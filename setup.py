@@ -1,0 +1,26 @@
+from setuptools import setup, find_packages
+
+requirements = [
+    'simpy',
+    'networkx',
+    'gym'
+]
+
+setup(
+    name='coord-sim',
+    version='0.9',
+    description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
+                'scheduling/balancing traffic between them.',
+    url='https://github.com/CN-UPB/coordination-simulation',
+    author='Stefan Schneider',
+    author_email='stefan.schneider@upb.de',
+    package_dir={'':'src'},
+    packages=find_packages('src'),
+    install_requires=requirements,
+    zip_safe=False,
+    # entry_points={
+    #     'console_scripts': [
+    #         'coord-sim=coord-sim.main:main',
+    #     ],
+    # },
+)
