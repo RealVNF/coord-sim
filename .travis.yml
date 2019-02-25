@@ -6,4 +6,4 @@ install:
     - python setup.py install
 
 script:
-    - python -c print("placeholder")
+    - flake8 src

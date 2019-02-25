@@ -7,6 +7,7 @@ requirements = [
 ]
 
 test_requirements = [
+    'flake8',
     'pytest'
 ]
 
@@ -18,7 +19,7 @@ setup(
     url='https://github.com/CN-UPB/coordination-simulation',
     author='Stefan Schneider',
     author_email='stefan.schneider@upb.de',
-    package_dir={'':'src'},
+    package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=requirements + test_requirements,
     test_requirements=test_requirements,
