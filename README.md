@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/CN-UPB/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/CN-UPB/coordination-simulation)
+
 # Simulation: Coordination of chained virtual network functions
 
 Simulate flow-level, inter-node network coordination including scaling and placement of services and scheduling/balancing traffic between them.
