@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/CN-UPB/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/CN-UPB/coordination-simulation)
+[![Build Status](https://travis-ci.com/RealVNF/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/RealVNF/coordination-simulation)
 
 # Simulation: Coordination of chained virtual network functions
 
