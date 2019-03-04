@@ -2,12 +2,15 @@ import random
 
 
 def generate_flow(env, node, rand_mean):
-    # Print flow arrivals, departures and waiting for flow to end (duration) at a pre-specified rate
+    # Print flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     flow_id = 0
     while True:
-        duration = random.randint(0, 3)
+        # Random flow duration for each flow
+        flow_duration = random.randint(0, 3)
+        # Exponentially distributed random inter arrival rate using a user set (or default) mean
         inter_arr_time = random.expovariate(rand_mean)
-        env.process(flow_arrival(env, node, duration, flow_id))
+        # Let flows arrive concurrently, no need to wait for one flow to depart for another to arrive. 
+        env.process(flow_arrival(env, node, flow_duration, flow_id))
         flow_id += 1
         yield env.timeout(inter_arr_time)
     
@@ -21,17 +24,17 @@ def ingress_nodes(nodes):
     return ing_nodes
 
 
-def flow_arrival(env, node, duration, flow_id):
-    print("Flow {}{} arrived at time {}".format(node["name"], flow_id, env.now))
-    yield env.timeout(duration)
-    print("Flow {}{} departed at time {}".format(node["name"], flow_id, env.now))
+# Flow arrival and departure function
+def flow_arrival(env, node, flow_duration, flow_id):
+    print("Flow {}{} arrived at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
+    yield env.timeout(flow_duration)
+    print("Flow {}{} departed at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
 
  
 def start_simulation(env, nodes, rand_mean=1.0, sim_rate=0):
     print("Starting simulation")
     print("Using nodes list {}\n".format(nodes))
     ing_nodes = ingress_nodes(nodes)
-
     print("Total of {} ingress nodes available: {}\n".format(len(ing_nodes), ing_nodes))
     for node in ing_nodes:
         env.process(generate_flow(env, node, rand_mean))
