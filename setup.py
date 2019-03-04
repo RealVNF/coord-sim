@@ -6,10 +6,10 @@ requirements = [
     'gym'
 ]
 
-# test_requirements = [
-#     'flake8',
-#     'pytest'
-# ]
+test_requirements = [
+    'flake8',
+    'pytest'
+]
 
 setup(
     name='coord-sim',
@@ -22,7 +22,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=requirements, #+ test_requirements,
-    #test_requirements=test_requirements,
+    test_requirements=test_requirements,
     zip_safe=False,
     entry_points={
         'console_scripts': [
