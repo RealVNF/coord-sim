@@ -1,8 +1,10 @@
 import random
+import logging
 
+log = logging.getLogger(__name__)
 
 def generate_flow(env, node, rand_mean):
-    # Print flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
+    # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     flow_id = 0
     while True:
         # Random flow duration for each flow
@@ -26,16 +28,16 @@ def ingress_nodes(nodes):
 
 # Flow arrival and departure function
 def flow_arrival(env, node, flow_duration, flow_id):
-    print("Flow {}{} arrived at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
+    log.info("Flow {}{} arrived at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
     yield env.timeout(flow_duration)
-    print("Flow {}{} departed at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
+    log.info("Flow {}{} departed at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
 
- 
+
 def start_simulation(env, nodes, rand_mean=1.0, sim_rate=0):
-    print("Starting simulation")
-    print("Using nodes list {}\n".format(nodes))
+    log.info("Starting simulation")
+    log.info("Using nodes list {}\n".format(nodes))
     ing_nodes = ingress_nodes(nodes)
-    print("Total of {} ingress nodes available: {}\n".format(len(ing_nodes), ing_nodes))
+    log.info("Total of {} ingress nodes available: {}\n".format(len(ing_nodes), ing_nodes))
     for node in ing_nodes:
         env.process(generate_flow(env, node, rand_mean))
 

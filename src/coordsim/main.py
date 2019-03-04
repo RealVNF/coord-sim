@@ -2,9 +2,14 @@ import argparse
 import simpy
 import random
 from coordsim.simulation import flowsimulator
+import logging 
+
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger(__name__)
+
     default_seed = 9999
 
     # Read CLI arguments 
@@ -22,8 +27,8 @@ def main():
     # For now this is a dummy list of node. Will be replaced by a NetworkX representation (Future)
     nodes = [{"id": 1, "name": "NY", "type": "ingress"}, {"id": 2, "name": "DC", "type": "ingress"},
              {"id": 3, "name": "PH", "type": "normal"}]
-    print("Coordination-Simulation")
-    print("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
+    log.info("Coordination-Simulation")
+    log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 
     # Begin simulation
     flowsimulator.start_simulation(env, nodes, float(args.rand_mean))

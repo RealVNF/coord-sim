@@ -21,7 +21,7 @@ setup(
     author_email='stefan.schneider@upb.de',
     package_dir={'': 'src'},
     packages=find_packages('src'),
-    install_requires=requirements, #+ test_requirements,
+    install_requires=requirements + test_requirements,
     test_requirements=test_requirements,
     zip_safe=False,
     entry_points={
