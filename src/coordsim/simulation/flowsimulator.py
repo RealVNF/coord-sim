@@ -3,6 +3,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def generate_flow(env, node, rand_mean):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     flow_id = 0
@@ -11,13 +12,13 @@ def generate_flow(env, node, rand_mean):
         flow_duration = random.randint(0, 3)
         # Exponentially distributed random inter arrival rate using a user set (or default) mean
         inter_arr_time = random.expovariate(rand_mean)
-        # Let flows arrive concurrently, no need to wait for one flow to depart for another to arrive. 
+        # Let flows arrive concurrently, no need to wait for one flow to depart for another to arrive.
         env.process(flow_arrival(env, node, flow_duration, flow_id))
         flow_id += 1
         yield env.timeout(inter_arr_time)
-    
 
-#Filter out non-ingree nodes 
+
+# Filter out non-ingree nodes
 def ingress_nodes(nodes):
     ing_nodes = []
     for node in nodes:
@@ -40,5 +41,3 @@ def start_simulation(env, nodes, rand_mean=1.0, sim_rate=0):
     log.info("Total of {} ingress nodes available: {}\n".format(len(ing_nodes), ing_nodes))
     for node in ing_nodes:
         env.process(generate_flow(env, node, rand_mean))
-
-

@@ -2,8 +2,7 @@ import argparse
 import simpy
 import random
 from coordsim.simulation import flowsimulator
-import logging 
-
+import logging
 
 
 def main():
@@ -12,7 +11,7 @@ def main():
 
     default_seed = 9999
 
-    # Read CLI arguments 
+    # Read CLI arguments
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
     parser.add_argument('-d', '--duration', required=True, default=None, dest="duration")
     parser.add_argument('-r', '--rate', required=False, default=None, dest="rate")
