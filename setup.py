@@ -24,9 +24,9 @@ setup(
     install_requires=requirements + test_requirements,
     test_requirements=test_requirements,
     zip_safe=False,
-    # entry_points={
-    #     'console_scripts': [
-    #         'coord-sim=coord-sim.main:main',
-    #     ],
-    # },
+    entry_points={
+        'console_scripts': [
+            'coord-sim=coordsim.main:main',
+        ],
+    },
 )
