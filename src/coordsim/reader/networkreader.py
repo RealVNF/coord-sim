@@ -18,15 +18,17 @@ def read_network(file, cpu=None, mem=None):
     # set links
     link_ids = [("pop{}".format(e[0]), "pop{}".format(e[1])) for e in network.edges]
 
-    # calculate link delay based on geo positions of nodes; duplicate links for bidirectionality
-    link_delay = {}
-    # Get the LinkDelay attributes of all edges at once, filter out those with no link delay value.
-    edge_link_delay_attr = nx.get_edge_attributes(network, "LinkDelay")
-    for e in network.edges:
+    # calculate link delay based on geo positions of nodes; duplicate links for
+    # bidirectionality and create complete links array
+    edges = {}
+    for e in network.edges(data=True):
         # Check whether LinkDelay value is set, otherwise default to -1
-        link_delay_val = edge_link_delay_attr.get(e, -1)
+        link_delay = e[2].get("LinkDelay", -1)
+        link_cap = e[2].get("LinkCap", -1)
+        if (link_cap == -1):
+            raise ValueError("Link {} has incorrect or no capacity defined in graphml file.".format(e))
         delay = 0
-        if link_delay_val == -1:
+        if link_delay == -1:
             n1 = network.nodes(data=True)[e[0]]
             n2 = network.nodes(data=True)[e[1]]
             n1_lat, n1_long = n1.get("Latitude"), n1.get("Longitude")
@@ -35,20 +37,19 @@ def read_network(file, cpu=None, mem=None):
             # round delay to int using np.around for consistency with emulator
             delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  	# in milliseconds
         else:
-            delay = link_delay_val
-        link_delay[("pop{}".format(e[0]), "pop{}".format(e[1]))] = delay
+            delay = link_delay
+        edges[("pop{}".format(e[0]), "pop{}".format(e[1]))] = {"delay": delay, "cap": link_cap}
 
     # add reversed links for bidirectionality
-    for e in network.edges:
+    for e in network.edges(data=True):
         e = ("pop{}".format(e[0]), "pop{}".format(e[1]))
         e_reversed = (e[1], e[0])
         link_ids.append(e_reversed)
-        link_delay[e_reversed] = link_delay[e]
+        edges[e_reversed] = edges[e]
 
-    # Create complete links array
     links = []
-    for link in link_delay.keys():
-        links.append({"src": link[0], "dest": link[1], "link_delay": link_delay[link]})
+    for link in edges.keys():
+        links.append({"src": link[0], "dest": link[1], "delay": edges[link]["delay"], "cap": edges[link]["cap"]})
     nodes = []
     for n in network.nodes(data=True):
         node_id = "pop{}".format(n[0])
@@ -61,4 +62,5 @@ def read_network(file, cpu=None, mem=None):
         # We might use objects of Nodes to allow for easier feature additions
         # nodes.append(Node(node_id,cpu,mem,node_type))
         nodes.append({"id": node_id, "name": node_name, "type": node_type, "cpu": cpu, "mem": mem})
+
     return nodes, links
