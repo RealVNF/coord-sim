@@ -2,6 +2,7 @@ import argparse
 import simpy
 import random
 from coordsim.simulation import flowsimulator
+from coordsim.reader import networkreader
 import logging
 
 
@@ -16,6 +17,7 @@ def main():
     parser.add_argument('-d', '--duration', required=True, default=None, dest="duration")
     parser.add_argument('-r', '--rate', required=False, default=None, dest="rate")
     parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed")
+    parser.add_argument('-n', '--network', required=True, dest='network')
     parser.add_argument('-rm', '--randmean', required=False, default=1.0, dest="rand_mean")
     args = parser.parse_args()
 
@@ -23,9 +25,7 @@ def main():
     random.seed(args.seed)
     env = simpy.Environment()
 
-    # For now this is a dummy list of node. Will be replaced by a NetworkX representation (Future)
-    nodes = [{"id": 1, "name": "NY", "type": "ingress"}, {"id": 2, "name": "DC", "type": "ingress"},
-             {"id": 3, "name": "PH", "type": "normal"}]
+    nodes, links = networkreader.read_network(args.network)
     log.info("Coordination-Simulation")
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 

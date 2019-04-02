@@ -22,16 +22,16 @@ def generate_flow(env, node, rand_mean):
 def ingress_nodes(nodes):
     ing_nodes = []
     for node in nodes:
-        if node["type"] == "ingress":
+        if node["type"] == "Ingress":
             ing_nodes.append(node)
     return ing_nodes
 
 
 # Flow arrival and departure function
 def flow_arrival(env, node, flow_duration, flow_id):
-    log.info("Flow {}{} arrived at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
+    log.info("Flow {}-{} arrived at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
     yield env.timeout(flow_duration)
-    log.info("Flow {}{} departed at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
+    log.info("Flow {}-{} departed at time {} - flow duration: {}".format(node["name"], flow_id, env.now, flow_duration))
 
 
 def start_simulation(env, nodes, rand_mean=1.0, sim_rate=0):
