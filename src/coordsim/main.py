@@ -19,6 +19,7 @@ def main():
     parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed")
     parser.add_argument('-n', '--network', required=True, dest='network')
     parser.add_argument('-rm', '--randmean', required=False, default=1.0, dest="rand_mean")
+    parser.add_argument('-p', '--placement', required=False, default=None, dest="placement")
     args = parser.parse_args()
 
     # Initialize environment (random seed and simpy.)
@@ -28,6 +29,12 @@ def main():
     nodes, links = networkreader.read_network(args.network, node_cap=10, link_cap=10)
     log.info("Coordination-Simulation")
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
+
+    # Getting current placement of VNF's
+    if args.placement:
+        placement = networkreader.gen_placement(args.placement)
+    else:
+        log.info("No Placement File Specified, Cannot get the Current VNF Placement's")
 
     # Begin simulation
     flowsimulator.start_simulation(env, nodes, float(args.rand_mean))

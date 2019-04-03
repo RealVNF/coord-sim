@@ -3,9 +3,23 @@ from geopy.distance import vincenty
 import numpy as np
 from coordsim.network.node import Node
 import logging as log
+import yaml
+from collections import defaultdict
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
+
+#This function returns the current placement of VNF's in the network as a Dict of nodes with the list of VNF's placed in it. The Placement for now is done using a static file, which later would be changed to the latest placements suggested by an RL Agent.
+def gen_placement(placementFileDirectory):
+    vnf_placements = defaultdict(list)
+    with open(placementFileDirectory) as placementFile:
+        placements = yaml.load(placementFile)
+    for vnf in placements['placement']['vnfs']:
+        node = vnf['node']
+        vnfName  = vnf['name']
+        vnf_placements[node].append(vnfName)
+    return vnf_placements
+
 
 
 def read_network(file, node_cap=None, link_cap=None):

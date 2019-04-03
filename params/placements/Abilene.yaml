@@ -1,0 +1,34 @@
+input:
+  algorithm: bjointsp
+  fixed: None
+  network: Abilene_updated.graphml
+  num_edges: 3
+  num_nodes: 3
+  num_sources: 1
+  num_vnfs: 4
+  objective: 0
+  prev_embedding: None
+  seed: 6044
+  service: fw2chain.yaml
+  sources: source1.yaml
+placement:
+  vnfs:
+  - image: '{"image":"placement-fw1-img", "network":"(id=input,ip=88.0.0.2/24),(id=output,ip=99.0.0.1/24)"}'
+    name: vnf_fw1
+    node: pop2
+  - image: '{"image":"placement-fw2-img", "network":"(id=input,ip=77.0.0.2/24),(id=output,ip=88.0.0.1/24)"}'
+    name: vnf_fw2
+    node: pop0
+  - image: '{"image":"placement-user-img", "network":"(id=output,ip=77.0.0.1/24)"}'
+    name: vnf_user
+    node: pop1
+  - image: '{"image":"placement-fw2-img", "network":"(id=input,ip=77.0.0.2/24),(id=output,ip=88.0.0.1/24)"}'
+    name: vnf_fw2
+    node: pop2
+  - image: '{"image":"placement-apache-img", "network":"(id=input,ip=99.0.0.2/24)"}'
+    name: vnf_web
+    node: pop1
+  - image: '{"image":"placement-fw1-img", "network":"(id=input,ip=88.0.0.2/24),(id=output,ip=99.0.0.1/24)"}'
+    name: vnf_fw1
+    node: pop0
+time: 2019-04-03_15-36-51
