@@ -6,25 +6,28 @@ import logging as log
 import yaml
 from collections import defaultdict
 
+
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
 
-#This function returns the current placement of VNF's in the network as a Dict of nodes with the list of VNF's placed in it. The Placement for now is done using a static file, which later would be changed to the latest placements suggested by an RL Agent.
-def gen_placement(placementFileDirectory):
+# Returns the current placement of VNF's in the network as a Dict of nodes with the list of VNF's placed in it.
+# The Placement for now is done using a static file.
+# This later would be changed to the latest placements suggested by an RL Agent.
+
+def gen_placement(placement_file_directory):
     vnf_placements = defaultdict(list)
-    with open(placementFileDirectory) as placementFile:
+    with open(placement_file_directory) as placementFile:
         placements = yaml.load(placementFile)
     for vnf in placements['placement']['vnfs']:
         node = vnf['node']
-        vnfName  = vnf['name']
-        vnf_placements[node].append(vnfName)
+        vnf_name = vnf['name']
+        vnf_placements[node].append(vnf_name)
     return vnf_placements
-
 
 
 def read_network(file, node_cap=None, link_cap=None):
     SPEED_OF_LIGHT = 299792458  # meter per second
-    PROPAGATION_FACTOR = 0.77  	# https://en.wikipedia.org/wiki/Propagation_delay
+    PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
 
     if not file.endswith(".graphml"):
         raise ValueError("{} is not a GraphML file".format(file))
@@ -48,9 +51,9 @@ def read_network(file, node_cap=None, link_cap=None):
             n2 = network.nodes(data=True)[e[1]]
             n1_lat, n1_long = n1.get("Latitude"), n1.get("Longitude")
             n2_lat, n2_long = n2.get("Latitude"), n2.get("Longitude")
-            distance = vincenty((n1_lat, n1_long), (n2_lat, n2_long)).meters		# in meters
+            distance = vincenty((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
             # round delay to int using np.around for consistency with emulator
-            delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  	# in milliseconds
+            delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
         else:
             delay = link_delay
         edges[("pop{}".format(e[0]), "pop{}".format(e[1]))] = {"delay": delay, "cap": link_cap}

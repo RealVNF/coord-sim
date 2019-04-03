@@ -4,7 +4,8 @@ requirements = [
     'simpy',
     'networkx',
     'gym',
-    'geopy'
+    'geopy',
+    'pyyaml'
 ]
 
 test_requirements = [
