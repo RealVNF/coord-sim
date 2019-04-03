@@ -1,13 +1,13 @@
 import networkx as nx
 from geopy.distance import vincenty
 import numpy as np
-# from coordsim.network import node
+from coordsim.network.node import Node
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
 
 
-def read_network(file, cpu=None, mem=None):
+def read_network(file, node_cap=None, link_cap=None):
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  	# https://en.wikipedia.org/wiki/Propagation_delay
 
@@ -24,8 +24,8 @@ def read_network(file, cpu=None, mem=None):
     for e in network.edges(data=True):
         # Check whether LinkDelay value is set, otherwise default to -1
         link_delay = e[2].get("LinkDelay", -1)
-        link_cap = e[2].get("LinkCap", -1)
-        if (link_cap == -1):
+        link_cap = e[2].get("LinkCap", link_cap)
+        if (link_cap is None):
             raise ValueError("Link {} has incorrect or no capacity defined in graphml file.".format(e))
         delay = 0
         if link_delay == -1:
@@ -53,14 +53,13 @@ def read_network(file, cpu=None, mem=None):
     nodes = []
     for n in network.nodes(data=True):
         node_id = "pop{}".format(n[0])
-        cpu = n[1].get("NodeCPU", None)
-        mem = n[1].get("NodeCPU", None)
+        cap = n[1].get("NodeCap", node_cap)
         node_type = n[1].get("NodeType", "Normal")
         node_name = n[1].get("label", None)
-        if (cpu is None or mem is None):
+        if (cap is None):
             raise ValueError("No CPU or mem. specified for {} (as cmd argument or in graphml)".format(file))
-        # We might use objects of Nodes to allow for easier feature additions
-        # nodes.append(Node(node_id,cpu,mem,node_type))
-        nodes.append({"id": node_id, "name": node_name, "type": node_type, "cpu": cpu, "mem": mem})
+        # Completing the nodes list with Node objects
+        nodes.append(Node(node_id, node_name, node_type, cap))
+        # nodes.append({"id": node_id, "name": node_name, "type": node_type, "cpu": cpu, "mem": mem})
 
     return nodes, links

@@ -7,3 +7,4 @@ install:
 
 script:
     - flake8 src
+    - coord-sim -d 20 -n "./params/networks/Abilene.graphml"
