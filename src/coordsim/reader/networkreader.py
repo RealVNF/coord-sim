@@ -2,6 +2,7 @@ import networkx as nx
 from geopy.distance import vincenty
 import numpy as np
 from coordsim.network.node import Node
+import logging as log
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
@@ -54,10 +55,12 @@ def read_network(file, node_cap=None, link_cap=None):
     for n in network.nodes(data=True):
         node_id = "pop{}".format(n[0])
         cap = n[1].get("NodeCap", node_cap)
+        if cap == node_cap:
+            log.warning("Using default NodeCap for node: {}".format(n))
         node_type = n[1].get("NodeType", "Normal")
         node_name = n[1].get("label", None)
         if (cap is None):
-            raise ValueError("No CPU or mem. specified for {} (as cmd argument or in graphml)".format(file))
+            raise ValueError("No NodeCap. set for node{} in file {} (as cmd argument or in graphml)".format(n, file))
         # Completing the nodes list with Node objects
         nodes.append(Node(node_id, node_name, node_type, cap))
         # nodes.append({"id": node_id, "name": node_name, "type": node_type, "cpu": cpu, "mem": mem})

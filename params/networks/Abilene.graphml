@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key attr.name="LinkCap" attr.type="int" for="edge" id="d42" />
-  <key attr.name="NodeMEM" attr.type="int" for="node" id="d41" />
-  <key attr.name="NodeCPU" attr.type="int" for="node" id="d40" />
+  <key attr.name="LinkCap" attr.type="int" for="edge" id="d41" />
+  <key attr.name="NodeCap" attr.type="int" for="node" id="d40" />
   <key attr.name="NodeType" attr.type="string" for="node" id="d39" />
   <key attr.name="LinkDelay" attr.type="int" for="edge" id="d38" />
   <key attr.name="key" attr.type="int" for="edge" id="d37" />
@@ -80,7 +79,6 @@
       <data key="d33">New York</data>
       <data key="d39">Ingress</data>
       <data key="d40">40</data>
-      <data key="d41">40</data>
     </node>
     <node id="1">
       <data key="d28">1</data>
@@ -91,7 +89,6 @@
       <data key="d33">Chicago</data>
       <data key="d39">Normal</data>
       <data key="d40">40</data>
-      <data key="d41">40</data>
     </node>
     <node id="2">
       <data key="d28">1</data>
@@ -102,21 +99,20 @@
       <data key="d33">Washington DC</data>
       <data key="d39">Ingress</data>
       <data key="d40">40</data>
-      <data key="d41">40</data>
     </node>
     <edge source="0" target="1">
       <data key="d34">OC-192</data>
       <data key="d35">OC-192c</data>
       <data key="d36">c</data>
       <data key="d37">0</data>
-      <data key="d42">1024</data>
+      <data key="d41">1024</data>
     </edge>
     <edge source="0" target="2">
       <data key="d34">OC-192</data>
       <data key="d35">OC-192c</data>
       <data key="d36">c</data>
       <data key="d37">0</data>
-      <data key="d42">1024</data>
+      <data key="d41">1024</data>
     </edge>
     <edge source="1" target="2">
       <data key="d34">OC-192</data>
@@ -124,7 +120,7 @@
       <data key="d36">c</data>
       <data key="d37">0</data>
       <data key="d38">15</data>
-      <data key="d42">1024</data>
+      <data key="d41">1024</data>
     </edge>
   </graph>
 </graphml>
