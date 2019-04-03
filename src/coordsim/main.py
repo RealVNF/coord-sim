@@ -32,10 +32,10 @@ def main():
 
     # Getting current placement of VNF's
     if args.placement:
-        placement = networkreader.gen_placement(args.placement)
+        placement = networkreader.get_placement(args.placement)
         log.info("Total of {} nodes have VNF's placed in them\n".format(len(placement)))
     else:
-        log.info("No Placement File Specified, Cannot get the Current VNF Placement's")
+        log.warning("No Placement File Specified, Cannot get the Current VNF Placement's")
 
     # Begin simulation
     flowsimulator.start_simulation(env, nodes, float(args.rand_mean))

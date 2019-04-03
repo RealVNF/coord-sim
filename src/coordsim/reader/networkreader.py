@@ -14,7 +14,7 @@ from collections import defaultdict
 # The Placement for now is done using a static file.
 # This later would be changed to the latest placements suggested by an RL Agent.
 
-def gen_placement(placement_file_directory):
+def get_placement(placement_file_directory):
     vnf_placements = defaultdict(list)
     with open(placement_file_directory) as placementFile:
         placements = yaml.load(placementFile)
