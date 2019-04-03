@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 requirements = [
     'simpy',
     'networkx',
-    'gym'
+    'gym',
+    'geopy'
 ]
 
 test_requirements = [
