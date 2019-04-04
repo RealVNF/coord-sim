@@ -35,7 +35,7 @@ def main():
     log.info("Total of {} nodes have VNF's placed in them\n".format(len(sf_placement)))
 
     # Begin simulation
-    flowsimulator.start_simulation(env, nodes, float(args.rand_mean))
+    flowsimulator.start_simulation(env, nodes, sf_placement, sfc_list, float(args.rand_mean))
     env.run(until=args.duration)
 
 

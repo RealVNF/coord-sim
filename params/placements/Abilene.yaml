@@ -13,32 +13,44 @@ input:
   sources: source1.yaml
 placement:
   vnfs:
-  - image: '{"image":"placement-fw1-img", "network":"(id=input,ip=88.0.0.2/24),(id=output,ip=99.0.0.1/24)"}'
-    name: vnf_fw1
-    node: pop2
-  - image: '{"image":"placement-fw2-img", "network":"(id=input,ip=77.0.0.2/24),(id=output,ip=88.0.0.1/24)"}'
-    name: vnf_fw2
+  - image: '{}'
+    name: a
     node: pop0
-  - image: '{"image":"placement-user-img", "network":"(id=output,ip=77.0.0.1/24)"}'
-    name: vnf_user
+  - image: '{}'
+    name: a
     node: pop1
-  - image: '{"image":"placement-fw2-img", "network":"(id=input,ip=77.0.0.2/24),(id=output,ip=88.0.0.1/24)"}'
-    name: vnf_fw2
+  - image: '{}'
+    name: a
     node: pop2
-  - image: '{"image":"placement-apache-img", "network":"(id=input,ip=99.0.0.2/24)"}'
-    name: vnf_web
-    node: pop1
-  - image: '{"image":"placement-fw1-img", "network":"(id=input,ip=88.0.0.2/24),(id=output,ip=99.0.0.1/24)"}'
-    name: vnf_fw1
+  - image: '{}'
+    name: b
     node: pop0
+  - image: '{}'
+    name: b
+    node: pop1
+  - image: '{}'
+    name: b
+    node: pop2
+  - image: '{}'
+    name: c
+    node: pop0
+  - image: '{}'
+    name: c
+    node: pop1
+  - image: '{}'
+    name: c
+    node: pop2
 sfc_list: 
   sfc_1:
-    - vnf_fw1
-    - vnf_web
+    - a
+    - b
+    - c
   sfc_2:
-    - vnf_fw1
-    - vnf_web
+    - a
+    - b
+    - c
   sfc_3:
-    - vnf_web
-    - vnf_fw1 
+    - b
+    - a
+    - c
 time: 2019-04-03_15-36-51

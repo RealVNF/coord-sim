@@ -5,7 +5,8 @@ requirements = [
     'networkx',
     'gym',
     'geopy',
-    'pyyaml'
+    'pyyaml',
+    'numpy'
 ]
 
 test_requirements = [
