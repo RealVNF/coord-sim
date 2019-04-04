@@ -31,4 +31,14 @@ placement:
   - image: '{"image":"placement-fw1-img", "network":"(id=input,ip=88.0.0.2/24),(id=output,ip=99.0.0.1/24)"}'
     name: vnf_fw1
     node: pop0
+sfc_list: 
+  sfc_1:
+    - vnf_fw1
+    - vnf_web
+  sfc_2:
+    - vnf_fw1
+    - vnf_web
+  sfc_3:
+    - vnf_web
+    - vnf_fw1 
 time: 2019-04-03_15-36-51

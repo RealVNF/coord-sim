@@ -19,7 +19,7 @@ def main():
     parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed")
     parser.add_argument('-n', '--network', required=True, dest='network')
     parser.add_argument('-rm', '--randmean', required=False, default=1.0, dest="rand_mean")
-    parser.add_argument('-p', '--placement', required=False, default=None, dest="placement")
+    parser.add_argument('-p', '--placement', required=True, default=None, dest="placement")
     args = parser.parse_args()
 
     # Initialize environment (random seed and simpy.)
@@ -31,11 +31,8 @@ def main():
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 
     # Getting current placement of VNF's
-    if args.placement:
-        placement = networkreader.get_placement(args.placement)
-        log.info("Total of {} nodes have VNF's placed in them\n".format(len(placement)))
-    else:
-        log.warning("No Placement File Specified, Cannot get the Current VNF Placement's")
+    sf_placement, sfc_list = networkreader.network_update(args.placement)
+    log.info("Total of {} nodes have VNF's placed in them\n".format(len(sf_placement)))
 
     # Begin simulation
     flowsimulator.start_simulation(env, nodes, float(args.rand_mean))
