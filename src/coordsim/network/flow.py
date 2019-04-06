@@ -1,6 +1,12 @@
-class Flow():
-    def __init__(self, interval, duration):
-        self.interval = interval
+class Flow:
+
+    def __init__(self, flow_id, sfc, duration, status=None, rate=None,
+                 destination=None, current_sf=None, current_node=None):
+        self.flow_id = flow_id
+        self.sfc = sfc
+        self.status = status
         self.duration = duration
-        self.rate
-        self.destination
+        self.rate = rate
+        self.destination = destination
+        self.current_sf = current_sf
+        self.current_node = current_node

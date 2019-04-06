@@ -14,15 +14,27 @@ from collections import defaultdict
 # The Placement for now is done using a static file.
 # This later would be changed to the latest placements suggested by an RL Agent.
 
-def get_placement(placement_file_directory):
+
+def network_update(yaml_file):
+    with open(yaml_file) as yaml_stream:
+        yaml_data = yaml.load(yaml_stream)
+    return get_placement(yaml_data), get_sfc(yaml_data)
+
+
+def get_placement(placement_data):
     vnf_placements = defaultdict(list)
-    with open(placement_file_directory) as placementFile:
-        placements = yaml.load(placementFile)
-    for vnf in placements['placement']['vnfs']:
+    for vnf in placement_data['placement']['vnfs']:
         node = vnf['node']
         vnf_name = vnf['name']
         vnf_placements[node].append(vnf_name)
     return vnf_placements
+
+
+def get_sfc(sfc_data):
+    sfc_list = {}
+    for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
+        sfc_list[sfc_name] = sfc_sf
+    return sfc_list
 
 
 def read_network(file, node_cap=None, link_cap=None):

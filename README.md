@@ -45,7 +45,7 @@ optional arguments:
 You can use the following command as an example (run from the root project folder)
 
 ```bash 
-coord-sim -d 20 -n "./params/networks/Abilene.graphml"
+coord-sim -d 20 -n params/networks/Abilene.graphml -p params/placements/Abilene.yaml 
 ```
 This will run a simulation on a provided GraphML file for a duration of 20 timesteps. 
 

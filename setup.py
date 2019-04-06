@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 requirements = [
     'simpy',
     'networkx',
-    'gym',
     'geopy',
-    'pyyaml'
+    'pyyaml',
+    'numpy'
 ]
 
 test_requirements = [
