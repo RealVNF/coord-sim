@@ -13,32 +13,23 @@ input:
   sources: source1.yaml
 placement:
   vnfs:
-  - image: '{}'
-    name: a
+  - name: a
     node: pop0
-  - image: '{}'
-    name: a
+  - name: a
     node: pop1
-  - image: '{}'
-    name: a
+  - name: a
     node: pop2
-  - image: '{}'
-    name: b
+  - name: b
     node: pop0
-  - image: '{}'
-    name: b
+  - name: b
     node: pop1
-  - image: '{}'
-    name: b
+  - name: b
     node: pop2
-  - image: '{}'
-    name: c
+  - name: c
     node: pop0
-  - image: '{}'
-    name: c
+  - name: c
     node: pop1
-  - image: '{}'
-    name: c
+  - name: c
     node: pop2
 sfc_list: 
   sfc_1:
