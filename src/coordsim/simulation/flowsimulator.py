@@ -75,8 +75,9 @@ def schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list):
             processing_delay = sf_list[sf].get("processing_delay", 0)
             if sf in sf_placement[next_node]:
                 flow_forward(env, node, next_node, flow)
+                yield env.timeout(processing_delay)
                 process_flow(env, flow.current_node_id, flow)
-                yield env.timeout(flow.duration + processing_delay)
+                yield env.timeout(flow.duration)
                 if(index == len(sfc_list[flow.sfc])-1):
                     flow_departure(env, flow.current_node_id, flow)
             else:
