@@ -18,7 +18,7 @@ from collections import defaultdict
 def network_update(yaml_file):
     with open(yaml_file) as yaml_stream:
         yaml_data = yaml.load(yaml_stream)
-    return get_placement(yaml_data), get_sfc(yaml_data)
+    return get_placement(yaml_data), get_sfc(yaml_data), get_sf(yaml_data)
 
 
 def get_placement(placement_data):
@@ -35,6 +35,14 @@ def get_sfc(sfc_data):
     for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
         sfc_list[sfc_name] = sfc_sf
     return sfc_list
+
+
+def get_sf(sf_data):
+    print(sf_data['sf_list'])
+    sf_list = {}
+    for sf_name, sf_details in sf_data['sf_list'].items():
+        sf_list[sf_name] = sf_details
+    return sf_list
 
 
 def read_network(file, node_cap=None, link_cap=None):

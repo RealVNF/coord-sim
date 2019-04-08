@@ -31,11 +31,11 @@ def main():
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 
     # Getting current placement of VNF's
-    sf_placement, sfc_list = networkreader.network_update(args.placement)
+    sf_placement, sfc_list, sf_list = networkreader.network_update(args.placement)
     log.info("Total of {} nodes have VNF's placed in them\n".format(len(sf_placement)))
 
     # Begin simulation
-    flowsimulator.start_simulation(env, nodes, sf_placement, sfc_list, float(args.rand_mean))
+    flowsimulator.start_simulation(env, nodes, sf_placement, sfc_list, sf_list, float(args.rand_mean))
     env.run(until=args.duration)
 
 
