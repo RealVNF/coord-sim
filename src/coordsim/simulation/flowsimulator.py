@@ -34,7 +34,7 @@ def ingress_nodes(nodes):
     return ing_nodes
 
 
-# Flow arrival and departure functions. Just logs that flow arrived and departed.
+# Process the flow at the requested SF of the current node.
 def process_flow(env, node, flow):
     log.info(
         "Flow {} processed by sf '{}' at node {}. Time {}"
