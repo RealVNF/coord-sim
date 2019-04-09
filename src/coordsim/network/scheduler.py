@@ -1,3 +1,7 @@
+
+
+# Placeholder function to return a fixed LB schedule. Todo: Replace this with
+# functioning algorithm or get data from outside (RL or another agent)
 def flow_schedule():
     flow_schedule = {'pop0':
                      {'a': {'pop0': 0.4, 'pop1': 0.6, 'pop2': 0},

@@ -44,4 +44,10 @@ sfc_list:
     - b
     - a
     - c
-time: 2019-04-03_15-36-51
+sf_list:
+  a:
+    processing_delay: 0.5
+  b:
+    processing_delay: 0.3
+  c:
+    processing_delay: 0.2
