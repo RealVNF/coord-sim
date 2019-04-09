@@ -8,6 +8,7 @@ from coordsim.network import scheduler
 log = logging.getLogger(__name__)
 
 
+# Generate flows at the ingress nodes.
 def generate_flow(env, node, sf_placement, sfc_list, sf_list, rand_mean):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
@@ -24,7 +25,7 @@ def generate_flow(env, node, sf_placement, sfc_list, sf_list, rand_mean):
         yield env.timeout(inter_arr_time)
 
 
-# Filter out non-ingree nodes
+# Filter out non-ingree nodes.
 def ingress_nodes(nodes):
     ing_nodes = []
     for node in nodes:
@@ -40,10 +41,12 @@ def process_flow(env, node, flow):
         .format(flow.flow_id, flow.current_sf, node, env.now))
 
 
+# When the flow is in the last SF of the requested SFC. Depart it from the network.
 def flow_departure(env, node, flow):
     log.info("Flow {} was fully processed and departed network from {}. Time {}".format(flow.flow_id, node, env.now))
 
 
+# Determine whether flow stays in the same node. Otherwise forward flow and log the action taken.
 def flow_forward(env, node, next_node, flow):
     if(node.node_id == next_node):
         log.info("Flow {} stays in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
@@ -86,6 +89,7 @@ def schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list):
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
 
 
+# Start the simulator.
 def start_simulation(env, nodes, sf_placement, sfc_list, sf_list, rand_mean=1.0, sim_rate=0):
     log.info("Starting simulation")
     nodes_list = [(n.node_id, n.name) for n in nodes]

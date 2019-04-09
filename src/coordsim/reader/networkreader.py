@@ -15,12 +15,14 @@ from collections import defaultdict
 # This later would be changed to the latest placements suggested by an RL Agent.
 
 
+# Open yaml file and pass data to other functions for procesing.
 def network_update(yaml_file):
     with open(yaml_file) as yaml_stream:
         yaml_data = yaml.load(yaml_stream)
     return get_placement(yaml_data), get_sfc(yaml_data), get_sf(yaml_data)
 
 
+# Get the placement from the yaml data.
 def get_placement(placement_data):
     vnf_placements = defaultdict(list)
     for vnf in placement_data['placement']['vnfs']:
@@ -30,6 +32,7 @@ def get_placement(placement_data):
     return vnf_placements
 
 
+# Get the list of SFCs from the yaml data.
 def get_sfc(sfc_data):
     sfc_list = {}
     for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
@@ -37,6 +40,7 @@ def get_sfc(sfc_data):
     return sfc_list
 
 
+# Get the list of SFs and their properties from the yaml data.
 def get_sf(sf_data):
     print(sf_data['sf_list'])
     sf_list = {}
@@ -45,6 +49,7 @@ def get_sf(sf_data):
     return sf_list
 
 
+# Read the GraphML file and return list of nodes and edges.
 def read_network(file, node_cap=None, link_cap=None):
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
