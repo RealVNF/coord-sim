@@ -26,7 +26,7 @@ def main():
     random.seed(args.seed)
     env = simpy.Environment()
 
-    network = networkreader.read_network(args.network, node_cap=10, link_fwd_cap=10, link_bkwd_cap=5)
+    network = networkreader.read_network(args.network, node_cap=10, link_cap=10)
     log.info("Coordination-Simulation")
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 

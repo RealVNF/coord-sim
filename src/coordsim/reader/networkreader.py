@@ -56,7 +56,7 @@ def get_sf(sf_data):
 
 
 # Read the GraphML file and return list of nodes and edges.
-def read_network(file, node_cap=None, link_fwd_cap=None, link_bkwd_cap=None):
+def read_network(file, node_cap=None, link_cap=None):
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
 
@@ -68,14 +68,15 @@ def read_network(file, node_cap=None, link_fwd_cap=None, link_bkwd_cap=None):
     #  Setting the nodes of the NetworkX Graph
     for n in graphml_network.nodes(data=True):
         node_id = "pop{}".format(n[0])
-        cap = n[1].get("NodeCap", node_cap)
-        if cap == node_cap:
-            log.warning("Using default NodeCap for node: {}".format(n))
+        cap = n[1].get("NodeCap", None)
+        if cap is None:
+            cap = node_cap
+            log.warning("NodeCap not set in the GraphML file, now using default NodeCap for node: {}".format(n))
         node_type = n[1].get("NodeType", "Normal")
         node_name = n[1].get("label", None)
         if cap is None:
             raise ValueError("No NodeCap. set for node{} in file {} (as cmd argument or in graphml)".format(n, file))
-        # Adding a Node object as a Node in the NetworkX Graph
+        # Adding a Node in the NetworkX Graph
         # {"id": node_id, "name": node_name, "type": node_type, "cap": cpu})
         # Type of node. For now it is either "Normal" or "Ingress"
         networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={})
@@ -87,22 +88,29 @@ def read_network(file, node_cap=None, link_fwd_cap=None, link_bkwd_cap=None):
         # Check whether LinkDelay value is set, otherwise default to -1
         source = "pop{}".format(e[0])
         target = "pop{}".format(e[1])
-        link_delay = e[2].get("LinkDelay", -1)
-        link_fwd_cap = e[2].get("LinkFwdCap", link_fwd_cap)
-        link_bkwd_cap = e[2].get("LinkBkwdCap", link_bkwd_cap)
+        link_delay = e[2].get("LinkDelay", None)
+        link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
+        link_bkwd_cap = e[2].get("LinkBkwdCap", link_cap)
         if link_fwd_cap is None and link_bkwd_cap is None:
             raise ValueError("Link {} has incorrect or no capacity defined in graphml file.".format(e))
-        delay = 0
-        if link_delay == -1:
+        # Setting a default delay of 3 incase no delay specified in GraphML file
+        # and we are unable to set it based on Geo location
+        delay = 3
+        if link_delay is None:
             n1 = graphml_network.nodes(data=True)[e[0]]
             n2 = graphml_network.nodes(data=True)[e[1]]
-            n1_lat, n1_long = n1.get("Latitude"), n1.get("Longitude")
-            n2_lat, n2_long = n2.get("Latitude"), n2.get("Longitude")
-            distance = vincenty((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
-            # round delay to int using np.around for consistency with emulator
-            delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
+            n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
+            n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
+            if n1_lat is None or n1_long is None or n2_lat is None or n2_long is None:
+                log.warning("Link Delay not set in the GraphML file and unable to calc based on Geo Location,"
+                            "Now using default delay for edge: ({},{})".format(source, target))
+            else:
+                distance = vincenty((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
+                # round delay to int using np.around for consistency with emulator
+                delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
         else:
             delay = link_delay
+
         # delay = edge delay , cap = edge capacity in that direction
         if e[2].get("LinkFwdCap") is not None:
             networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
