@@ -6,3 +6,4 @@ class Node:
         self.cap = cap
         # Type of node. For now it is either "Normal" or "Ingress"
         self.node_type = node_type
+        self.available_sf = {}

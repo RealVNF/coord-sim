@@ -26,16 +26,16 @@ def main():
     random.seed(args.seed)
     env = simpy.Environment()
 
-    nodes, links = networkreader.read_network(args.network, node_cap=10, link_cap=10)
+    network = networkreader.read_network(args.network, node_cap=10, link_cap=10)
     log.info("Coordination-Simulation")
     log.info("Using seed {} and using mean {}\n".format(args.seed, args.rand_mean))
 
     # Getting current placement of VNF's
-    sf_placement, sfc_list, sf_list = networkreader.network_update(args.placement)
+    sf_placement, sfc_list, sf_list = networkreader.network_update(args.placement, network)
     log.info("Total of {} nodes have VNF's placed in them\n".format(len(sf_placement)))
 
     # Begin simulation
-    flowsimulator.start_simulation(env, nodes, sf_placement, sfc_list, sf_list, float(args.rand_mean))
+    flowsimulator.start_simulation(env, network, sf_placement, sfc_list, sf_list, float(args.rand_mean))
     env.run(until=args.duration)
 
 
