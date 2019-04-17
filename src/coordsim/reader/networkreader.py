@@ -85,14 +85,14 @@ def read_network(file, node_cap=None, link_cap=None):
     # calculate link delay based on geo positions of nodes;
 
     for e in graphml_network.edges(data=True):
-        # Check whether LinkDelay value is set, otherwise default to -1
+        # Check whether LinkDelay value is set, otherwise default to None
         source = "pop{}".format(e[0])
         target = "pop{}".format(e[1])
         link_delay = e[2].get("LinkDelay", None)
         link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
         link_bkwd_cap = e[2].get("LinkBkwdCap", link_cap)
-        if link_fwd_cap is None and link_bkwd_cap is None:
-            raise ValueError("Link {} has incorrect or no capacity defined in graphml file.".format(e))
+        if e[2].get("LinkFwdCap") is None and e[2].get("LinkBkwdCap") is None:
+            log.warning("Link {} has no capacity defined in graphml file. So, Using the default capacity".format(e))
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
         delay = 3
@@ -111,10 +111,9 @@ def read_network(file, node_cap=None, link_cap=None):
         else:
             delay = link_delay
 
+        # Adding the directed edges(forward and backward) for each link defined in the network.
         # delay = edge delay , cap = edge capacity in that direction
-        if e[2].get("LinkFwdCap") is not None:
-            networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
-        if e[2].get("LinkBkwdCap") is not None:
-            networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
+        networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
+        networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
 
     return networkx_network
