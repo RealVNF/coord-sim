@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 # Generate flows at the ingress nodes.
-def generate_flow(env, node, sf_placement, sfc_list, sf_list, rand_mean):
+def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, rand_mean, network):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
         flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
@@ -17,38 +17,39 @@ def generate_flow(env, node, sf_placement, sfc_list, sf_list, rand_mean):
         flow_duration = random.randint(0, 3)
         # Exponentially distributed random inter arrival rate using a user set (or default) mean
         inter_arr_time = random.expovariate(rand_mean)
-        flow_id_str = "{}-{}".format(node.node_id, flow_id)
+        flow_id_str = "{}-{}".format(node_id, flow_id)
         flow_sfc = np.random.choice([sfc for sfc in sfc_list.keys()])
-        flow = Flow(flow_id_str, flow_sfc, flow_duration, current_node_id=node.node_id)
+        flow = Flow(flow_id_str, flow_sfc, flow_duration, current_node_id=node_id)
         # Generate flows and schedule them at ingress node
-        env.process(schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list))
+        env.process(schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list))
         yield env.timeout(inter_arr_time)
 
 
 # Filter out non-ingree nodes.
-def ingress_nodes(nodes):
+def ingress_nodes(network):
     ing_nodes = []
-    for node in nodes:
-        if node.node_type == "Ingress":
+    for node in network.nodes.items():
+        if node[1]["type"] == "Ingress":
             ing_nodes.append(node)
+    print(ing_nodes)
     return ing_nodes
 
 
 # Process the flow at the requested SF of the current node.
-def process_flow(env, node, flow):
+def process_flow(env, node_id, flow):
     log.info(
         "Flow {} processed by sf '{}' at node {}. Time {}"
-        .format(flow.flow_id, flow.current_sf, node, env.now))
+        .format(flow.flow_id, flow.current_sf, node_id, env.now))
 
 
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
-def flow_departure(env, node, flow):
-    log.info("Flow {} was fully processed and departed network from {}. Time {}".format(flow.flow_id, node, env.now))
+def flow_departure(env, node_id, flow):
+    log.info("Flow {} was fully processed and departed network from {}. Time {}".format(flow.flow_id, node_id, env.now))
 
 
 # Determine whether flow stays in the same node. Otherwise forward flow and log the action taken.
-def flow_forward(env, node, next_node, flow):
-    if(node.node_id == next_node):
+def flow_forward(env, node_id, next_node, flow):
+    if(node_id == next_node):
         log.info("Flow {} stays in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
     else:
         log.info("Flow {} departed node {} to node {}. Time {}"
@@ -62,10 +63,10 @@ def flow_forward(env, node, next_node, flow):
 # The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
 # SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
 # function.
-def schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list):
+def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list):
     log.info(
         "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}. Time: {}"
-        .format(flow.flow_id, node.node_id, flow.sfc, flow.duration, env.now))
+        .format(flow.flow_id, node_id, flow.sfc, flow.duration, env.now))
     schedule = scheduler.flow_schedule()
     sfc = sfc_list.get(flow.sfc, None)
     if sfc is not None:
@@ -77,10 +78,10 @@ def schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list):
             next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
             processing_delay = sf_list[sf].get("processing_delay", 0)
             if sf in sf_placement[next_node]:
-                flow_forward(env, node, next_node, flow)
+                flow_forward(env, flow.current_node_id, next_node, flow)
                 yield env.timeout(processing_delay)
-                process_flow(env, flow.current_node_id, flow)
                 yield env.timeout(flow.duration)
+                process_flow(env, flow.current_node_id, flow)
                 if(index == len(sfc_list[flow.sfc])-1):
                     flow_departure(env, flow.current_node_id, flow)
             else:
@@ -90,11 +91,12 @@ def schedule_flow(env, node, flow, sf_placement, sfc_list, sf_list):
 
 
 # Start the simulator.
-def start_simulation(env, nodes, sf_placement, sfc_list, sf_list, rand_mean=1.0, sim_rate=0):
+def start_simulation(env, network, sf_placement, sfc_list, sf_list, rand_mean=1.0, sim_rate=0):
     log.info("Starting simulation")
-    nodes_list = [(n.node_id, n.name) for n in nodes]
+    nodes_list = [n[0] for n in network.nodes().items()]
     log.info("Using nodes list {}\n".format(nodes_list))
-    ing_nodes = ingress_nodes(nodes)
+    ing_nodes = ingress_nodes(network)
     log.info("Total of {} ingress nodes available\n".format(len(ing_nodes)))
     for node in ing_nodes:
-        env.process(generate_flow(env, node, sf_placement, sfc_list, sf_list, rand_mean))
+        node_id = node[0]
+        env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, rand_mean, network))

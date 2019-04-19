@@ -48,7 +48,6 @@ def get_sfc(sfc_data):
 
 # Get the list of SFs and their properties from the yaml data.
 def get_sf(sf_data):
-    print(sf_data['sf_list'])
     sf_list = {}
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
