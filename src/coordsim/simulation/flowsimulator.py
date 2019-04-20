@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 # Generate flows at the ingress nodes.
 def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev):
+                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev, vnf_delay_mean, vnf_delay_stdev):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
         flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
@@ -28,7 +28,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         # Generate flow based on given params
         flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, current_node_id=node_id)
         # Generate flows and schedule them at ingress node
-        env.process(schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network))
+        env.process(schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean,
+                    vnf_delay_stdev))
         yield env.timeout(inter_arr_time)
 
 
@@ -69,7 +70,7 @@ def flow_forward(env, node_id, next_node, flow):
 # The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
 # SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
 # function.
-def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
+def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
     log.info(
         "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}. Time: {}"
         .format(flow.flow_id, node_id, flow.sfc, flow.duration, env.now))
@@ -82,7 +83,6 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
             next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
-            processing_delay = sf_list[sf].get("processing_delay", 0)
             if sf in sf_placement[next_node]:
                 flow_forward(env, flow.current_node_id, next_node, flow)
                 # Get node capacity and remaining capacity from NetworkX graph
@@ -91,6 +91,7 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
                 # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
                 if flow.dr <= node_remaining_cap:
                     node_remaining_cap -= flow.dr
+                    processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
                     yield env.timeout(processing_delay + flow.duration)
                     process_flow(env, flow.current_node_id, flow)
                     node_remaining_cap += flow.dr
@@ -113,7 +114,8 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
 
 # Start the simulator.
 def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
-                     flow_dr_stdev=1.0, flow_size_mean=1.0, flow_size_stdev=1.0):
+                     flow_dr_stdev=1.0, flow_size_mean=1.0, flow_size_stdev=1.0, vnf_delay_mean=1.0,
+                     vnf_delay_stdev=1.0):
     log.info("Starting simulation")
     nodes_list = [n[0] for n in network.nodes.items()]
     log.info("Using nodes list {}\n".format(nodes_list))
@@ -122,4 +124,5 @@ def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_me
     for node in ing_nodes:
         node_id = node[0]
         env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev))
+                                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev,
+                                  vnf_delay_mean, vnf_delay_stdev))
