@@ -97,10 +97,11 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
                     # We assert that remaining capacity must at all times be less than the node capacity so that
                     # nodes dont put back more capacity than the node's capacity.
                     assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
-                # If there is not enough capacity, then drop flow by breaking the SFC loop. 
-                # This is the best place to place this check as it checks each node without modifying much of the function
+                # If there is not enough capacity, then drop flow by breaking the SFC loop.
+                # This is the best place to place this check as it checks each node without modifying much of the code
                 else:
-                    log.info("Not enough capacity for flow {} at node {}. Dropping flow.".format(flow.flow_id, flow.current_node_id))
+                    log.info("Not enough capacity for flow {} at node {}. Dropping flow.".format(flow.flow_id,
+                             flow.current_node_id))
                     break
                 if(index == len(sfc_list[flow.sfc])-1):
                     flow_departure(env, flow.current_node_id, flow)
