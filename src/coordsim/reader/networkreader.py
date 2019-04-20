@@ -78,7 +78,9 @@ def read_network(file, node_cap=None, link_cap=None):
         # Adding a Node in the NetworkX Graph
         # {"id": node_id, "name": node_name, "type": node_type, "cap": cpu})
         # Type of node. For now it is either "Normal" or "Ingress"
-        networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={})
+        # Init 'remaining_resources' to the node capacity
+        networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={},
+                                  remaining_cap=cap)
 
     # set links
     # calculate link delay based on geo positions of nodes;

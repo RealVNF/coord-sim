@@ -9,19 +9,26 @@ log = logging.getLogger(__name__)
 
 
 # Generate flows at the ingress nodes.
-def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, rand_mean, network):
+def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
+                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
         flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
-        # Random flow duration for each flow
-        flow_duration = random.randint(0, 3)
-        # Exponentially distributed random inter arrival rate using a user set (or default) mean
-        inter_arr_time = random.expovariate(rand_mean)
         flow_id_str = "{}-{}".format(node_id, flow_id)
+        # Exponentially distributed random inter arrival rate using a user set (or default) mean
+        inter_arr_time = random.expovariate(inter_arr_mean)
+        # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
+        # Abs here is necessary as normal dist. gives negative numbers.
+        flow_dr = np.absolute(np.random.normal(flow_dr_mean, flow_dr_stdev))
+        flow_size = np.absolute(np.random.normal(flow_size_mean, flow_size_stdev))
+        # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
+        if flow_dr == 0 or flow_size == 0:
+            continue
         flow_sfc = np.random.choice([sfc for sfc in sfc_list.keys()])
-        flow = Flow(flow_id_str, flow_sfc, flow_duration, current_node_id=node_id)
+        # Generate flow based on given params
+        flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, current_node_id=node_id)
         # Generate flows and schedule them at ingress node
-        env.process(schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list))
+        env.process(schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network))
         yield env.timeout(inter_arr_time)
 
 
@@ -31,7 +38,6 @@ def ingress_nodes(network):
     for node in network.nodes.items():
         if node[1]["type"] == "Ingress":
             ing_nodes.append(node)
-    print(ing_nodes)
     return ing_nodes
 
 
@@ -63,7 +69,7 @@ def flow_forward(env, node_id, next_node, flow):
 # The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
 # SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
 # function.
-def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list):
+def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network):
     log.info(
         "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}. Time: {}"
         .format(flow.flow_id, node_id, flow.sfc, flow.duration, env.now))
@@ -79,9 +85,23 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list):
             processing_delay = sf_list[sf].get("processing_delay", 0)
             if sf in sf_placement[next_node]:
                 flow_forward(env, flow.current_node_id, next_node, flow)
-                yield env.timeout(processing_delay)
-                yield env.timeout(flow.duration)
-                process_flow(env, flow.current_node_id, flow)
+                # Get node capacity and remaining capacity from NetworkX graph
+                node_cap = network.nodes[flow.current_node_id]["cap"]
+                node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
+                # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
+                if flow.dr <= node_remaining_cap:
+                    node_remaining_cap -= flow.dr
+                    yield env.timeout(processing_delay + flow.duration)
+                    process_flow(env, flow.current_node_id, flow)
+                    node_remaining_cap += flow.dr
+                    # We assert that remaining capacity must at all times be less than the node capacity so that
+                    # nodes dont put back more capacity than the node's capacity.
+                    assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
+                # If there is not enough capacity, then drop flow by breaking the SFC loop. 
+                # This is the best place to place this check as it checks each node without modifying much of the function
+                else:
+                    log.info("Not enough capacity for flow {} at node {}. Dropping flow.".format(flow.flow_id, flow.current_node_id))
+                    break
                 if(index == len(sfc_list[flow.sfc])-1):
                     flow_departure(env, flow.current_node_id, flow)
             else:
@@ -91,12 +111,14 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list):
 
 
 # Start the simulator.
-def start_simulation(env, network, sf_placement, sfc_list, sf_list, rand_mean=1.0, sim_rate=0):
+def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
+                     flow_dr_stdev=1.0, flow_size_mean=1.0, flow_size_stdev=1.0):
     log.info("Starting simulation")
-    nodes_list = [n[0] for n in network.nodes().items()]
+    nodes_list = [n[0] for n in network.nodes.items()]
     log.info("Using nodes list {}\n".format(nodes_list))
     ing_nodes = ingress_nodes(network)
     log.info("Total of {} ingress nodes available\n".format(len(ing_nodes)))
     for node in ing_nodes:
         node_id = node[0]
-        env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, rand_mean, network))
+        env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
+                                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev))
