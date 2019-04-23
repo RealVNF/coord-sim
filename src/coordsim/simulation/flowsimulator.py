@@ -88,6 +88,7 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, 
                 # Get node capacity and remaining capacity from NetworkX graph
                 node_cap = network.nodes[flow.current_node_id]["cap"]
                 node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
+                assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
                 # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
                 if flow.dr <= node_remaining_cap:
                     node_remaining_cap -= flow.dr
