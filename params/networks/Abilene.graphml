@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key attr.name="LinkCap" attr.type="int" for="edge" id="d41" />
+  <key attr.name="LinkBkwdCap" attr.type="int" for="edge" id="d42" />
+  <key attr.name="LinkFwdCap" attr.type="int" for="edge" id="d41" />
   <key attr.name="NodeCap" attr.type="int" for="node" id="d40" />
   <key attr.name="NodeType" attr.type="string" for="node" id="d39" />
   <key attr.name="LinkDelay" attr.type="int" for="edge" id="d38" />
@@ -113,6 +114,7 @@
       <data key="d36">c</data>
       <data key="d37">0</data>
       <data key="d41">1024</data>
+      <data key="d42">512</data>
     </edge>
     <edge source="1" target="2">
       <data key="d34">OC-192</data>
