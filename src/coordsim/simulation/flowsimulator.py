@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 # Generate flows at the ingress nodes.
 def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev, vnf_delay_mean, vnf_delay_stdev):
+                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
         flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
@@ -20,7 +20,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
         # Abs here is necessary as normal dist. gives negative numbers.
         flow_dr = np.absolute(np.random.normal(flow_dr_mean, flow_dr_stdev))
-        flow_size = np.absolute(np.random.normal(flow_size_mean, flow_size_stdev))
+        # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
+        flow_size = np.absolute(np.random.pareto(flow_size_shape)) + 1
         # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
         if flow_dr == 0 or flow_size == 0:
             continue
@@ -115,7 +116,7 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, 
 
 # Start the simulator.
 def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
-                     flow_dr_stdev=1.0, flow_size_mean=1.0, flow_size_stdev=1.0, vnf_delay_mean=1.0,
+                     flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
                      vnf_delay_stdev=1.0):
     log.info("Starting simulation")
     nodes_list = [n[0] for n in network.nodes.items()]
@@ -125,5 +126,4 @@ def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_me
     for node in ing_nodes:
         node_id = node[0]
         env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                                  flow_dr_mean, flow_dr_stdev, flow_size_mean, flow_size_stdev,
-                                  vnf_delay_mean, vnf_delay_stdev))
+                                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev))
