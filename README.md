@@ -29,7 +29,9 @@ Type `coord-sim -h` for help using the simulator. For now, this should print
 
 ``` 
 usage: coord-sim [-h] -d DURATION [-r RATE] [-s SEED] -n NETWORK
-                 [-rm RAND_MEAN]
+                 [-iam INTER_ARR_MEAN] -p PLACEMENT [-fdm FLOW_DR_MEAN]
+                 [-fds FLOW_DR_STDEV] [-fsm FLOW_SIZE_MEAN]
+                 [-fss FLOW_SIZE_STDEV]
 
 Coordination-Simulation tool
 
@@ -39,7 +41,12 @@ optional arguments:
   -r RATE, --rate RATE
   -s SEED, --seed SEED
   -n NETWORK, --network NETWORK
-  -rm RAND_MEAN, --randmean RAND_MEAN
+  -iam INTER_ARR_MEAN, --inter_arr_mean INTER_ARR_MEAN
+  -p PLACEMENT, --placement PLACEMENT
+  -fdm FLOW_DR_MEAN, --flow_dr_mean FLOW_DR_MEAN
+  -fds FLOW_DR_STDEV, --flow_dr_stdev FLOW_DR_STDEV
+  -fsm FLOW_SIZE_MEAN, --flow_size_mean FLOW_SIZE_MEAN
+  -fss FLOW_SIZE_STDEV, --flow_size_stdev FLOW_SIZE_STDEV
 ```
 
 You can use the following command as an example (run from the root project folder)

@@ -48,7 +48,6 @@ def get_sfc(sfc_data):
 
 # Get the list of SFs and their properties from the yaml data.
 def get_sf(sf_data):
-    print(sf_data['sf_list'])
     sf_list = {}
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
@@ -79,7 +78,9 @@ def read_network(file, node_cap=None, link_cap=None):
         # Adding a Node in the NetworkX Graph
         # {"id": node_id, "name": node_name, "type": node_type, "cap": cpu})
         # Type of node. For now it is either "Normal" or "Ingress"
-        networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={})
+        # Init 'remaining_resources' to the node capacity
+        networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={},
+                                  remaining_cap=cap)
 
     # set links
     # calculate link delay based on geo positions of nodes;
