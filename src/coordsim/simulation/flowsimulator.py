@@ -8,6 +8,30 @@ from coordsim.network import scheduler
 log = logging.getLogger(__name__)
 
 
+# Start the simulator.
+def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
+                     flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
+                     vnf_delay_stdev=1.0):
+    log.info("Starting simulation")
+    nodes_list = [n[0] for n in network.nodes.items()]
+    log.info("Using nodes list {}\n".format(nodes_list))
+    ing_nodes = ingress_nodes(network)
+    log.info("Total of {} ingress nodes available\n".format(len(ing_nodes)))
+    for node in ing_nodes:
+        node_id = node[0]
+        env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
+                                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev))
+
+
+# Filter out non-ingree nodes.
+def ingress_nodes(network):
+    ing_nodes = []
+    for node in network.nodes.items():
+        if node[1]["type"] == "Ingress":
+            ing_nodes.append(node)
+    return ing_nodes
+
+
 # Generate flows at the ingress nodes.
 def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
                   flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev):
@@ -34,25 +58,46 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         yield env.timeout(inter_arr_time)
 
 
-# Filter out non-ingree nodes.
-def ingress_nodes(network):
-    ing_nodes = []
-    for node in network.nodes.items():
-        if node[1]["type"] == "Ingress":
-            ing_nodes.append(node)
-    return ing_nodes
-
-
-# Process the flow at the requested SF of the current node.
-def process_flow(env, node_id, flow):
+# Schedule flows. This function takes the generated flow object at the ingress node and handles it according
+# to the requested SFC. We check if the SFC that is being requested is indeed within the schedule, otherwise
+# we log a warning and drop the flow.
+# The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
+# SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
+# function.
+def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
     log.info(
-        "Flow {} processed by sf '{}' at node {}. Time {}"
-        .format(flow.flow_id, flow.current_sf, node_id, env.now))
+        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, flow dr: {}. Time: {}"
+        .format(flow.flow_id, node_id, flow.sfc, flow.duration, flow.dr, env.now))
+    sfc = sfc_list.get(flow.sfc, None)
+    if sfc is not None:
+        for index, sf in enumerate(sfc_list[flow.sfc]):
+            flow.current_sf = sf
+            next_node = get_next_node(flow, sf)
+            if sf in sf_placement[next_node]:
+                # Forward the flow to the next node or keep it in the same node if next_node == curr_node
+                flow_forward(env, flow.current_node_id, next_node, flow)
+                # Generate a processing delay for the SF
+                processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
+                process_status = yield env.process(process_flow(env, flow, processing_delay, network))
+                # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
+                if not process_status:
+                    break
+                if(index == len(sfc_list[flow.sfc])-1):
+                    flow_departure(env, flow.current_node_id, flow)
+            else:
+                log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
+    else:
+        log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
 
 
-# When the flow is in the last SF of the requested SFC. Depart it from the network.
-def flow_departure(env, node_id, flow):
-    log.info("Flow {} was fully processed and departed network from {}. Time {}".format(flow.flow_id, node_id, env.now))
+# Get next node using weighted probabilites from the scheduler
+def get_next_node(flow, sf):
+    schedule = scheduler.flow_schedule()
+    schedule_sf = schedule[flow.current_node_id][sf]
+    sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
+    sf_probability = [prob for name, prob in schedule_sf.items()]
+    next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
+    return next_node
 
 
 # Determine whether flow stays in the same node. Otherwise forward flow and log the action taken.
@@ -65,65 +110,32 @@ def flow_forward(env, node_id, next_node, flow):
         flow.current_node_id = next_node
 
 
-# Schedule flows. This function takes the generated flow object at the ingress node and handles it according
-# to the requested SFC. We check if the SFC that is being requested is indeed within the schedule, otherwise
-# we log a warning and drop the flow.
-# The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
-# SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
-# function.
-def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
+# Process the flow at the requested SF of the current node.
+def process_flow(env, flow, processing_delay, network):
+    # Get node capacities
     log.info(
-        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}. Time: {}"
-        .format(flow.flow_id, node_id, flow.sfc, flow.duration, env.now))
-    schedule = scheduler.flow_schedule()
-    sfc = sfc_list.get(flow.sfc, None)
-    if sfc is not None:
-        for index, sf in enumerate(sfc_list[flow.sfc]):
-            schedule_sf = schedule[flow.current_node_id][sf]
-            flow.current_sf = sf
-            sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
-            sf_probability = [prob for name, prob in schedule_sf.items()]
-            next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
-            if sf in sf_placement[next_node]:
-                flow_forward(env, flow.current_node_id, next_node, flow)
-                # Get node capacity and remaining capacity from NetworkX graph
-                node_cap = network.nodes[flow.current_node_id]["cap"]
-                node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
-                assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
-                # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
-                if flow.dr <= node_remaining_cap:
-                    node_remaining_cap -= flow.dr
-                    processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
-                    yield env.timeout(processing_delay + flow.duration)
-                    process_flow(env, flow.current_node_id, flow)
-                    node_remaining_cap += flow.dr
-                    # We assert that remaining capacity must at all times be less than the node capacity so that
-                    # nodes dont put back more capacity than the node's capacity.
-                    assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
-                # If there is not enough capacity, then drop flow by breaking the SFC loop.
-                # This is the best place to place this check as it checks each node without modifying much of the code
-                else:
-                    log.info("Not enough capacity for flow {} at node {}. Dropping flow.".format(flow.flow_id,
-                             flow.current_node_id))
-                    break
-                if(index == len(sfc_list[flow.sfc])-1):
-                    flow_departure(env, flow.current_node_id, flow)
-            else:
-                log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
+            "Flow {} arrived for proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
+            .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now, processing_delay))
+    node_cap = network.nodes[flow.current_node_id]["cap"]
+    node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
+    assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
+    if flow.dr <= node_remaining_cap:
+        node_remaining_cap -= flow.dr
+        yield env.timeout(processing_delay + flow.duration)
+        log.info(
+            "Flow {} processed by sf '{}' at node {}. Time {}"
+            .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+        node_remaining_cap += flow.dr
+        # We assert that remaining capacity must at all times be less than the node capacity so that
+        # nodes dont put back more capacity than the node's capacity.
+        assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
+        return True
     else:
-        log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
+        log.warning("Not enough capacity for flow {} at node {}. Dropping flow."
+                    .format(flow.flow_id, flow.current_node_id))
+        return False
 
 
-# Start the simulator.
-def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
-                     flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
-                     vnf_delay_stdev=1.0):
-    log.info("Starting simulation")
-    nodes_list = [n[0] for n in network.nodes.items()]
-    log.info("Using nodes list {}\n".format(nodes_list))
-    ing_nodes = ingress_nodes(network)
-    log.info("Total of {} ingress nodes available\n".format(len(ing_nodes)))
-    for node in ing_nodes:
-        node_id = node[0]
-        env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev))
+# When the flow is in the last SF of the requested SFC. Depart it from the network.
+def flow_departure(env, node_id, flow):
+    log.info("Flow {} was fully processed and departed network from {}. Time {}".format(flow.flow_id, node_id, env.now))
