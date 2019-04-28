@@ -163,4 +163,4 @@ def process_flow(env, flow, processing_delay, network, vnf_delay_mean, vnf_delay
 
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
 def flow_departure(env, node_id, flow):
-    log.info("Flow {} was processed and departed the network from {}Time {}".format(flow.flow_id, node_id, env.now))
+    log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, env.now))
