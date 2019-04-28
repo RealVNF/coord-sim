@@ -70,6 +70,7 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, 
         .format(flow.flow_id, node_id, flow.sfc, flow.duration, flow.dr, env.now))
     sfc = sfc_list.get(flow.sfc, None)
     if sfc is not None:
+        # Iterate over the SFs and process the flow at each SF.
         for index, sf in enumerate(sfc_list[flow.sfc]):
             flow.current_sf = sf
             next_node = get_next_node(flow, sf)
@@ -78,9 +79,10 @@ def schedule_flow(env, node_id, flow, sf_placement, sfc_list, sf_list, network, 
                 flow_forward(env, flow.current_node_id, next_node, flow)
                 # Generate a processing delay for the SF
                 processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
-                process_status = yield env.process(process_flow(env, flow, processing_delay, network))
-                # Check if the flow's dr is less or equals the node's remaining capacity, then process the flow.
-                if not process_status:
+                # Assign a flow processed bool variable to use for node capacity check
+                flow_processed = yield env.process(process_flow(env, flow, processing_delay, network))
+                if not flow_processed:
+                    # Breaking the SF Processing loop basically terminates/drops the flow
                     break
                 if(index == len(sfc_list[flow.sfc])-1):
                     flow_departure(env, flow.current_node_id, flow)
