@@ -1,7 +1,7 @@
 class Flow:
 
     def __init__(self, flow_id, sfc, dr, size, status=None, rate=None,
-                 destination=None, current_sf=None, current_node_id=None, nodes_visited={}):
+                 destination=None, current_sf=None, current_node_id=None, current_position=0):
         self.flow_id = flow_id
         self.sfc = sfc
         self.status = status
@@ -11,4 +11,5 @@ class Flow:
         self.current_sf = current_sf
         self.current_node_id = current_node_id
         self.duration = float(size) / float(dr)
-        self.nodes_visited = nodes_visited
+        # Current flow position within the SFC
+        self.current_position = current_position
