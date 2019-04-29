@@ -77,6 +77,29 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mea
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
 
 
+# Schedule the flow
+# This function is used in a recursion alongside process_flow function to allow flows to arrive and begin
+# processing without waiting for the flow to completely arrive.
+# The recursion is as follows:
+# schedule_flow() -> process_flow() -> schedule_flow() and so on...
+# Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
+# instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
+# attribute of the flow object.
+def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement):
+    sf = sfc[flow.current_position]
+    flow.current_sf = sf
+    next_node = get_next_node(flow, sf)
+    flow_forward(env, flow, next_node)
+    if sf in sf_placement[next_node]:
+        log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
+                 .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+        yield env.process(process_flow(env, flow, network,
+                                       vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc))
+    else:
+        log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
+        env.exit()
+
+
 # Get next node using weighted probabilites from the scheduler
 def get_next_node(flow, sf):
     schedule = scheduler.flow_schedule()
@@ -98,38 +121,10 @@ def flow_forward(env, flow, next_node):
         flow.current_node_id = next_node
 
 
-# Schedule the flow
-# This function is used in a recursion alongside process_flow function to allow flows to arrive and begin
-# processing without waiting for the flow to completely arrive.
-# The recursion is as follows:
-# schedule_flow() -> process_flow() -> schedule_flow() and so on...
-# Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
-# instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
-# attribute of the flow object.
-def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement):
-    sf = sfc[flow.current_position]
-    flow.current_sf = sf
-    next_node = get_next_node(flow, sf)
-    if sf in sf_placement[next_node]:
-        flow_forward(env, flow, next_node)
-        # Generate a processing delay for the SF
-        processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
-        log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
-                 .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
-        flow_processed = env.process(process_flow(env, flow, processing_delay, network,
-                                                  vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc))
-        yield env.timeout(flow.duration)
-        log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
-                 .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
-        if not flow_processed:
-            # Stop the flow
-            env.exit()
-    else:
-        log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
-
-
 # Process the flow at the requested SF of the current node.
-def process_flow(env, flow, processing_delay, network, vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc):
+def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc):
+    # Generate a processing delay for the SF
+    processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
     # Get node capacities
     log.info(
             "Flow {} started proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
@@ -141,12 +136,9 @@ def process_flow(env, flow, processing_delay, network, vnf_delay_mean, vnf_delay
         node_remaining_cap -= flow.dr
         yield env.timeout(processing_delay)
         log.info(
-            "Flow {} processed by sf '{}' at node {}. Time {}"
+            "Flow {} started departing sf '{}' at node {}. Time {}"
             .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
-        node_remaining_cap += flow.dr
-        # We assert that remaining capacity must at all times be less than the node capacity so that
-        # nodes dont put back more capacity than the node's capacity.
-        assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
+        # Check if flow is currently in last SF, if so, then depart flow.
         if(flow.current_position == len(sfc)-1):
             yield env.timeout(flow.duration)
             flow_departure(env, flow.current_node_id, flow)
@@ -154,11 +146,17 @@ def process_flow(env, flow, processing_delay, network, vnf_delay_mean, vnf_delay
             # Increment the position of the flow within SFC
             flow.current_position += 1
             env.process(schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement))
-        return True
+            yield env.timeout(flow.duration)
+            log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
+                     .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+        node_remaining_cap += flow.dr
+        # We assert that remaining capacity must at all times be less than the node capacity so that
+        # nodes dont put back more capacity than the node's capacity.
+        assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
     else:
         log.warning("Not enough capacity for flow {} at node {}. Dropping flow."
                     .format(flow.flow_id, flow.current_node_id))
-        return False
+        env.exit()
 
 
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
