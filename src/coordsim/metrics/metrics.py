@@ -1,5 +1,4 @@
 import numpy as np
-
 # Metrics global dict
 metrics = {}
 
@@ -9,10 +8,18 @@ def reset():
     metrics['generated_flows'] = 0
     metrics['processed_flows'] = 0
     metrics['dropped_flows'] = 0
-    metrics['processing_delays'] = []
-    metrics['path_delays'] = []
+
+    metrics['total_processing_delay'] = 0.0
+    metrics['num_processing_delays'] = 0
     metrics['avg_processing_delay'] = 0.0
+
+    metrics['total_path_delay'] = 0.0
+    metrics['num_path_delays'] = 0
     metrics['avg_path_delay'] = 0.0
+
+    metrics['total_end2end_delay'] = 0.0
+    metrics['avg_end2end_delay'] = 0.0
+
     metrics['avg_total_delay'] = 0.0
 
 
@@ -29,19 +36,30 @@ def dropped_flow():
 
 
 def add_processing_delay(delay):
-    metrics['processing_delays'].append(delay)
+    metrics['num_processing_delays'] += 1
+    metrics['total_processing_delay'] += delay
 
 
 def add_path_delay(delay):
-    metrics['path_delays'].append(delay)
+    metrics['num_path_delays'] += 1
+    metrics['total_path_delay'] += delay
+
+
+def add_end2end_delay(delay):
+    metrics['total_end2end_delay'] += delay
 
 
 def calc_avg_processing_delay():
-    metrics['avg_processing_delay'] = np.mean(metrics['processing_delays'])
+    metrics['avg_processing_delay'] = metrics['total_processing_delay'] / metrics['num_processing_delays']
 
 
 def calc_avg_path_delay():
-    metrics['avg_path_delay'] = np.mean(metrics['path_delays'])
+    metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
+
+
+def calc_avg_end2end_delay():
+    # We devide by number of processed flows to get end2end delays for processed flows only
+    metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
 
 
 def calc_avg_total_delay():
@@ -54,4 +72,5 @@ def get_metrics():
     calc_avg_processing_delay()
     calc_avg_path_delay()
     calc_avg_total_delay()
+    calc_avg_end2end_delay()
     return metrics

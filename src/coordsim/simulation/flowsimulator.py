@@ -120,7 +120,9 @@ def get_next_node(flow, sf):
 # TODO: Routing will be put here
 def flow_forward(env, flow, next_node):
     path_delay = 0  # TODO: Replace this with actual calculated path delay from SP routing
+    # Metrics calculation for path delay. Flow's end2end delay is also incremented.
     metrics.add_path_delay(path_delay)
+    flow.end2end_delay += path_delay
     if(flow.current_node_id == next_node):
         log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
     else:
@@ -134,7 +136,9 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
     # Generate a processing delay for the SF
     processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
     # Update metrics for the processing delay
+    # Add the delay to the flow's end2end delay
     metrics.add_processing_delay(processing_delay)
+    flow.end2end_delay += processing_delay
     # Get node capacities
     log.info(
             "Flow {} started proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
@@ -175,4 +179,5 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
 def flow_departure(env, node_id, flow):
     # Update metrics for the processed flow
     metrics.processed_flow()
+    metrics.add_end2end_delay(flow.end2end_delay)
     log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, env.now))
