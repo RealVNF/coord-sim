@@ -5,6 +5,7 @@ import numpy as np
 # from coordsim.reader import networkreader
 from coordsim.network.flow import Flow
 from coordsim.network import scheduler
+from coordsim.metrics import metrics
 log = logging.getLogger(__name__)
 
 
@@ -52,6 +53,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         flow_sfc = np.random.choice([sfc for sfc in sfc_list.keys()])
         # Generate flow based on given params
         flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, current_node_id=node_id)
+        # Update metrics for the generated flow
+        metrics.generated_flow()
         # Generate flows and schedule them at ingress node
         env.process(flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean,
                     vnf_delay_stdev))
@@ -75,12 +78,15 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mea
         yield env.process(schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement))
     else:
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
+        # Update metrics for the dropped flow
+        metrics.dropped_flow()
+        env.exit()
 
 
 # Schedule the flow
-# This function is used in a recursion alongside process_flow function to allow flows to arrive and begin
+# This function is used in a mutual recursion alongside process_flow function to allow flows to arrive and begin
 # processing without waiting for the flow to completely arrive.
-# The recursion is as follows:
+# The mutual recursion is as follows:
 # schedule_flow() -> process_flow() -> schedule_flow() and so on...
 # Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
 # instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
@@ -113,6 +119,8 @@ def get_next_node(flow, sf):
 # For now just set the current node id of the flow to the new node if change happens and log action.
 # TODO: Routing will be put here
 def flow_forward(env, flow, next_node):
+    path_delay = 0  # TODO: Replace this with actual calculated path delay from SP routing
+    metrics.add_path_delay(path_delay)
     if(flow.current_node_id == next_node):
         log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
     else:
@@ -125,6 +133,8 @@ def flow_forward(env, flow, next_node):
 def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc):
     # Generate a processing delay for the SF
     processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
+    # Update metrics for the processing delay
+    metrics.add_processing_delay(processing_delay)
     # Get node capacities
     log.info(
             "Flow {} started proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
@@ -156,9 +166,13 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
     else:
         log.warning("Not enough capacity for flow {} at node {}. Dropping flow."
                     .format(flow.flow_id, flow.current_node_id))
+        # Update metrics for the dropped flow
+        metrics.dropped_flow()
         env.exit()
 
 
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
 def flow_departure(env, node_id, flow):
+    # Update metrics for the processed flow
+    metrics.processed_flow()
     log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, env.now))
