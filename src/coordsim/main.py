@@ -54,8 +54,8 @@ def parse_args():
     parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=10.0, dest="flow_dr_mean")
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev")
     parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape")
-    parser.add_argument('-vdm', '--vnf_delay_mean', required=False, default=20.0, dest="vnf_delay_mean")
-    parser.add_argument('-vds', '--vnf_delay_stdev', required=False, default=2.0, dest="vnf_delay_stdev")
+    parser.add_argument('-vdm', '--vnf_delay_mean', required=False, default=5.0, dest="vnf_delay_mean")
+    parser.add_argument('-vds', '--vnf_delay_stdev', required=False, default=1.0, dest="vnf_delay_stdev")
     return parser.parse_args()
 
 
