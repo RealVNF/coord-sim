@@ -1,7 +1,7 @@
 class Flow:
 
     def __init__(self, flow_id, sfc, dr, size, status=None, rate=None,
-                 destination=None, current_sf=None, current_node_id=None, current_position=0):
+                 destination=None, current_sf=None, current_node_id=None, current_position=0, end2end_delay=0.0):
         self.flow_id = flow_id
         self.sfc = sfc
         self.status = status
@@ -13,3 +13,5 @@ class Flow:
         self.duration = float(size) / float(dr)
         # Current flow position within the SFC
         self.current_position = current_position
+        # End to end delay of the flow, used for metrics
+        self.end2end_delay = end2end_delay
