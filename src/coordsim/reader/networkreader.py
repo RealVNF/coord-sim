@@ -3,6 +3,7 @@ from geopy.distance import vincenty
 import numpy as np
 import logging as log
 import yaml
+import math
 from collections import defaultdict
 
 
@@ -52,6 +53,21 @@ def get_sf(sf_data):
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
     return sf_list
+
+
+# edge weight = 1 / (cap + 1/delay) => prefer high cap, use smaller delay as additional influence/tie breaker
+def weight(edge_cap, edge_delay):
+    if edge_cap == 0:
+        return math.inf
+    elif edge_delay == 0:
+        return 0
+    return 1 / (edge_cap + 1 / edge_delay)
+
+
+# finds the all pairs shortest paths using Johnson Algo
+# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len).
+def shortest_paths(networkx_network):
+    return dict(nx.johnson(networkx_network,weight='weight'))
 
 
 # Read the GraphML file and return list of nodes and edges.
@@ -116,5 +132,10 @@ def read_network(file, node_cap=None, link_cap=None):
         # delay = edge delay , cap = edge capacity in that direction
         networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
         networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
+
+    # setting the weight property for each edge in the NetworkX Graph
+    # weight attribute is used to find the shortest paths
+    for edge in networkx_network.edges.items():
+        edge[1]['weight'] = weight(edge[1]['cap'],edge[1]['delay'])
 
     return networkx_network

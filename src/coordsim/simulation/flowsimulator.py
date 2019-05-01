@@ -6,7 +6,10 @@ import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.network import scheduler
 from coordsim.metrics import metrics
+from coordsim.reader.networkreader import shortest_paths as sp
 log = logging.getLogger(__name__)
+
+shortest_paths = {}
 
 
 # Start the simulator.
@@ -14,6 +17,8 @@ def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_me
                      flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
                      vnf_delay_stdev=1.0):
     log.info("Starting simulation")
+    global shortest_paths
+    shortest_paths = sp(network)
     nodes_list = [n[0] for n in network.nodes.items()]
     log.info("Using nodes list {}\n".format(nodes_list))
     ing_nodes = ingress_nodes(network)
@@ -95,7 +100,7 @@ def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_p
     sf = sfc[flow.current_position]
     flow.current_sf = sf
     next_node = get_next_node(flow, sf)
-    flow_forward(env, flow, next_node)
+    yield env.process(flow_forward(env,network, flow, next_node))
     if sf in sf_placement[next_node]:
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
@@ -116,14 +121,24 @@ def get_next_node(flow, sf):
     return next_node
 
 
-# For now just set the current node id of the flow to the new node if change happens and log action.
-# TODO: Routing will be put here
-def flow_forward(env, flow, next_node):
-    path_delay = 0  # TODO: Replace this with actual calculated path delay from SP routing
+# Calculates the path delays occuring when forwarding a node
+# Path delays are calculated using the Shortest path
+# The delay is simulated by timing out for the delay amount of duration
+def flow_forward(env, network, flow, next_node):
+    path_delay = 0
+    shortest_path = shortest_paths[flow.current_node_id][next_node]
+    if len(shortest_path) > 1:
+        for i in range(len(shortest_path)-1):
+            source = shortest_path[0]
+            destination = shortest_path[1]
+            path_delay += network[source][destination]['delay']
+
     # Metrics calculation for path delay. Flow's end2end delay is also incremented.
     metrics.add_path_delay(path_delay)
     flow.end2end_delay += path_delay
-    if(flow.current_node_id == next_node):
+    if path_delay:
+        yield env.timeout(path_delay)
+    if flow.current_node_id == next_node:
         log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
     else:
         log.info("Flow {} will leave node {} towards node {}. Time {}"
