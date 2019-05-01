@@ -22,6 +22,8 @@ def reset():
 
     metrics['avg_total_delay'] = 0.0
 
+    metrics['running_time'] = 0.0
+
 
 def generated_flow():
     metrics['generated_flows'] += 1
@@ -47,6 +49,10 @@ def add_path_delay(delay):
 
 def add_end2end_delay(delay):
     metrics['total_end2end_delay'] += delay
+
+
+def running_time(start_time, end_time):
+    metrics['running_time'] = end_time - start_time
 
 
 def calc_avg_processing_delay():
