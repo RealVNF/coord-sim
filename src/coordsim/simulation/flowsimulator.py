@@ -100,7 +100,7 @@ def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_p
     sf = sfc[flow.current_position]
     flow.current_sf = sf
     next_node = get_next_node(flow, sf)
-    yield env.process(flow_forward(env,network, flow, next_node))
+    yield env.process(flow_forward(env, network, flow, next_node))
     if sf in sf_placement[next_node]:
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))

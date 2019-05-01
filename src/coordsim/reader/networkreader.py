@@ -67,7 +67,7 @@ def weight(edge_cap, edge_delay):
 # finds the all pairs shortest paths using Johnson Algo
 # returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len).
 def shortest_paths(networkx_network):
-    return dict(nx.johnson(networkx_network,weight='weight'))
+    return dict(nx.johnson(networkx_network, weight='weight'))
 
 
 # Read the GraphML file and return list of nodes and edges.
@@ -136,6 +136,6 @@ def read_network(file, node_cap=None, link_cap=None):
     # setting the weight property for each edge in the NetworkX Graph
     # weight attribute is used to find the shortest paths
     for edge in networkx_network.edges.items():
-        edge[1]['weight'] = weight(edge[1]['cap'],edge[1]['delay'])
+        edge[1]['weight'] = weight(edge[1]['cap'], edge[1]['delay'])
 
     return networkx_network
