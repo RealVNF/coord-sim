@@ -30,8 +30,8 @@ Type `coord-sim -h` for help using the simulator. For now, this should print
 ``` 
 usage: coord-sim [-h] -d DURATION [-r RATE] [-s SEED] -n NETWORK
                  [-iam INTER_ARR_MEAN] -p PLACEMENT [-fdm FLOW_DR_MEAN]
-                 [-fds FLOW_DR_STDEV] [-fsm FLOW_SIZE_MEAN]
-                 [-fss FLOW_SIZE_STDEV]
+                 [-fds FLOW_DR_STDEV] [-fss FLOW_SIZE_SHAPE]
+                 [-vdm VNF_DELAY_MEAN] [-vds VNF_DELAY_STDEV]
 
 Coordination-Simulation tool
 
@@ -45,8 +45,9 @@ optional arguments:
   -p PLACEMENT, --placement PLACEMENT
   -fdm FLOW_DR_MEAN, --flow_dr_mean FLOW_DR_MEAN
   -fds FLOW_DR_STDEV, --flow_dr_stdev FLOW_DR_STDEV
-  -fsm FLOW_SIZE_MEAN, --flow_size_mean FLOW_SIZE_MEAN
-  -fss FLOW_SIZE_STDEV, --flow_size_stdev FLOW_SIZE_STDEV
+  -fss FLOW_SIZE_SHAPE, --flow_size_shape FLOW_SIZE_SHAPE
+  -vdm VNF_DELAY_MEAN, --vnf_delay_mean VNF_DELAY_MEAN
+  -vds VNF_DELAY_STDEV, --vnf_delay_stdev VNF_DELAY_STDEV
 ```
 
 You can use the following command as an example (run from the root project folder)
@@ -54,7 +55,7 @@ You can use the following command as an example (run from the root project folde
 ```bash 
 coord-sim -d 20 -n params/networks/Abilene.graphml -p params/placements/Abilene.yaml 
 ```
-This will run a simulation on a provided GraphML file for a duration of 20 timesteps. 
+This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps. 
 
 ## Tests
 

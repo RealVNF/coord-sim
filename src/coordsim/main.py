@@ -3,10 +3,15 @@ import simpy
 import random
 from coordsim.simulation import flowsimulator
 from coordsim.reader import networkreader
+from coordsim.metrics import metrics
 import logging
+import time
 
 
 def main():
+    # Initialize the metrics and logging module
+    metrics.reset()
+    start_time = time.time()
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger(__name__)
 
@@ -39,6 +44,11 @@ def main():
                                    flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean,
                                    vnf_delay_stdev)
     env.run(until=args.duration)
+
+    end_time = time.time()
+    metrics.running_time(start_time, end_time)
+    # Temp: Print the metrics after the simulation is done
+    print(metrics.get_metrics())
 
 
 def parse_args():
