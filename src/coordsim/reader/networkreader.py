@@ -73,8 +73,8 @@ def shortest_paths(networkx_network):
     all_pair_shortest_paths = dict(nx.johnson(networkx_network, weight='weight'))
     # contains shortest paths with path_delays
     shortest_paths_with_delays = {}
-    for source,v in all_pair_shortest_paths.items():
-        for destination,shortest_path_list in v.items():
+    for source, v in all_pair_shortest_paths.items():
+        for destination, shortest_path_list in v.items():
             path_delay = 0
             # only is the source and destination are different path_delays need to be calculated, otherwise 0
             if source != destination:
