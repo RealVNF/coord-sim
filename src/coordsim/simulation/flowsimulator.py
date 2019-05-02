@@ -75,8 +75,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
 # function.
 def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
     log.info(
-        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, flow dr: {}. Time: {}"
-            .format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
+        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, "
+        "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
     sfc = sfc_list.get(flow.sfc, None)
     # Check to see if requested SFC exists
     if sfc is not None:
@@ -154,8 +154,8 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
     flow.end2end_delay += processing_delay
     # Get node capacities
     log.info(
-        "Flow {} started proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
-            .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now, processing_delay))
+        "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
+        "Processing delay: {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now, processing_delay))
     node_cap = network.nodes[flow.current_node_id]["cap"]
     node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
     assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
@@ -163,8 +163,8 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
         node_remaining_cap -= flow.dr
         yield env.timeout(processing_delay)
         log.info(
-            "Flow {} started departing sf '{}' at node {}. Time {}"
-                .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+            "Flow {} started departing sf '{}' at node {}."
+            " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
         # Check if flow is currently in last SF, if so, then depart flow.
         if (flow.current_position == len(sfc) - 1):
             yield env.timeout(flow.duration)
