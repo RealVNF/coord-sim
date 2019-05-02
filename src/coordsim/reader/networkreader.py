@@ -65,9 +65,25 @@ def weight(edge_cap, edge_delay):
 
 
 # finds the all pairs shortest paths using Johnson Algo
-# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len).
+# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len) with path_delays.
+# key: (src, dest) , value: ([shortest_path], path_delay)
+# path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
 def shortest_paths(networkx_network):
-    return dict(nx.johnson(networkx_network, weight='weight'))
+    # in-built implementation of Johnson Algo, just returns a list of shortest paths
+    all_pair_shortest_paths = dict(nx.johnson(networkx_network, weight='weight'))
+    # contains shortest paths with path_delays
+    shortest_paths_with_delays = {}
+    for source,v in all_pair_shortest_paths.items():
+        for destination,shortest_path_list in v.items():
+            path_delay = 0
+            # only is the source and destination are different path_delays need to be calculated, otherwise 0
+            if source != destination:
+                # shortest_path_list only contains ordered nodes [node1,node2,node3....] in the shortest path
+                # here we take ordered pair of nodes (src, dest) to cal. the path_delay of the edge between them
+                for i in range(len(shortest_path_list) - 1):
+                    path_delay += networkx_network[shortest_path_list[i]][shortest_path_list[i + 1]]['delay']
+            shortest_paths_with_delays[(source, destination)] = (shortest_path_list, path_delay)
+    return shortest_paths_with_delays
 
 
 # Read the GraphML file and return list of nodes and edges.
