@@ -151,7 +151,6 @@ def read_network(file, node_cap=None, link_cap=None):
         networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
         networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
 
-
     # setting the weight property for each edge in the NetworkX Graph
     # weight attribute is used to find the shortest paths
     for edge in networkx_network.edges.values():
