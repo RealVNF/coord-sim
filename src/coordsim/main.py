@@ -33,16 +33,13 @@ def main():
     flow_dr_mean = float(args.flow_dr_mean)
     flow_dr_stdev = float(args.flow_dr_stdev)
     flow_size_shape = float(args.flow_size_shape)
-    vnf_delay_mean = float(args.vnf_delay_mean)
-    vnf_delay_stdev = float(args.vnf_delay_stdev)
 
     # Obtain flow inter arrival mean
     inter_arr_mean = float(args.inter_arr_mean)
 
     # Begin simulation
     flowsimulator.start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean,
-                                   flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean,
-                                   vnf_delay_stdev)
+                                   flow_dr_mean, flow_dr_stdev, flow_size_shape)
     env.run(until=args.duration)
 
     end_time = time.time()
@@ -64,8 +61,6 @@ def parse_args():
     parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=1.0, dest="flow_dr_mean")
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev")
     parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape")
-    parser.add_argument('-vdm', '--vnf_delay_mean', required=False, default=5.0, dest="vnf_delay_mean")
-    parser.add_argument('-vds', '--vnf_delay_stdev', required=False, default=1.0, dest="vnf_delay_stdev")
     return parser.parse_args()
 
 
