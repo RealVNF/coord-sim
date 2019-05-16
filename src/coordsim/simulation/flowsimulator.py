@@ -15,7 +15,8 @@ shortest_paths = {}
 
 # Start the simulator.
 def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean=1.0, flow_dr_mean=1.0,
-                     flow_dr_stdev=1.0, flow_size_shape=1.0):
+                     flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
+                     vnf_delay_stdev=1.0):
     log.info("Starting simulation")
     global shortest_paths
     shortest_paths = sp(network)
@@ -26,7 +27,7 @@ def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_me
     for node in ing_nodes:
         node_id = node[0]
         env.process(generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                                  flow_dr_mean, flow_dr_stdev, flow_size_shape))
+                                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev))
 
 
 # Filter out non-ingree nodes.
@@ -40,7 +41,7 @@ def ingress_nodes(network):
 
 # Generate flows at the ingress nodes.
 def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean, network,
-                  flow_dr_mean, flow_dr_stdev, flow_size_shape):
+                  flow_dr_mean, flow_dr_stdev, flow_size_shape, vnf_delay_mean, vnf_delay_stdev):
     # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
     while True:
         flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
@@ -50,7 +51,7 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
         # Abs here is necessary as normal dist. gives negative numbers.
 
-        # Todo: Change the abs here as it is not a real mean anymore. Will affect result accuracy when
+        # Todo: Change the abs here as it is not a real mean anymore. Will affect result accuracy when 
         # publishing.
         flow_dr = np.absolute(np.random.normal(flow_dr_mean, flow_dr_stdev))
         # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
@@ -64,7 +65,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         # Update metrics for the generated flow
         metrics.generated_flow()
         # Generate flows and schedule them at ingress node
-        env.process(flow_init(env, flow, sf_placement, sfc_list, sf_list, network))
+        env.process(flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean,
+                              vnf_delay_stdev))
         yield env.timeout(inter_arr_time)
 
 
@@ -74,7 +76,7 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
 # The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
 # SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
 # function.
-def flow_init(env, flow, sf_placement, sfc_list, sf_list, network):
+def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
     log.info(
         "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, "
         "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
@@ -83,7 +85,7 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network):
     if sfc is not None:
         # Iterate over the SFs and process the flow at each SF.
         metrics.add_active_flow(flow)
-        yield env.process(schedule_flow(env, flow, network, sfc, sf_placement, sf_list))
+        yield env.process(schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement))
     else:
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
         # Update metrics for the dropped flow
@@ -99,7 +101,7 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network):
 # Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
 # instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
 # attribute of the flow object.
-def schedule_flow(env, flow, network, sfc, sf_placement, sf_list):
+def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement):
     sf = sfc[flow.current_position]
     flow.current_sf = sf
     next_node = get_next_node(flow, sf)
@@ -107,7 +109,8 @@ def schedule_flow(env, flow, network, sfc, sf_placement, sf_list):
     if sf in sf_placement[next_node]:
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
-        yield env.process(process_flow(env, flow, network, sf_placement, sfc, sf_list))
+        yield env.process(process_flow(env, flow, network,
+                                       vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc))
     else:
         log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
         env.exit()
@@ -149,10 +152,8 @@ def flow_forward(env, network, flow, next_node):
 
 
 # Process the flow at the requested SF of the current node.
-def process_flow(env, flow, network, sf_placement, sfc, sf_list):
+def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placement, sfc):
     # Generate a processing delay for the SF
-    vnf_delay_mean = sf_list[flow.current_sf].get("processing_delay_mean", 1.0)
-    vnf_delay_stdev = sf_list[flow.current_sf].get("processing_delay_stdev", 1.0)
     processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
     # Update metrics for the processing delay
     # Add the delay to the flow's end2end delay
@@ -178,7 +179,7 @@ def process_flow(env, flow, network, sf_placement, sfc, sf_list):
         else:
             # Increment the position of the flow within SFC
             flow.current_position += 1
-            env.process(schedule_flow(env, flow, network, sfc, sf_placement, sf_list))
+            env.process(schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement))
             yield env.timeout(flow.duration)
             log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
                      .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))

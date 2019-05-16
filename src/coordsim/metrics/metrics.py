@@ -28,10 +28,8 @@ def reset():
 
     metrics['current_active_flows'] = defaultdict(int)
 
-
 def add_active_flow(flow):
     metrics['current_active_flows'][flow.current_node_id] += 1
-
 
 def remove_active_flow(flow):
     metrics['current_active_flows'][flow.current_node_id] -= 1
@@ -82,7 +80,6 @@ def calc_avg_end2end_delay():
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
     else:
         metrics['avg_end2end_delay'] = math.inf
-
 
 def calc_avg_total_delay():
     avg_processing_delay = metrics['avg_processing_delay']

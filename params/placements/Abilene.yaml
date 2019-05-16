@@ -46,11 +46,8 @@ sfc_list:
     - c
 sf_list:
   a:
-    processing_delay_mean: 6.0
-    processing_delay_stdev: 1.0
+    processing_delay: 0.5
   b:
-    processing_delay_mean: 4.5
-    processing_delay_stdev: 1.0
+    processing_delay: 0.3
   c:
-    processing_delay_mean: 3.0
-    processing_delay_stdev: 1.0
+    processing_delay: 0.2
