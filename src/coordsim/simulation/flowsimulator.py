@@ -6,7 +6,11 @@ import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.network import scheduler
 from coordsim.metrics import metrics
+from coordsim.reader.networkreader import shortest_paths as sp
+
 log = logging.getLogger(__name__)
+
+shortest_paths = {}
 
 
 # Start the simulator.
@@ -14,6 +18,8 @@ def start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_me
                      flow_dr_stdev=1.0, flow_size_shape=1.0, vnf_delay_mean=1.0,
                      vnf_delay_stdev=1.0):
     log.info("Starting simulation")
+    global shortest_paths
+    shortest_paths = sp(network)
     nodes_list = [n[0] for n in network.nodes.items()]
     log.info("Using nodes list {}\n".format(nodes_list))
     ing_nodes = ingress_nodes(network)
@@ -60,7 +66,7 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         metrics.generated_flow()
         # Generate flows and schedule them at ingress node
         env.process(flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean,
-                    vnf_delay_stdev))
+                              vnf_delay_stdev))
         yield env.timeout(inter_arr_time)
 
 
@@ -72,8 +78,8 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
 # function.
 def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mean, vnf_delay_stdev):
     log.info(
-        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, flow dr: {}. Time: {}"
-        .format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
+        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, "
+        "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
     sfc = sfc_list.get(flow.sfc, None)
     # Check to see if requested SFC exists
     if sfc is not None:
@@ -98,7 +104,7 @@ def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_p
     sf = sfc[flow.current_position]
     flow.current_sf = sf
     next_node = get_next_node(flow, sf)
-    flow_forward(env, flow, next_node)
+    env.process(flow_forward(env, network, flow, next_node))
     if sf in sf_placement[next_node]:
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
@@ -119,18 +125,25 @@ def get_next_node(flow, sf):
     return next_node
 
 
-# For now just set the current node id of the flow to the new node if change happens and log action.
-# TODO: Routing will be put here
-def flow_forward(env, flow, next_node):
-    path_delay = 0  # TODO: Replace this with actual calculated path delay from SP routing
+# Calculates the path delays occuring when forwarding a node
+# Path delays are calculated using the Shortest path
+# The delay is simulated by timing out for the delay amount of duration
+def flow_forward(env, network, flow, next_node):
+    path_delay = 0
+    if flow.current_node_id != next_node:
+        path_delay = shortest_paths[(flow.current_node_id, next_node)][1]
+
     # Metrics calculation for path delay. Flow's end2end delay is also incremented.
     metrics.add_path_delay(path_delay)
     flow.end2end_delay += path_delay
-    if(flow.current_node_id == next_node):
+
+    if flow.current_node_id == next_node:
+        assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
         log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
     else:
         log.info("Flow {} will leave node {} towards node {}. Time {}"
                  .format(flow.flow_id, flow.current_node_id, next_node, env.now))
+        yield env.timeout(path_delay)
         flow.current_node_id = next_node
 
 
@@ -144,8 +157,8 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
     flow.end2end_delay += processing_delay
     # Get node capacities
     log.info(
-            "Flow {} started proccessing at sf '{}' at node {}. Time: {}, Processing delay: {}"
-            .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now, processing_delay))
+        "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
+        "Processing delay: {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now, processing_delay))
     node_cap = network.nodes[flow.current_node_id]["cap"]
     node_remaining_cap = network.nodes[flow.current_node_id]["remaining_cap"]
     assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
@@ -153,10 +166,10 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
         node_remaining_cap -= flow.dr
         yield env.timeout(processing_delay)
         log.info(
-            "Flow {} started departing sf '{}' at node {}. Time {}"
-            .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+            "Flow {} started departing sf '{}' at node {}."
+            " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
         # Check if flow is currently in last SF, if so, then depart flow.
-        if(flow.current_position == len(sfc)-1):
+        if (flow.current_position == len(sfc) - 1):
             yield env.timeout(flow.duration)
             flow_departure(env, flow.current_node_id, flow)
         else:

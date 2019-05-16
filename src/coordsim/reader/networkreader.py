@@ -3,6 +3,7 @@ from geopy.distance import vincenty
 import numpy as np
 import logging as log
 import yaml
+import math
 from collections import defaultdict
 
 
@@ -52,6 +53,39 @@ def get_sf(sf_data):
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
     return sf_list
+
+
+# edge weight = 1 / (cap + 1/delay) => prefer high cap, use smaller delay as additional influence/tie breaker
+def weight(edge_cap, edge_delay):
+    if edge_cap == 0:
+        return math.inf
+    elif edge_delay == 0:
+        return 0
+    return 1 / (edge_cap + 1 / edge_delay)
+
+
+# finds the all pairs shortest paths using Johnson Algo
+# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len) with path_delays.
+# key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
+# path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
+def shortest_paths(networkx_network):
+    # in-built implementation of Johnson Algo, just returns a list of shortest paths
+    # returns a dict with : key: source, value: dict with key: dest and value: shortest path as list of nodes
+    all_pair_shortest_paths = dict(nx.johnson(networkx_network, weight='weight'))
+    # contains shortest paths with path_delays
+    # key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
+    shortest_paths_with_delays = {}
+    for source, v in all_pair_shortest_paths.items():
+        for destination, shortest_path_list in v.items():
+            path_delay = 0
+            # only is the source and destination are different path_delays need to be calculated, otherwise 0
+            if source != destination:
+                # shortest_path_list only contains ordered nodes [node1,node2,node3....] in the shortest path
+                # here we take ordered pair of nodes (src, dest) to cal. the path_delay of the edge between them
+                for i in range(len(shortest_path_list) - 1):
+                    path_delay += networkx_network[shortest_path_list[i]][shortest_path_list[i + 1]]['delay']
+            shortest_paths_with_delays[(source, destination)] = (shortest_path_list, path_delay)
+    return shortest_paths_with_delays
 
 
 # Read the GraphML file and return list of nodes and edges.
@@ -116,5 +150,10 @@ def read_network(file, node_cap=None, link_cap=None):
         # delay = edge delay , cap = edge capacity in that direction
         networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
         networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
+
+    # setting the weight property for each edge in the NetworkX Graph
+    # weight attribute is used to find the shortest paths
+    for edge in networkx_network.edges.values():
+        edge['weight'] = weight(edge['cap'], edge['delay'])
 
     return networkx_network
