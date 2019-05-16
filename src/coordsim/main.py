@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument('-n', '--network', required=True, dest='network')
     parser.add_argument('-iam', '--inter_arr_mean', required=False, default=1.0, dest="inter_arr_mean")
     parser.add_argument('-p', '--placement', required=True, default=None, dest="placement")
-    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=10.0, dest="flow_dr_mean")
+    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=1.0, dest="flow_dr_mean")
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev")
     parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape")
     parser.add_argument('-vdm', '--vnf_delay_mean', required=False, default=5.0, dest="vnf_delay_mean")

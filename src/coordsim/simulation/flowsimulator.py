@@ -84,6 +84,7 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network, vnf_delay_mea
     # Check to see if requested SFC exists
     if sfc is not None:
         # Iterate over the SFs and process the flow at each SF.
+        metrics.add_active_flow(flow)
         yield env.process(schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_placement))
     else:
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
@@ -104,7 +105,7 @@ def schedule_flow(env, flow, network, sfc, vnf_delay_mean, vnf_delay_stdev, sf_p
     sf = sfc[flow.current_position]
     flow.current_sf = sf
     next_node = get_next_node(flow, sf)
-    env.process(flow_forward(env, network, flow, next_node))
+    yield env.process(flow_forward(env, network, flow, next_node))
     if sf in sf_placement[next_node]:
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
@@ -136,7 +137,6 @@ def flow_forward(env, network, flow, next_node):
     # Metrics calculation for path delay. Flow's end2end delay is also incremented.
     metrics.add_path_delay(path_delay)
     flow.end2end_delay += path_delay
-
     if flow.current_node_id == next_node:
         assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
         log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, env.now))
@@ -144,7 +144,11 @@ def flow_forward(env, network, flow, next_node):
         log.info("Flow {} will leave node {} towards node {}. Time {}"
                  .format(flow.flow_id, flow.current_node_id, next_node, env.now))
         yield env.timeout(path_delay)
+        # Remove the flow's active status from the current node
+        metrics.remove_active_flow(flow)
         flow.current_node_id = next_node
+        # After the flow was 'forwarded', add it to the list of active flows of the current node
+        metrics.add_active_flow(flow)
 
 
 # Process the flow at the requested SF of the current node.
@@ -194,6 +198,7 @@ def process_flow(env, flow, network, vnf_delay_mean, vnf_delay_stdev, sf_placeme
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
 def flow_departure(env, node_id, flow):
     # Update metrics for the processed flow
+    metrics.remove_active_flow(flow)
     metrics.processed_flow()
     metrics.add_end2end_delay(flow.end2end_delay)
     log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, env.now))
