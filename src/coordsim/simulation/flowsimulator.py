@@ -44,6 +44,9 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
         inter_arr_time = random.expovariate(inter_arr_mean)
         # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
         # Abs here is necessary as normal dist. gives negative numbers.
+
+        # Todo: Change the abs here as it is not a real mean anymore. Will affect result accuracy when 
+        # publishing.
         flow_dr = np.absolute(np.random.normal(flow_dr_mean, flow_dr_stdev))
         # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
         flow_size = np.absolute(np.random.pareto(flow_size_shape)) + 1
