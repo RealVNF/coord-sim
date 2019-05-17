@@ -2,7 +2,6 @@ import random
 import logging
 import string
 import numpy as np
-# from coordsim.reader import networkreader
 from coordsim.network.flow import Flow
 from coordsim.network import scheduler
 from coordsim.metrics import metrics
@@ -76,9 +75,9 @@ def generate_flow(env, node_id, sf_placement, sfc_list, sf_list, inter_arr_mean,
 # function.
 def flow_init(env, flow, sf_placement, sfc_list, sf_list, network):
     log.info(
-        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}, "
+        "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}ms, "
         "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr, env.now))
-    sfc = sfc_list.get(flow.sfc, None)
+    sfc = sfc_list[flow.sfc]
     # Check to see if requested SFC exists
     if sfc is not None:
         # Iterate over the SFs and process the flow at each SF.
@@ -151,8 +150,8 @@ def flow_forward(env, network, flow, next_node):
 # Process the flow at the requested SF of the current node.
 def process_flow(env, flow, network, sf_placement, sfc, sf_list):
     # Generate a processing delay for the SF
-    vnf_delay_mean = sf_list[flow.current_sf].get("processing_delay_mean", 1.0)
-    vnf_delay_stdev = sf_list[flow.current_sf].get("processing_delay_stdev", 1.0)
+    vnf_delay_mean = sf_list[flow.current_sf]["processing_delay_mean"]
+    vnf_delay_stdev = sf_list[flow.current_sf]["processing_delay_stdev"]
     processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
     # Update metrics for the processing delay
     # Add the delay to the flow's end2end delay

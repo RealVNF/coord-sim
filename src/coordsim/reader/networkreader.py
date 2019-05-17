@@ -35,13 +35,12 @@ def get_placement(placement_data, network):
         node[1]['available_sf'] = {}
         for sf in vnf_placements[node[0]]:
             node[1]['available_sf'][sf] = 1
-
     return vnf_placements
 
 
 # Get the list of SFCs from the yaml data.
 def get_sfc(sfc_data):
-    sfc_list = {}
+    sfc_list = defaultdict(None)
     for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
         sfc_list[sfc_name] = sfc_sf
     return sfc_list
@@ -49,9 +48,17 @@ def get_sfc(sfc_data):
 
 # Get the list of SFs and their properties from the yaml data.
 def get_sf(sf_data):
-    sf_list = {}
+    # Configureable default mean and stdev defaults
+    default_processing_delay_mean = 1.0
+    default_processing_delay_stdev = 1.0
+    sf_list = defaultdict(None)
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
+        # Set defaults (currently processing delay mean and stdev)
+        sf_list[sf_name]["processing_delay_mean"] = sf_list[sf_name].get("processing_delay_mean",
+                                                                         default_processing_delay_mean)
+        sf_list[sf_name]["processing_delay_stdev"] = sf_list[sf_name].get("processing_delay_stdev",
+                                                                          default_processing_delay_stdev)
     return sf_list
 
 
