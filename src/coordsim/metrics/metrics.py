@@ -1,4 +1,6 @@
 import numpy as np
+from collections import defaultdict
+import math
 # Metrics global dict
 metrics = {}
 
@@ -23,6 +25,17 @@ def reset():
     metrics['avg_total_delay'] = 0.0
 
     metrics['running_time'] = 0.0
+
+    metrics['current_active_flows'] = defaultdict(int)
+
+
+def add_active_flow(flow):
+    metrics['current_active_flows'][flow.current_node_id] += 1
+
+
+def remove_active_flow(flow):
+    metrics['current_active_flows'][flow.current_node_id] -= 1
+    assert metrics['current_active_flows'][flow.current_node_id] >= 0, "Nodes cannot have negative active flows"
 
 
 def generated_flow():
@@ -65,13 +78,20 @@ def calc_avg_path_delay():
 
 def calc_avg_end2end_delay():
     # We devide by number of processed flows to get end2end delays for processed flows only
-    metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
+    if metrics['processed_flows'] > 0:
+        metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
+    else:
+        metrics['avg_end2end_delay'] = math.inf
 
 
 def calc_avg_total_delay():
     avg_processing_delay = metrics['avg_processing_delay']
     avg_path_delay = metrics['avg_path_delay']
     metrics['avg_total_delay'] = np.mean([avg_path_delay, avg_processing_delay])
+
+
+def get_active_flows():
+    return metrics['current_active_flows']
 
 
 def get_metrics():
