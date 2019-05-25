@@ -5,7 +5,6 @@ Metrics collection module
 """
 import numpy as np
 from collections import defaultdict
-import math
 # Metrics global dict
 metrics = {}
 

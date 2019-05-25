@@ -195,4 +195,5 @@ class FlowSimulator:
         metrics.processed_flow()
         metrics.remove_active_flow(flow)
         metrics.add_end2end_delay(flow.end2end_delay)
-        log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, self.env.now))
+        log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id,
+                                                                                          self.env.now))

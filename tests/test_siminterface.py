@@ -4,8 +4,7 @@ Simulator interface tests
 """
 from unittest import TestCase
 
-from rlsp.simulator_interface import SimulatorInterface, SimulatorAction, SimulatorState
-
+from siminterface.interface.siminterface import SimulatorInterface, SimulatorAction, SimulatorState
 NETWORK_FILE = "/mnt/d/SWC/coordination-simulation/params/networks/Abilene.graphml"
 SERVICE_FUNCTIONS_FILE = "/mnt/d/SWC/coordination-simulation/params/placements/Abilene.yaml"
 

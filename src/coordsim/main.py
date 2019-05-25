@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 def main():
     # Initialize logger
-    
+
     args = parse_args()
     metrics.reset()
     start_time = time.time()
@@ -22,7 +22,7 @@ def main():
     env = simpy.Environment()
     # Initialize environment (random seed and simpy.)
     seed = int(args.seed)
-    random.seed(seed)  
+    random.seed(seed)
 
     network = networkreader.read_network(args.network, node_cap=10, link_cap=10)
 
