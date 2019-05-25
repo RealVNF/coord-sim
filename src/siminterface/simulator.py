@@ -41,7 +41,7 @@ class Simulator(SimulatorInterface):
     def apply(self, actions: SimulatorAction):
         start_time = time.time()
         self.simulator.params.sf_placement = actions.placement
-        self.simulator.params.schedule = actions.schedule
+        self.simulator.params.schedule = actions.scheduling
         self.env.run(until=(self.duration*self.run_times))
         self.parse_network()
         self.network_metrics()
@@ -88,5 +88,5 @@ class Simulator(SimulatorInterface):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     simulate = Simulator()
-    simulate.init("/mnt/d/SWC/coordination-simulation/params/networks/Abilene.graphml",
-                  "/mnt/d/SWC/coordination-simulation/params/placements/Abilene.yaml", 9999)
+    simulate.init("params/networks/Abilene.graphml",
+                  "params/placements/Abilene.yaml", 9999)
