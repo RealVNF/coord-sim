@@ -1,45 +1,30 @@
 import argparse
 import simpy
 import random
-from coordsim.simulation import flowsimulator
+from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.reader import networkreader
 from coordsim.metrics import metrics
+import coordsim.network.scheduler as scheduler
+from coordsim.simulation.params import SimulatorParams
 import logging
 import time
-
-
-def begin(network, sf_placement, sfc_list, sf_list, inter_arr_mean, flow_dr_mean, flow_dr_stdev,
-          flow_size_shape, duration): # TODO: Add seed, set defaults
-    env = simpy.Environment()
-    # Initialize the metrics module
-    metrics.reset()
-    start_time = time.time()
-    logging.basicConfig(level=logging.INFO)
-
-    # Init simulation
-    flowsimulator.start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean,
-                                   flow_dr_mean, flow_dr_stdev, flow_size_shape)
-    env.step()
-    sec_duration = duration
-    logging.info(sec_duration)
-    env.run(until=sec_duration)
-    end_time = time.time()
-    metrics.running_time(start_time, end_time)
-    # Temp: Print the metrics after the simulation is done
-    print(metrics.get_metrics())
+log = logging.getLogger(__name__)
 
 
 def main():
     # Initialize logger
-    log = logging.getLogger(__name__)
+    
     args = parse_args()
-
+    metrics.reset()
+    start_time = time.time()
+    logging.basicConfig(level=logging.INFO)
+    # Create a SimPy environment
+    env = simpy.Environment()
     # Initialize environment (random seed and simpy.)
-    random.seed(args.seed)  
+    seed = int(args.seed)
+    random.seed(seed)  
 
     network = networkreader.read_network(args.network, node_cap=10, link_cap=10)
-    log.info("Coordination-Simulation")
-    log.info("Using seed {} and using inter arrival mean {}\n".format(args.seed, args.inter_arr_mean))
 
     # Getting current placement of VNF's
     sf_placement, sfc_list, sf_list = networkreader.network_update(args.placement, network)
@@ -53,10 +38,16 @@ def main():
     # Obtain flow inter arrival mean
     inter_arr_mean = float(args.inter_arr_mean)
 
+    schedule = scheduler.flow_schedule()
     # Simulation duration
     duration = int(args.duration)
-    begin(network, sf_placement, sfc_list, sf_list, inter_arr_mean,
-          flow_dr_mean, flow_dr_stdev, flow_size_shape, duration)    
+    params = SimulatorParams(network, sf_placement, sfc_list, sf_list, seed, schedule, inter_arr_mean=inter_arr_mean,
+                             flow_dr_mean=flow_dr_mean, flow_dr_stdev=flow_dr_stdev, flow_size_shape=flow_size_shape)
+    simulator = FlowSimulator(env, params)
+    simulator.start_simulator()
+    env.run(until=duration)
+    end_time = time.time()
+    metrics.running_time(start_time, end_time)
 
 
 def parse_args():

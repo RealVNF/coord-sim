@@ -33,22 +33,25 @@ def reset():
 
     # Current number of active flows per each node
     metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    metrics['total_active_flows'] = 0
     metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
 
 
 def add_active_flow(flow):
-
+    metrics['total_active_flows'] += 1
     metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] += 1
     metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
 
 
 def remove_active_flow(flow):
-
+    metrics['total_active_flows'] -= 1
     metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] -= 1
     metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] -= flow.dr
     assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
     "Nodes cannot have negative active flows"
     assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
+    "Nodes cannot have negative active flows"
+    assert metrics['total_active_flow'] >= 0, ""
     "Nodes cannot have negative active flows"
 
 
@@ -83,11 +86,17 @@ def running_time(start_time, end_time):
 
 
 def calc_avg_processing_delay():
-    metrics['avg_processing_delay'] = metrics['total_processing_delay'] / metrics['num_processing_delays']
+    if metrics['num_processing_delays'] > 0:
+        metrics['avg_processing_delay'] = metrics['total_processing_delay'] / metrics['num_processing_delays']
+    else:
+        metrics['avg_processing_delay'] = 9999
 
 
 def calc_avg_path_delay():
-    metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
+    if metrics['num_path_delays'] > 0:
+        metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
+    else:
+        metrics['avg_path_delay'] = 9999
 
 
 def calc_avg_end2end_delay():
@@ -95,7 +104,7 @@ def calc_avg_end2end_delay():
     if metrics['processed_flows'] > 0:
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
     else:
-        metrics['avg_end2end_delay'] = math.inf
+        metrics['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
 
 
 def calc_avg_total_delay():
