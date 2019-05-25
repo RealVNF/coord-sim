@@ -1,3 +1,8 @@
+"""
+
+Metrics collection module
+
+"""
 import numpy as np
 from collections import defaultdict
 import math
@@ -26,16 +31,25 @@ def reset():
 
     metrics['running_time'] = 0.0
 
-    metrics['current_active_flows'] = defaultdict(int)
+    # Current number of active flows per each node
+    metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
 
 
 def add_active_flow(flow):
-    metrics['current_active_flows'][flow.current_node_id] += 1
+
+    metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] += 1
+    metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
 
 
 def remove_active_flow(flow):
-    metrics['current_active_flows'][flow.current_node_id] -= 1
-    assert metrics['current_active_flows'][flow.current_node_id] >= 0, "Nodes cannot have negative active flows"
+
+    metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] -= 1
+    metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] -= flow.dr
+    assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
+    "Nodes cannot have negative active flows"
+    assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
+    "Nodes cannot have negative active flows"
 
 
 def generated_flow():

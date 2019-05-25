@@ -81,7 +81,6 @@ def flow_init(env, flow, sf_placement, sfc_list, sf_list, network):
     # Check to see if requested SFC exists
     if sfc is not None:
         # Iterate over the SFs and process the flow at each SF.
-        metrics.add_active_flow(flow)
         yield env.process(schedule_flow(env, flow, network, sfc, sf_placement, sf_list))
     else:
         log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
@@ -104,6 +103,8 @@ def schedule_flow(env, flow, network, sfc, sf_placement, sf_list):
     next_node = get_next_node(flow, sf)
     yield env.process(flow_forward(env, network, flow, next_node))
     if sf in sf_placement[next_node]:
+        # Metrics: Add active flow to the SF the flow is arriving to.
+        metrics.add_active_flow(flow)
         log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
         yield env.process(process_flow(env, flow, network, sf_placement, sfc, sf_list))
@@ -140,11 +141,7 @@ def flow_forward(env, network, flow, next_node):
         log.info("Flow {} will leave node {} towards node {}. Time {}"
                  .format(flow.flow_id, flow.current_node_id, next_node, env.now))
         yield env.timeout(path_delay)
-        # Remove the flow's active status from the current node
-        metrics.remove_active_flow(flow)
         flow.current_node_id = next_node
-        # After the flow was 'forwarded', add it to the list of active flows of the current node
-        metrics.add_active_flow(flow)
 
 
 # Process the flow at the requested SF of the current node.
@@ -171,6 +168,7 @@ def process_flow(env, flow, network, sf_placement, sfc, sf_list):
             "Flow {} started departing sf '{}' at node {}."
             " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
         # Check if flow is currently in last SF, if so, then depart flow.
+        # metrics.remove_active_flow(flow)
         if (flow.current_position == len(sfc) - 1):
             yield env.timeout(flow.duration)
             flow_departure(env, flow.current_node_id, flow)
@@ -179,8 +177,11 @@ def process_flow(env, flow, network, sf_placement, sfc, sf_list):
             flow.current_position += 1
             env.process(schedule_flow(env, flow, network, sfc, sf_placement, sf_list))
             yield env.timeout(flow.duration)
+            # before departing the SF.
             log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
                      .format(flow.flow_id, flow.current_sf, flow.current_node_id, env.now))
+            # Remove the active flow from the SF after it departed the SF
+            metrics.remove_active_flow(flow)
         node_remaining_cap += flow.dr
         # We assert that remaining capacity must at all times be less than the node capacity so that
         # nodes dont put back more capacity than the node's capacity.
@@ -190,13 +191,14 @@ def process_flow(env, flow, network, sf_placement, sfc, sf_list):
                     .format(flow.flow_id, flow.current_node_id))
         # Update metrics for the dropped flow
         metrics.dropped_flow()
+        metrics.remove_active_flow(flow)
         env.exit()
 
 
 # When the flow is in the last SF of the requested SFC. Depart it from the network.
 def flow_departure(env, node_id, flow):
     # Update metrics for the processed flow
-    metrics.remove_active_flow(flow)
     metrics.processed_flow()
+    metrics.remove_active_flow(flow)
     metrics.add_end2end_delay(flow.end2end_delay)
     log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id, env.now))

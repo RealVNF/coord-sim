@@ -8,18 +8,34 @@ import logging
 import time
 
 
-def main():
-    # Initialize the metrics and logging module
+def begin(network, sf_placement, sfc_list, sf_list, inter_arr_mean, flow_dr_mean, flow_dr_stdev,
+          flow_size_shape, duration): # TODO: Add seed, set defaults
+    env = simpy.Environment()
+    # Initialize the metrics module
     metrics.reset()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
-    log = logging.getLogger(__name__)
 
+    # Init simulation
+    flowsimulator.start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean,
+                                   flow_dr_mean, flow_dr_stdev, flow_size_shape)
+    env.step()
+    sec_duration = duration
+    logging.info(sec_duration)
+    env.run(until=sec_duration)
+    end_time = time.time()
+    metrics.running_time(start_time, end_time)
+    # Temp: Print the metrics after the simulation is done
+    print(metrics.get_metrics())
+
+
+def main():
+    # Initialize logger
+    log = logging.getLogger(__name__)
     args = parse_args()
 
     # Initialize environment (random seed and simpy.)
-    random.seed(args.seed)
-    env = simpy.Environment()
+    random.seed(args.seed)  
 
     network = networkreader.read_network(args.network, node_cap=10, link_cap=10)
     log.info("Coordination-Simulation")
@@ -37,15 +53,10 @@ def main():
     # Obtain flow inter arrival mean
     inter_arr_mean = float(args.inter_arr_mean)
 
-    # Begin simulation
-    flowsimulator.start_simulation(env, network, sf_placement, sfc_list, sf_list, inter_arr_mean,
-                                   flow_dr_mean, flow_dr_stdev, flow_size_shape)
-    env.run(until=args.duration)
-
-    end_time = time.time()
-    metrics.running_time(start_time, end_time)
-    # Temp: Print the metrics after the simulation is done
-    print(metrics.get_metrics())
+    # Simulation duration
+    duration = int(args.duration)
+    begin(network, sf_placement, sfc_list, sf_list, inter_arr_mean,
+          flow_dr_mean, flow_dr_stdev, flow_size_shape, duration)    
 
 
 def parse_args():
