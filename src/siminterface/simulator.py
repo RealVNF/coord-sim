@@ -4,7 +4,7 @@ import coordsim.metrics.metrics as metrics
 from coordsim.network import scheduler
 import time
 from coordsim.simulation.params import SimulatorParams
-from interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
+from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
 import logging
 
@@ -12,7 +12,7 @@ import logging
 class Simulator(SimulatorInterface):
     def __init__(self):
         # Define simulator duration until which simulator in 'apply' runs until requesting a decision
-        self.duration = int(1000)
+        self.duration = int(100)
         self.run_times = int(1)
 
     def init(self, network_file, service_functions_file, seed):
