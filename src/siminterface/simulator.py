@@ -84,10 +84,3 @@ class Simulator(SimulatorInterface):
             'in_network_flows': stats['total_active_flows'],
             'avg_end_2_end_delay': stats['avg_end2end_delay']
         }
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    simulate = Simulator()
-    simulate.init("params/networks/Abilene.graphml",
-                  "params/placements/Abilene.yaml", 9999)
