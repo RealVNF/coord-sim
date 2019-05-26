@@ -3,16 +3,17 @@ from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
 from coordsim.network import scheduler
 import time
-from coordsim.simulation.params import SimulatorParams
+from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
 import logging
 
+DURATION = int(100)
+
 
 class Simulator(SimulatorInterface):
     def __init__(self):
-        # Define simulator duration until which simulator in 'apply' runs until requesting a decision
-        self.duration = int(100)
+        # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
 
     def init(self, network_file, service_functions_file, seed):
@@ -42,7 +43,7 @@ class Simulator(SimulatorInterface):
         start_time = time.time()
         self.simulator.params.sf_placement = actions.placement
         self.simulator.params.schedule = actions.scheduling
-        self.env.run(until=(self.duration*self.run_times))
+        self.env.run(until=(DURATION*self.run_times))
         self.parse_network()
         self.network_metrics()
         self.run_times += 1

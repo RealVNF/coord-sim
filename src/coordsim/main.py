@@ -5,7 +5,7 @@ from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.reader import networkreader
 from coordsim.metrics import metrics
 import coordsim.network.scheduler as scheduler
-from coordsim.simulation.params import SimulatorParams
+from coordsim.simulation.simulatorparams import SimulatorParams
 import logging
 import time
 log = logging.getLogger(__name__)
