@@ -30,27 +30,27 @@ class Simulator(SimulatorInterface):
         self.simulator = FlowSimulator(self.env, self.params)
         self.simulator.start_simulator()
         self.env.step()
-        end_time = time.time()
-        metrics.running_time(start_time, end_time)
         self.parse_network()
         self.network_metrics()
         self.run_times += 1
-        traffic = metrics.get_metrics()['current_traffic']
-        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, traffic, self.network_stats)
+        end_time = time.time()
+        metrics.running_time(start_time, end_time)
+        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
+                                         self.network_stats)
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
         start_time = time.time()
         self.simulator.params.sf_placement = actions.placement
         self.simulator.params.schedule = actions.scheduling
-        self.env.run(until=(DURATION*self.run_times))
+        self.env.run(until=(DURATION * self.run_times))
         self.parse_network()
         self.network_metrics()
         self.run_times += 1
-        traffic = metrics.get_metrics()['current_traffic']
-        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, traffic, self.network_stats)
         end_time = time.time()
         metrics.running_time(start_time, end_time)
+        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
+                                         self.network_stats)
         return simulator_state
 
     def parse_network(self) -> dict:
@@ -72,7 +72,7 @@ class Simulator(SimulatorInterface):
                 'delay': edge_delay,
                 'data_rate': edge_dr,
                 'used_data_rate': edge_used_dr
-                }
+            }
 
     def network_metrics(self):
         stats = metrics.get_metrics()
