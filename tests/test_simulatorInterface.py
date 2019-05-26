@@ -5,7 +5,6 @@ Simulator interface tests
 from unittest import TestCase
 
 from siminterface.interface.siminterface import SimulatorInterface, SimulatorAction, SimulatorState
-from siminterface.simulator import Simulator
 
 NETWORK_FILE = "params/networks/Abilene.graphml"
 SERVICE_FUNCTIONS_FILE = "params/placements/Abilene.yaml"
