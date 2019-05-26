@@ -6,7 +6,6 @@ import time
 from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
-import logging
 
 DURATION = int(100)
 
