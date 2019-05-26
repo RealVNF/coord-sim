@@ -10,7 +10,8 @@ requirements = [
 
 test_requirements = [
     'flake8',
-    'pytest'
+    'pytest',
+    'nose2'
 ]
 
 setup(

@@ -1,3 +1,10 @@
+"""
+
+Flow constructor class
+
+"""
+
+
 class Flow:
 
     def __init__(self, flow_id, sfc, dr, size, status=None, rate=None,

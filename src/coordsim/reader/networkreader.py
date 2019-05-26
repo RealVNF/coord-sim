@@ -1,5 +1,5 @@
 import networkx as nx
-from geopy.distance import vincenty
+from geopy.distance import distance as dist
 import numpy as np
 import logging as log
 import yaml
@@ -147,7 +147,7 @@ def read_network(file, node_cap=None, link_cap=None):
                 log.warning("Link Delay not set in the GraphML file and unable to calc based on Geo Location,"
                             "Now using default delay for edge: ({},{})".format(source, target))
             else:
-                distance = vincenty((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
+                distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
                 # round delay to int using np.around for consistency with emulator
                 delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
         else:
