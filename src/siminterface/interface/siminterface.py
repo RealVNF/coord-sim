@@ -21,6 +21,7 @@ class SimulatorAction:
                 'node id' : [list of SF ids]
             }
 
+        << Schedule: Must include traffic distribution for all possible nodes. Even those that have a value of zero >>
         scheduling : dict
             {
                 'node id' : dict
@@ -29,7 +30,7 @@ class SimulatorAction:
                     {
                         'SF id' : dict
                         {
-                            'node id : float
+                            'node id' : float (Inclusive of zero values)
                         }
                     }
                 }
