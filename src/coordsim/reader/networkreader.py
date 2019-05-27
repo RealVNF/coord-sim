@@ -72,7 +72,7 @@ def weight(edge_cap, edge_delay):
 
 
 # finds the all pairs shortest paths using Johnson Algo
-# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len) with path_delays.
+# sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an attr.
 # key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
 # path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
 def shortest_paths(networkx_network):
@@ -162,5 +162,6 @@ def read_network(file, node_cap=None, link_cap=None):
     # weight attribute is used to find the shortest paths
     for edge in networkx_network.edges.values():
         edge['weight'] = weight(edge['cap'], edge['delay'])
-
+    # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
+    shortest_paths(networkx_network)
     return networkx_network
