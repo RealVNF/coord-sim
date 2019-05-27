@@ -7,8 +7,6 @@ from coordsim.metrics import metrics
 from coordsim.reader.networkreader import shortest_paths as sp
 log = logging.getLogger(__name__)
 
-shortest_paths = {}
-
 
 class FlowSimulator:
     def __init__(self, env, params):
@@ -18,8 +16,8 @@ class FlowSimulator:
     # Start the simulator.
     def start_simulator(self):
         log.info("Starting simulation")
-        global shortest_paths
-        shortest_paths = sp(self.params.network)
+        # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
+        sp(self.params.network)
         nodes_list = [n[0] for n in self.params.network.nodes.items()]
         log.info("Using nodes list {}\n".format(nodes_list))
         ing_nodes = self.ingress_nodes()
@@ -118,13 +116,13 @@ class FlowSimulator:
         next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
         return next_node
 
-    # Calculates the path delays occuring when forwarding a node
+    # Calculates the path delays occurring when forwarding a node
     # Path delays are calculated using the Shortest path
     # The delay is simulated by timing out for the delay amount of duration
     def flow_forward(self, flow, next_node):
         path_delay = 0
         if flow.current_node_id != next_node:
-            path_delay = shortest_paths[(flow.current_node_id, next_node)][1]
+            path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
 
         # Metrics calculation for path delay. Flow's end2end delay is also incremented.
         metrics.add_path_delay(path_delay)
