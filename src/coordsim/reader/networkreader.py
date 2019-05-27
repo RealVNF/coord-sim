@@ -72,7 +72,7 @@ def weight(edge_cap, edge_delay):
 
 
 # finds the all pairs shortest paths using Johnson Algo
-# returns a dictionary, keyed by source and target, of all pairs shortest paths(not the shortest len) with path_delays.
+# sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an attr.
 # key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
 # path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
 def shortest_paths(networkx_network):
@@ -85,14 +85,14 @@ def shortest_paths(networkx_network):
     for source, v in all_pair_shortest_paths.items():
         for destination, shortest_path_list in v.items():
             path_delay = 0
-            # only is the source and destination are different path_delays need to be calculated, otherwise 0
+            # only if the source and destination are different, path_delays need to be calculated, otherwise 0
             if source != destination:
                 # shortest_path_list only contains ordered nodes [node1,node2,node3....] in the shortest path
                 # here we take ordered pair of nodes (src, dest) to cal. the path_delay of the edge between them
                 for i in range(len(shortest_path_list) - 1):
                     path_delay += networkx_network[shortest_path_list[i]][shortest_path_list[i + 1]]['delay']
             shortest_paths_with_delays[(source, destination)] = (shortest_path_list, path_delay)
-    return shortest_paths_with_delays
+    networkx_network.graph['shortest_paths'] = shortest_paths_with_delays
 
 
 # Read the GraphML file and return list of nodes and edges.
@@ -162,5 +162,6 @@ def read_network(file, node_cap=None, link_cap=None):
     # weight attribute is used to find the shortest paths
     for edge in networkx_network.edges.values():
         edge['weight'] = weight(edge['cap'], edge['delay'])
-
+    # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
+    shortest_paths(networkx_network)
     return networkx_network
