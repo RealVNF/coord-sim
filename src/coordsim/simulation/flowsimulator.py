@@ -4,7 +4,6 @@ import string
 import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.metrics import metrics
-from coordsim.reader.networkreader import shortest_paths as sp
 log = logging.getLogger(__name__)
 
 
