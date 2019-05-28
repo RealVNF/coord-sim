@@ -102,7 +102,7 @@ class SimulatorAction:
             },
         }
 
-        action = SimulationActionInterface(placement, schedule)
+        action = SimulationAction(placement, schedule)
         """
         self.placement = placement
         self.scheduling = scheduling
@@ -141,19 +141,20 @@ class SimulatorState:
                 }],
             }
 
-        sfcs : list
-            [{
-                'id': str,
-                'functions': list
+        sfcs : dict
+            {
+                'sfc_id': list
                     ['ids (str)']
-            }],
+            },
 
-        service_functions : list
-            [{
-                'id': str,
-                'processing_delay_mean': int (ms),
-                'processing_delay_stdev': int (ms)
-            }],
+        service_functions : dict
+            {
+                'sf_id (str)' : dict
+                {
+                    'processing_delay_mean': int (ms),
+                    'processing_delay_stdev': int (ms)
+                },
+            }
 
 
         << traffic: aggregated data rates of flows arriving at node requesting >>
@@ -215,7 +216,7 @@ class SimulatorInterface:
 
         Parameters
         ----------
-        actions: SimulationActionInterface
+        actions: SimulationAction
 
         Returns
         -------
