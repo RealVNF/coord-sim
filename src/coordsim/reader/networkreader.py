@@ -14,7 +14,6 @@ from collections import defaultdict
 Network parsing module.
 - Reads and parses network files into NetworkX.
 - Reads and parses network yaml files and gets placement and SFC and SFs.
-
 """
 
 

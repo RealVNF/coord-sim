@@ -68,6 +68,8 @@ def main():
 def parse_args():
     default_seed = 9999
     # Read CLI arguments
+
+    # TODO: Research a valid defaults for these arguments. Also update defaults in SimulatorParams.
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
     parser.add_argument('-d', '--duration', required=True, default=None, dest="duration", type=int)
     parser.add_argument('-r', '--rate', required=False, default=None, dest="rate")
@@ -75,7 +77,7 @@ def parse_args():
     parser.add_argument('-n', '--network', required=True, dest='network')
     parser.add_argument('-iam', '--inter_arr_mean', required=False, default=1.0, dest="inter_arr_mean", type=float)
     parser.add_argument('-p', '--placement', required=True, default=None, dest="placement")
-    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=1.0, dest="flow_dr_mean", type=float)
+    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=5.0, dest="flow_dr_mean", type=float)
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev", type=float)
     parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape", type=float)
     return parser.parse_args()

@@ -93,7 +93,7 @@ class FlowSimulator:
 
     def pass_flow(self, flow, sfc):
         """
-        Passes the flow to the next node to begin processing. 
+        Passes the flow to the next node to begin processing.
         The flow might still be arriving at a previous node or SF.
         This function is used in a mutual recursion alongside process_flow() function to allow flows to arrive and begin
         processing without waiting for the flow to completely arrive.

@@ -5,12 +5,25 @@ Defines a weighted flow schedule to allow making weighted decisions on where to
 forward flows through the network
 Placeholder function to return a fixed LB schedule.
 
+The schedule assigns forwarding decision weights for each SF at each SFC in each node.
+
+Follows the following format:
+
+schedule = {
+    node : {
+        sfc : {
+            sf : {
+                node : weight (float),
+            },
+        },
+    },
+}
+
 """
 
 
 class Scheduler:
     def __init__(self):
-        pass
         # Define an initial static flow schedule for the test scenario
         self.flow_schedule = {
             'pop0': {

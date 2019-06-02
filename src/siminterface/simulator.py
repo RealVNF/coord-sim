@@ -24,7 +24,7 @@ class Simulator(SimulatorInterface):
 
         # Parse network (GraphML): Get NetworkX object and ingress nodes list
         self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
-        # Parse placement (YAML): Get placement, sfc, and sf lists.
+        # Parse placement (YAML): Getting current placement of VNFs, SFC list, and the SF list of each SFC.
         self.sf_placement, self.sfc_list, self.sf_list = networkreader.network_update(service_functions_file,
                                                                                       self.network)
 
@@ -50,7 +50,9 @@ class Simulator(SimulatorInterface):
         # Run the environment for one step to get initial stats.
         self.env.step()
 
-        # Parse the network stats. Prepares network stats in SimulatorState format.
+        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # for changing node remaining capacities.
+        # Also, parse the network stats and prepare it in SimulatorState format.
         self.parse_network()
         self.network_metrics()
 
@@ -65,22 +67,46 @@ class Simulator(SimulatorInterface):
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
+
+        # Get the new placement from the action passed by the RL agent
+        # Modify and set the placement parameter of the instantiated simulator object.
         self.simulator.params.sf_placement = actions.placement
+
+        # Get the new schedule from the SimulatorAction
+        # Set it in the params of the instantiated simulator object.
         self.simulator.params.schedule = actions.scheduling
+
+        # Run the simulation again with the new params for the set duration.
+        # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
+        # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
+        # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
         self.env.run(until=(DURATION * self.run_times))
+
+        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # for changing node remaining capacities.
+        # Also, parse the network stats and prepare it in SimulatorState format.
         self.parse_network()
         self.network_metrics()
+
+        # Increment the run times variable
         self.run_times += 1
+
+        # Record end time of the apply round, doesn't change start time to show the running time of the entire
+        # simulation at the end of the simulation.
         self.end_time = time.time()
         metrics.running_time(self.start_time, self.end_time)
+
+        # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
                                          self.network_stats)
         return simulator_state
 
     def parse_network(self) -> dict:
+        """
+        Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
+        """
         self.network_dict = {'nodes': [], 'edges': []}
-        for node in self.network.nodes(data=True):
-            # Reset network_dict nodes array
+        for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
             used_node_cap = node[1]['cap'] - node[1]['remaining_cap']
             self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap, 'used_resources': used_node_cap})
@@ -89,6 +115,9 @@ class Simulator(SimulatorInterface):
             edge_dest = edge[1]
             edge_delay = edge[2]['delay']
             edge_dr = edge[2]['cap']
+            # We use a fixed user data rate for the edges here as the functionality is not yet incorporated in the
+            # simulator.
+            # TODO: Implement used edge data rates in the simulator.
             edge_used_dr = 0
             self.network_dict['edges'] = {
                 'src': edge_src,
@@ -99,6 +128,9 @@ class Simulator(SimulatorInterface):
             }
 
     def network_metrics(self):
+        """
+        Processes the metrics and parses them in a format specified in the SimulatorState class.
+        """
         stats = metrics.get_metrics()
         self.traffic = stats['current_traffic']
         self.network_stats = {
