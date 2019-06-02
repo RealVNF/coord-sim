@@ -7,6 +7,17 @@ from coordsim.metrics import metrics
 log = logging.getLogger(__name__)
 
 
+"""
+Flow Simulator class
+This class holds the flow simulator and its internal flow handling functions.
+Flow of data through the simulator (abstract):
+
+start() -> generate_flow() -> init_flow() -> pass_flow() -> process_flow()
+and forward_flow() -> depart_flow() or pass_flow()
+
+"""
+
+
 class FlowSimulator:
     def __init__(self, env, params):
         self.env = env
@@ -53,10 +64,10 @@ class FlowSimulator:
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
-            self.env.process(self.flow_init(flow))
+            self.env.process(self.init_flow(flow))
             yield self.env.timeout(inter_arr_time)
 
-    def flow_init(self, flow):
+    def init_flow(self, flow):
         """
         Initialize flows within the network. This function takes the generated flow object at the ingress node
         and handles it according to the requested SFC. We check if the SFC that is being requested is indeed
@@ -73,28 +84,29 @@ class FlowSimulator:
         # Check to see if requested SFC exists
         if sfc is not None:
             # Iterate over the SFs and process the flow at each SF.
-            yield self.env.process(self.schedule_flow(flow, sfc))
+            yield self.env.process(self.pass_flow(flow, sfc))
         else:
             log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
             # Update metrics for the dropped flow
             metrics.dropped_flow()
             self.env.exit()
 
-    def schedule_flow(self, flow, sfc):
+    def pass_flow(self, flow, sfc):
         """
-        Schedule the flow
+        Passes the flow to the next node to begin processing. 
+        The flow might still be arriving at a previous node or SF.
         This function is used in a mutual recursion alongside process_flow() function to allow flows to arrive and begin
         processing without waiting for the flow to completely arrive.
         The mutual recursion is as follows:
-        schedule_flow() -> process_flow() -> schedule_flow() and so on...
-        Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
-        instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
+        pass_flow() -> process_flow() -> pass_flow() and so on...
+        Breaking condition: Flow reaches last position within the SFC, then process_flow() calls depart_flow()
+        instead of pass_flow(). The position of the flow within the SFC is determined using current_position
         attribute of the flow object.
         """
         sf = sfc[flow.current_position]
         flow.current_sf = sf
         next_node = self.get_next_node(flow, sf)
-        yield self.env.process(self.flow_forward(flow, next_node))
+        yield self.env.process(self.forward_flow(flow, next_node))
         if sf in self.params.sf_placement[next_node]:
             # Metrics: Add active flow to the SF the flow is arriving to.
             metrics.add_active_flow(flow)
@@ -116,7 +128,7 @@ class FlowSimulator:
         next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
         return next_node
 
-    def flow_forward(self, flow, next_node):
+    def forward_flow(self, flow, next_node):
         """
         Calculates the path delays occurring when forwarding a node
         Path delays are calculated using the Shortest path
@@ -168,11 +180,11 @@ class FlowSimulator:
             # metrics.remove_active_flow(flow)
             if (flow.current_position == len(sfc) - 1):
                 yield self.env.timeout(flow.duration)
-                self.flow_departure(self, flow.current_node_id, flow)
+                self.depart_flow(self, flow.current_node_id, flow)
             else:
                 # Increment the position of the flow within SFC
                 flow.current_position += 1
-                self.env.process(self.schedule_flow(flow, sfc))
+                self.env.process(self.pass_flow(flow, sfc))
                 yield self.env.timeout(flow.duration)
                 # before departing the SF.
                 log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
@@ -191,7 +203,7 @@ class FlowSimulator:
             metrics.remove_active_flow(flow)
             self.env.exit()
 
-    def flow_departure(self, node_id, flow):
+    def depart_flow(self, node_id, flow):
         """
         Process the flow at the requested SF of the current node.
         """

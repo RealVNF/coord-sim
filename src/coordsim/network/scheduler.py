@@ -3,7 +3,7 @@
 Flow Scheduler
 Defines a weighted flow schedule to allow making weighted decisions on where to
 forward flows through the network
-Placeholder function to return a fixed LB schedule. 
+Placeholder function to return a fixed LB schedule.
 
 """
 

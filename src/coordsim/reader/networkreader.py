@@ -11,7 +11,6 @@ from collections import defaultdict
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
 
 """
-
 Network parsing module.
 - Reads and parses network files into NetworkX.
 - Reads and parses network yaml files and gets placement and SFC and SFs.
@@ -88,7 +87,8 @@ def weight(edge_cap, edge_delay):
 def shortest_paths(networkx_network):
     """
     finds the all pairs shortest paths using Johnson Algo
-    sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an attr.
+    sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an
+    attr.
     key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
     path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
     """
