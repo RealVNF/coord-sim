@@ -10,20 +10,28 @@ from collections import defaultdict
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
 
-# Returns the current placement of VNF's in the network as a Dict of nodes with the list of VNF's placed in it.
-# The Placement for now is done using a static file.
-# This later would be changed to the latest placements suggested by an RL Agent.
+"""
+
+Network parsing module.
+- Reads and parses network files into NetworkX.
+- Reads and parses network yaml files and gets placement and SFC and SFs.
+
+"""
 
 
-# Open yaml file and pass data to other functions for procesing.
 def network_update(yaml_file, network):
+    """
+    Open yaml file and pass data to other functions for procesing.
+    """
     with open(yaml_file) as yaml_stream:
         yaml_data = yaml.load(yaml_stream)
     return get_placement(yaml_data, network), get_sfc(yaml_data), get_sf(yaml_data)
 
 
-# Get the placement from the yaml data.
 def get_placement(placement_data, network):
+    """
+    Get the placement from the yaml data.
+    """
     vnf_placements = defaultdict(list)
     # Getting the placements
     for vnf in placement_data['placement']['vnfs']:
@@ -38,16 +46,20 @@ def get_placement(placement_data, network):
     return vnf_placements
 
 
-# Get the list of SFCs from the yaml data.
 def get_sfc(sfc_data):
+    """
+    Get the list of SFCs from the yaml data.
+    """
     sfc_list = defaultdict(None)
     for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
         sfc_list[sfc_name] = sfc_sf
     return sfc_list
 
 
-# Get the list of SFs and their properties from the yaml data.
 def get_sf(sf_data):
+    """
+    Get the list of SFs and their properties from the yaml data.
+    """
     # Configureable default mean and stdev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
@@ -62,8 +74,10 @@ def get_sf(sf_data):
     return sf_list
 
 
-# edge weight = 1 / (cap + 1/delay) => prefer high cap, use smaller delay as additional influence/tie breaker
 def weight(edge_cap, edge_delay):
+    """
+    edge weight = 1 / (cap + 1/delay) => prefer high cap, use smaller delay as additional influence/tie breaker
+    """
     if edge_cap == 0:
         return math.inf
     elif edge_delay == 0:
@@ -71,11 +85,13 @@ def weight(edge_cap, edge_delay):
     return 1 / (edge_cap + 1 / edge_delay)
 
 
-# finds the all pairs shortest paths using Johnson Algo
-# sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an attr.
-# key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
-# path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
 def shortest_paths(networkx_network):
+    """
+    finds the all pairs shortest paths using Johnson Algo
+    sets a dictionary, keyed by source and target, of all pairs shortest paths with path_delays in the network as an attr.
+    key: (src, dest) , value: ([nodes_on_the_shortest_path], path_delay)
+    path delays are the sum of individual edge_delays of the edges in the shortest path from source to destination
+    """
     # in-built implementation of Johnson Algo, just returns a list of shortest paths
     # returns a dict with : key: source, value: dict with key: dest and value: shortest path as list of nodes
     all_pair_shortest_paths = dict(nx.johnson(networkx_network, weight='weight'))
@@ -95,8 +111,10 @@ def shortest_paths(networkx_network):
     networkx_network.graph['shortest_paths'] = shortest_paths_with_delays
 
 
-# Read the GraphML file and return list of nodes and edges.
 def read_network(file, node_cap=None, link_cap=None):
+    """
+    Read the GraphML file and return list of nodes and edges.
+    """
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
 
@@ -164,4 +182,11 @@ def read_network(file, node_cap=None, link_cap=None):
         edge['weight'] = weight(edge['cap'], edge['delay'])
     # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
     shortest_paths(networkx_network)
-    return networkx_network
+
+    # Filter ingress nodes
+    ing_nodes = []
+    for node in networkx_network.nodes.items():
+        if node[1]["type"] == "Ingress":
+            ing_nodes.append(node)
+
+    return networkx_network, ing_nodes

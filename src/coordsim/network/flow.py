@@ -1,27 +1,29 @@
 """
 
-Flow constructor class
+Flow class.
+This identifies the flow and its parameters.
 
 """
 
 
 class Flow:
 
-    def __init__(self, flow_id, sfc, dr, size, status=None, rate=None,
+    def __init__(self, flow_id, sfc, dr, size,
                  destination=None, current_sf=None, current_node_id=None, current_position=0, end2end_delay=0.0):
 
-        # DR is in Mbits/s
-        # Duration is in ms
-        # Size of flow is in Mbits
-
+        # Flow ID: Unique ID string
         self.flow_id = flow_id
+        # The requested SFC
         self.sfc = sfc
-        self.status = status
+        # The requested data rate in Megabits per second (Mbit/s)
         self.dr = dr
+        # The size of the flow in Megabit (Mb)
         self.size = size
-        self.destination = destination
+        # The current SF that the flow is being processed in.
         self.current_sf = current_sf
+        # The current node that the flow is being processed in
         self.current_node_id = current_node_id
+        # The duration of the flow calculated in ms.
         self.duration = (float(size) / float(dr)) * 1000  # Converted flow duration to ms
         # Current flow position within the SFC
         self.current_position = current_position

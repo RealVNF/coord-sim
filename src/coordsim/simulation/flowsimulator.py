@@ -12,28 +12,23 @@ class FlowSimulator:
         self.env = env
         self.params = params
 
-    # Start the simulator.
-    def start_simulator(self):
+    def start(self):
+        """
+        Start the simulator.
+        """
         log.info("Starting simulation")
         # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
         nodes_list = [n[0] for n in self.params.network.nodes.items()]
         log.info("Using nodes list {}\n".format(nodes_list))
-        ing_nodes = self.ingress_nodes()
-        log.info("Total of {} ingress nodes available\n".format(len(ing_nodes)))
-        for node in ing_nodes:
+        log.info("Total of {} ingress nodes available\n".format(len(self.params.ing_nodes)))
+        for node in self.params.ing_nodes:
             node_id = node[0]
             self.env.process(self.generate_flow(node_id))
 
-    # Filter out non-ingree nodes.
-    def ingress_nodes(self):
-        ing_nodes = []
-        for node in self.params.network.nodes.items():
-            if node[1]["type"] == "Ingress":
-                ing_nodes.append(node)
-        return ing_nodes
-
-    # Generate flows at the ingress nodes.
     def generate_flow(self, node_id):
+        """
+        Generate flows at the ingress nodes.
+        """
         # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
         while True:
             flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
@@ -43,7 +38,7 @@ class FlowSimulator:
             # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
             # Abs here is necessary as normal dist. gives negative numbers.
 
-            # Todo: Change the abs here as it is not a real mean anymore. Will affect result accuracy when
+            # TODO: Change the abs here as it is not a real mean anymore. Will affect result accuracy when
             # publishing.
             flow_dr = np.absolute(np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev))
             # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
@@ -51,6 +46,7 @@ class FlowSimulator:
             # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
             if flow_dr == 0 or flow_size == 0:
                 continue
+            # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
             # Generate flow based on given params
             flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, current_node_id=node_id)
@@ -60,13 +56,15 @@ class FlowSimulator:
             self.env.process(self.flow_init(flow))
             yield self.env.timeout(inter_arr_time)
 
-    # Initialize flows within the network. This function takes the generated flow object at the ingress node
-    # and handles it according to the requested SFC. We check if the SFC that is being requested is indeed
-    # within the schedule, otherwise we log a warning and drop the flow.
-    # The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
-    # SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
-    # function.
     def flow_init(self, flow):
+        """
+        Initialize flows within the network. This function takes the generated flow object at the ingress node
+        and handles it according to the requested SFC. We check if the SFC that is being requested is indeed
+        within the schedule, otherwise we log a warning and drop the flow.
+        The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
+        SFC's list of SFs based on the LB rules that are provided through the scheduler's 'flow_schedule()'
+        function.
+        """
         log.info(
             "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}ms, "
             "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
@@ -82,15 +80,17 @@ class FlowSimulator:
             metrics.dropped_flow()
             self.env.exit()
 
-    # Schedule the flow
-    # This function is used in a mutual recursion alongside process_flow function to allow flows to arrive and begin
-    # processing without waiting for the flow to completely arrive.
-    # The mutual recursion is as follows:
-    # schedule_flow() -> process_flow() -> schedule_flow() and so on...
-    # Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
-    # instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
-    # attribute of the flow object.
     def schedule_flow(self, flow, sfc):
+        """
+        Schedule the flow
+        This function is used in a mutual recursion alongside process_flow() function to allow flows to arrive and begin
+        processing without waiting for the flow to completely arrive.
+        The mutual recursion is as follows:
+        schedule_flow() -> process_flow() -> schedule_flow() and so on...
+        Breaking condition: Flow reaches last position within the SFC, then process_flow() calls flow_departure()
+        instead of schedule_flow(). The position of the flow within the SFC is determined using current_position
+        attribute of the flow object.
+        """
         sf = sfc[flow.current_position]
         flow.current_sf = sf
         next_node = self.get_next_node(flow, sf)
@@ -105,8 +105,10 @@ class FlowSimulator:
             log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
             self.env.exit()
 
-    # Get next node using weighted probabilites from the scheduler
     def get_next_node(self, flow, sf):
+        """
+        Get next node using weighted probabilites from the scheduler
+        """
         schedule = self.params.schedule
         schedule_sf = schedule[flow.current_node_id][flow.sfc][sf]
         sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
@@ -114,10 +116,12 @@ class FlowSimulator:
         next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
         return next_node
 
-    # Calculates the path delays occurring when forwarding a node
-    # Path delays are calculated using the Shortest path
-    # The delay is simulated by timing out for the delay amount of duration
     def flow_forward(self, flow, next_node):
+        """
+        Calculates the path delays occurring when forwarding a node
+        Path delays are calculated using the Shortest path
+        The delay is simulated by timing out for the delay amount of duration
+        """
         path_delay = 0
         if flow.current_node_id != next_node:
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
@@ -134,8 +138,10 @@ class FlowSimulator:
             yield self.env.timeout(path_delay)
             flow.current_node_id = next_node
 
-    # Process the flow at the requested SF of the current node.
     def process_flow(self, flow, sfc):
+        """
+        Process the flow at the requested SF of the current node.
+        """
         # Generate a processing delay for the SF
         vnf_delay_mean = self.params.sf_list[flow.current_sf]["processing_delay_mean"]
         vnf_delay_stdev = self.params.sf_list[flow.current_sf]["processing_delay_stdev"]
@@ -185,8 +191,10 @@ class FlowSimulator:
             metrics.remove_active_flow(flow)
             self.env.exit()
 
-    # When the flow is in the last SF of the requested SFC. Depart it from the network.
     def flow_departure(self, node_id, flow):
+        """
+        Process the flow at the requested SF of the current node.
+        """
         # Update metrics for the processed flow
         metrics.processed_flow()
         metrics.remove_active_flow(flow)

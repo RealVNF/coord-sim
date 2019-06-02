@@ -1,11 +1,12 @@
 import coordsim.reader.networkreader as networkreader
 from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
-from coordsim.network import scheduler
+from coordsim.network.scheduler import Scheduler
 import time
 from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
+import random
 
 DURATION = int(100)
 
@@ -16,38 +17,62 @@ class Simulator(SimulatorInterface):
         self.run_times = int(1)
 
     def init(self, network_file, service_functions_file, seed):
+
+        # Initialize metrics, record start time
         metrics.reset()
-        start_time = time.time()
-        self.network = networkreader.read_network(network_file, node_cap=10, link_cap=10)
+        self.start_time = time.time()
+
+        # Parse network (GraphML): Get NetworkX object and ingress nodes list
+        self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
+        # Parse placement (YAML): Get placement, sfc, and sf lists.
         self.sf_placement, self.sfc_list, self.sf_list = networkreader.network_update(service_functions_file,
                                                                                       self.network)
+
+        # Generate SimPy simulation environment
         self.env = simpy.Environment()
-        self.schedule = scheduler.flow_schedule()
+
+        # Get the initial flow schedule
+        self.schedule = Scheduler().flow_schedule
+        # Get and plant random seed
         self.seed = seed
-        self.params = SimulatorParams(self.network, self.sf_placement, self.sfc_list, self.sf_list, self.seed,
-                                      self.schedule)
+        random.seed(self.seed)
+
+        # Instantiate the parameter object for the simulator.
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sf_placement, self.sfc_list, self.sf_list,
+                                      self.seed, self.schedule)
+
+        # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
-        self.simulator.start_simulator()
+
+        # Start the simulator
+        self.simulator.start()
+
+        # Run the environment for one step to get initial stats.
         self.env.step()
+
+        # Parse the network stats. Prepares network stats in SimulatorState format.
         self.parse_network()
         self.network_metrics()
+
+        # Increment the run times variable to indicate the simulator has run an additional time.
         self.run_times += 1
-        end_time = time.time()
-        metrics.running_time(start_time, end_time)
+
+        # Record end time and running time metrics
+        self.end_time = time.time()
+        metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
                                          self.network_stats)
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
-        start_time = time.time()
         self.simulator.params.sf_placement = actions.placement
         self.simulator.params.schedule = actions.scheduling
         self.env.run(until=(DURATION * self.run_times))
         self.parse_network()
         self.network_metrics()
         self.run_times += 1
-        end_time = time.time()
-        metrics.running_time(start_time, end_time)
+        self.end_time = time.time()
+        metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
                                          self.network_stats)
         return simulator_state
