@@ -50,7 +50,7 @@ def remove_active_flow(flow):
     "Nodes cannot have negative active flows"
     assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
     "Nodes cannot have negative active flows"
-    assert metrics['total_active_flow'] >= 0, ""
+    assert metrics['total_active_flows'] >= 0, ""
     "Nodes cannot have negative active flows"
 
 
