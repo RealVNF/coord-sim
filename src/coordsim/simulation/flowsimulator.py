@@ -162,7 +162,7 @@ class FlowSimulator:
             # metrics.remove_active_flow(flow)
             if (flow.current_position == len(sfc) - 1):
                 yield self.env.timeout(flow.duration)
-                self.flow_departure(self, flow.current_node_id, flow)
+                self.flow_departure(flow.current_node_id, flow)
             else:
                 # Increment the position of the flow within SFC
                 flow.current_position += 1
