@@ -65,13 +65,13 @@ class Simulator(SimulatorInterface):
             edge_delay = edge[2]['delay']
             edge_dr = edge[2]['cap']
             edge_used_dr = 0
-            self.network_dict['edges'] = {
+            self.network_dict['edges'].append({
                 'src': edge_src,
                 'dst': edge_dest,
                 'delay': edge_delay,
                 'data_rate': edge_dr,
                 'used_data_rate': edge_used_dr
-            }
+            })
 
     def network_metrics(self):
         stats = metrics.get_metrics()
