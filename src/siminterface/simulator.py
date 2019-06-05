@@ -119,13 +119,13 @@ class Simulator(SimulatorInterface):
             # simulator.
             # TODO: Implement used edge data rates in the simulator.
             edge_used_dr = 0
-            self.network_dict['edges'] = {
+            self.network_dict['edges'].append({
                 'src': edge_src,
                 'dst': edge_dest,
                 'delay': edge_delay,
                 'data_rate': edge_dr,
                 'used_data_rate': edge_used_dr
-            }
+            })
 
     def network_metrics(self):
         """
