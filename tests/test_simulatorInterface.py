@@ -222,7 +222,7 @@ class TestSimulatorInterface(TestCase):
         nw_nodes = simulator_state.network['nodes']
         self.assertIs(len(nw_nodes), 3)
 
-        nw_edges = simulator_state.network['edges']
+        nw_edges = simulator_state.network['edges'][0]
         self.assertIs(len(nw_edges), 5)
 
 # sfcs
