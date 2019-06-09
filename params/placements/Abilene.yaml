@@ -11,6 +11,7 @@ input:
   seed: 6044
   service: fw2chain.yaml
   sources: source1.yaml
+# TODO: Handle when there is no placement section.
 placement:
   vnfs:
   - name: a

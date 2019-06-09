@@ -51,16 +51,23 @@ class FlowSimulator:
 
             # TODO: Change the abs here as it is not a real mean anymore. Will affect result accuracy when
             # publishing.
-            flow_dr = np.absolute(np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev))
+            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
             # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
-            flow_size = np.absolute(np.random.pareto(self.params.flow_size_shape)) + 1
-            # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
-            if flow_dr == 0 or flow_size == 0:
+            flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+
+            # Ignore negative flow_dr or flow_size values
+            if(flow_dr <= 0.00 or flow_size <= 0.00):
                 continue
+
+            # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
+            # if flow_dr == 0 or flow_size == 0:
+            #     continue
             # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
+            # Get the flow's creation time (current environment time)
+            creation_time = self.env.now
             # Generate flow based on given params
-            flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, current_node_id=node_id)
+            flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
@@ -108,8 +115,6 @@ class FlowSimulator:
         next_node = self.get_next_node(flow, sf)
         yield self.env.process(self.forward_flow(flow, next_node))
         if sf in self.params.sf_placement[next_node]:
-            # Metrics: Add active flow to the SF the flow is arriving to.
-            metrics.add_active_flow(flow)
             log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
                      .format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
             yield self.env.process(self.process_flow(flow, sfc))
@@ -155,6 +160,8 @@ class FlowSimulator:
         Process the flow at the requested SF of the current node.
         """
         # Generate a processing delay for the SF
+        current_sf = flow.current_sf
+        current_node_id = flow.current_node_id
         vnf_delay_mean = self.params.sf_list[flow.current_sf]["processing_delay_mean"]
         vnf_delay_stdev = self.params.sf_list[flow.current_sf]["processing_delay_stdev"]
         processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
@@ -163,34 +170,38 @@ class FlowSimulator:
         metrics.add_processing_delay(processing_delay)
         flow.end2end_delay += processing_delay
         # Get node capacities
-        log.info(
-            "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
-            "Processing delay: {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now,
-                                          processing_delay))
         node_cap = self.params.network.nodes[flow.current_node_id]["cap"]
         node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
         assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
         if flow.dr <= node_remaining_cap:
+            log.info(
+                "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
+                "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
+                                              processing_delay))
+            # Metrics: Add active flow to the SF once the flow has begun processing.
+            metrics.add_active_flow(flow, current_node_id, current_sf)
+            # print(metrics.get_metrics()['current_traffic'])
             node_remaining_cap -= flow.dr
             yield self.env.timeout(processing_delay)
             log.info(
                 "Flow {} started departing sf '{}' at node {}."
                 " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
             # Check if flow is currently in last SF, if so, then depart flow.
-            # metrics.remove_active_flow(flow)
+
             if (flow.current_position == len(sfc) - 1):
                 yield self.env.timeout(flow.duration)
-                self.depart_flow(self, flow.current_node_id, flow)
+                self.depart_flow(flow.current_node_id, flow)
             else:
                 # Increment the position of the flow within SFC
                 flow.current_position += 1
                 self.env.process(self.pass_flow(flow, sfc))
                 yield self.env.timeout(flow.duration)
                 # before departing the SF.
+                # print(metrics.get_metrics()['current_active_flows'])
                 log.info("Flow {} FINISHED ARRIVING at SF {} at node {} for processing. Time: {}"
-                         .format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
+                         .format(flow.flow_id, current_sf, current_node_id, self.env.now))
                 # Remove the active flow from the SF after it departed the SF
-                metrics.remove_active_flow(flow)
+                metrics.remove_active_flow(flow, current_node_id, current_sf)
             node_remaining_cap += flow.dr
             # We assert that remaining capacity must at all times be less than the node capacity so that
             # nodes dont put back more capacity than the node's capacity.
@@ -200,7 +211,7 @@ class FlowSimulator:
                         .format(flow.flow_id, flow.current_node_id))
             # Update metrics for the dropped flow
             metrics.dropped_flow()
-            metrics.remove_active_flow(flow)
+            metrics.remove_active_flow(flow, current_node_id, current_sf)
             self.env.exit()
 
     def depart_flow(self, node_id, flow):
@@ -209,7 +220,7 @@ class FlowSimulator:
         """
         # Update metrics for the processed flow
         metrics.processed_flow()
-        metrics.remove_active_flow(flow)
         metrics.add_end2end_delay(flow.end2end_delay)
+        metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
         log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id,
                                                                                           self.env.now))

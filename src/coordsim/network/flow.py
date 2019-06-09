@@ -8,7 +8,7 @@ This identifies the flow and its parameters.
 
 class Flow:
 
-    def __init__(self, flow_id, sfc, dr, size,
+    def __init__(self, flow_id, sfc, dr, size, creation_time,
                  destination=None, current_sf=None, current_node_id=None, current_position=0, end2end_delay=0.0):
 
         # Flow ID: Unique ID string
@@ -29,3 +29,5 @@ class Flow:
         self.current_position = current_position
         # End to end delay of the flow, used for metrics
         self.end2end_delay = end2end_delay
+        # FLow creation time
+        self.creation_time = creation_time

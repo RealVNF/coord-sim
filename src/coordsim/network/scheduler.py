@@ -24,6 +24,7 @@ schedule = {
 
 class Scheduler:
     def __init__(self):
+        # TODO: Remove the initial schedule.
         # Define an initial static flow schedule for the test scenario
         self.flow_schedule = {
             'pop0': {

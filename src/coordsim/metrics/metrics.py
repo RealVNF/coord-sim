@@ -31,27 +31,30 @@ def reset():
     metrics['running_time'] = 0.0
 
     # Current number of active flows per each node
-    metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
     metrics['total_active_flows'] = 0
-    metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+    metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
 
 
-def add_active_flow(flow):
+def add_active_flow(flow, current_node_id, current_sf):
     metrics['total_active_flows'] += 1
-    metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] += 1
-    metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
+    metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
+    metrics['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
 
 
-def remove_active_flow(flow):
+def remove_active_flow(flow, current_node_id, current_sf):
     metrics['total_active_flows'] -= 1
-    metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] -= 1
-    metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] -= flow.dr
-    assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
-    "Nodes cannot have negative active flows"
-    assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, ""
-    "Nodes cannot have negative active flows"
-    assert metrics['total_active_flows'] >= 0, ""
-    "Nodes cannot have negative active flows"
+    metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] -= 1
+    metrics['current_traffic'][current_node_id][flow.sfc][current_sf] -= flow.dr
+
+    assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, "\
+    Nodes cannot have negative current active flows"
+
+    assert metrics['total_active_flows'] >= 0, "\
+    Nodes cannot have negative active flows"
+
+    assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0.00, "\
+    Nodes cannot have negative traffic"
 
 
 def generated_flow():
