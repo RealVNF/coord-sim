@@ -190,7 +190,7 @@ class FlowSimulator:
 
             if (flow.current_position == len(sfc) - 1):
                 yield self.env.timeout(flow.duration)
-                self.depart_flow(flow.current_node_id, flow)
+                self.depart_flow(flow)
             else:
                 # Increment the position of the flow within SFC
                 flow.current_position += 1
@@ -214,7 +214,7 @@ class FlowSimulator:
             metrics.remove_active_flow(flow, current_node_id, current_sf)
             self.env.exit()
 
-    def depart_flow(self, node_id, flow):
+    def depart_flow(self, flow):
         """
         Process the flow at the requested SF of the current node.
         """
@@ -222,5 +222,5 @@ class FlowSimulator:
         metrics.processed_flow()
         metrics.add_end2end_delay(flow.end2end_delay)
         metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
-        log.info("Flow {} was processed and departed the network from {}. Time {}".format(flow.flow_id, node_id,
-                                                                                          self.env.now))
+        log.info("Flow {} was processed and departed the network from {}. Time {}"
+                 .format(flow.flow_id, flow.current_node_id, self.env.now))
