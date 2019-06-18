@@ -180,7 +180,7 @@ class FlowSimulator:
                 "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
                 "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                               processing_delay))
-            
+
             # print(metrics.get_metrics()['current_traffic'])
             node_remaining_cap -= flow.dr
             yield self.env.timeout(processing_delay)
