@@ -5,6 +5,9 @@ Metrics collection module
 """
 import numpy as np
 from collections import defaultdict
+import logging
+logger = logging.getLogger(__name__)
+
 # Metrics global dict
 metrics = {}
 
@@ -48,14 +51,18 @@ def remove_active_flow(flow, current_node_id, current_sf):
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] -= 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] -= flow.dr
 
-    assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, "\
-    Nodes cannot have negative current active flows"
+    try:
+        assert metrics['current_active_flows'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0, "\
+        Nodes cannot have negative current active flows"
 
-    assert metrics['total_active_flows'] >= 0, "\
-    Nodes cannot have negative active flows"
+        assert metrics['total_active_flows'] >= 0, "\
+        Nodes cannot have negative active flows"
 
-    assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0.00, "\
-    Nodes cannot have negative traffic"
+        assert metrics['current_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] >= 0.00, "\
+        Nodes cannot have negative traffic"
+
+    except Exception as e:
+        logger.critical(e)
 
 
 def generated_flow():
