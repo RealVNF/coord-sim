@@ -120,6 +120,7 @@ class FlowSimulator:
             yield self.env.process(self.process_flow(flow, sfc))
         else:
             log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
+            metrics.dropped_flow()
             self.env.exit()
 
     def get_next_node(self, flow, sf):
