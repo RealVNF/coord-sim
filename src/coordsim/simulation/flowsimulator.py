@@ -174,7 +174,8 @@ class FlowSimulator:
         node_cap = self.params.network.nodes[flow.current_node_id]["cap"]
         node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
         assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
-        
+        # Metrics: Add active flow to the SF once the flow has begun processing.
+        metrics.add_active_flow(flow, current_node_id, current_sf)
         if flow.dr <= node_remaining_cap:
             log.info(
                 "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
