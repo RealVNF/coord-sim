@@ -35,8 +35,8 @@ class Simulator(SimulatorInterface):
         random.seed(self.seed)
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sf_placement, self.sfc_list, self.sf_list,
-                                      self.seed)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list,
+                                      self.seed, sf_placement=self.sf_placement)
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
@@ -94,7 +94,7 @@ class Simulator(SimulatorInterface):
         metrics.running_time(self.start_time, self.end_time)
 
         # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.p, self.traffic,
+        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
                                          self.network_stats)
         return simulator_state
 
