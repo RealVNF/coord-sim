@@ -128,9 +128,9 @@ class FlowSimulator:
         Get next node using weighted probabilites from the scheduler
         """
         schedule = self.params.schedule
-        schedule_node = schedule[flow.current_node_id]
         # Check if scheduling rule exists
-        if schedule_node is not None:
+        if flow.current_node_id in schedule:
+            schedule_node = schedule[flow.current_node_id]
             schedule_sf = schedule_node[flow.sfc][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
