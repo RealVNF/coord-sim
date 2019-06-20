@@ -31,16 +31,18 @@ def get_placement(placement_data, network):
     Get the placement from the yaml data.
     """
     vnf_placements = defaultdict(list)
-    # Getting the placements
-    for vnf in placement_data['placement']['vnfs']:
-        node = vnf['node']
-        vnf_name = vnf['name']
-        vnf_placements[node].append(vnf_name)
-    # Updating the placements in the NetworkX Graph
-    for node in network.nodes().items():
-        node[1]['available_sf'] = {}
-        for sf in vnf_placements[node[0]]:
-            node[1]['available_sf'][sf] = 1
+    # Check to see if VNF file has placement data
+    if 'placement' in placement_data:
+        # Getting the placements
+        for vnf in placement_data['placement']['vnfs']:
+            node = vnf['node']
+            vnf_name = vnf['name']
+            vnf_placements[node].append(vnf_name)
+        # Updating the placements in the NetworkX Graph
+        for node in network.nodes().items():
+            node[1]['available_sf'] = {}
+            for sf in vnf_placements[node[0]]:
+                node[1]['available_sf'][sf] = 1
     return vnf_placements
 
 

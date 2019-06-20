@@ -93,7 +93,7 @@ class FlowSimulator:
             # Iterate over the SFs and process the flow at each SF.
             yield self.env.process(self.pass_flow(flow, sfc))
         else:
-            log.warning("No Scheduling rule for requested SFC. Dropping flow {}".format(flow.flow_id))
+            log.warning("Requested SFC was not found. Dropping flow {}".format(flow.flow_id))
             # Update metrics for the dropped flow
             metrics.dropped_flow()
             self.env.exit()
@@ -128,11 +128,19 @@ class FlowSimulator:
         Get next node using weighted probabilites from the scheduler
         """
         schedule = self.params.schedule
-        schedule_sf = schedule[flow.current_node_id][flow.sfc][sf]
-        sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
-        sf_probability = [prob for name, prob in schedule_sf.items()]
-        next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
-        return next_node
+        schedule_node = schedule[flow.current_node_id]
+        # Check if scheduling rule exists
+        if schedule_node is not None:
+            schedule_sf = schedule_node[flow.sfc][sf]
+            sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
+            sf_probability = [prob for name, prob in schedule_sf.items()]
+            next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
+            return next_node
+        else:
+            # Scheduling rule does not exist: drop flow
+            log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
+            metrics.dropped_flow()
+            self.env.exit()
 
     def forward_flow(self, flow, next_node):
         """
@@ -182,14 +190,13 @@ class FlowSimulator:
                 "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                               processing_delay))
 
-            # print(metrics.get_metrics()['current_traffic'])
             node_remaining_cap -= flow.dr
             yield self.env.timeout(processing_delay)
             log.info(
                 "Flow {} started departing sf '{}' at node {}."
                 " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
-            # Check if flow is currently in last SF, if so, then depart flow.
 
+            # Check if flow is currently in last SF, if so, then depart flow.
             if (flow.current_position == len(sfc) - 1):
                 yield self.env.timeout(flow.duration)
                 self.depart_flow(flow)
