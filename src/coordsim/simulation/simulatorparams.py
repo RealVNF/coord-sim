@@ -9,8 +9,8 @@ other parameters for the simulator.
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sf_placement, sfc_list, sf_list, seed, schedule, inter_arr_mean=1.0,
-                 flow_dr_mean=1.0, flow_dr_stdev=1.0, flow_size_shape=1.0):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, seed, inter_arr_mean=1.0,
+                 flow_dr_mean=1.0, flow_dr_stdev=1.0, flow_size_shape=1.0, schedule={}, sf_placement={}):
 
         # NetworkX network object: DiGraph
         self.network = network

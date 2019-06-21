@@ -11,27 +11,15 @@ input:
   seed: 6044
   service: fw2chain.yaml
   sources: source1.yaml
-# TODO: Handle when there is no placement section.
-placement:
-  vnfs:
-  - name: a
-    node: pop0
-  - name: a
-    node: pop1
-  - name: a
-    node: pop2
-  - name: b
-    node: pop0
-  - name: b
-    node: pop1
-  - name: b
-    node: pop2
-  - name: c
-    node: pop0
-  - name: c
-    node: pop1
-  - name: c
-    node: pop2
+
+
+# OPTIONAL: Add VNF placements here using the following format
+
+# placement:
+#   vnfs:
+#   - name: a
+#     node: pop0
+
 sfc_list: 
   sfc_1:
     - a

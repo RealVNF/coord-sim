@@ -1,7 +1,6 @@
 import coordsim.reader.networkreader as networkreader
 from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
-from coordsim.network.scheduler import Scheduler
 import time
 from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
@@ -24,22 +23,20 @@ class Simulator(SimulatorInterface):
 
         # Parse network (GraphML): Get NetworkX object and ingress nodes list
         self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
-        # Parse placement (YAML): Getting current placement of VNFs, SFC list, and the SF list of each SFC.
+        # Parse placement (YAML): Getting current placement of VNFs(if exists), SFC list, and the SF list of each SFC.
         self.sf_placement, self.sfc_list, self.sf_list = networkreader.network_update(service_functions_file,
                                                                                       self.network)
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
-        # Get the initial flow schedule
-        self.schedule = Scheduler().flow_schedule
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sf_placement, self.sfc_list, self.sf_list,
-                                      self.seed, self.schedule)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list,
+                                      self.seed, sf_placement=self.sf_placement)
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
