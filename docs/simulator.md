@@ -9,17 +9,19 @@ Table of contents:
 - Application structure
 - Operation flow
 - Input parameters
+- Running the simulator
 
 ## Introduction
 This discrete-event flow-based simulator is a fast testbed for VNF coordination algorithms. It is designed to simulate small to medium sized networks with relatively close-to-reality accuracy. It can interact with coordination algorithms via an interface that can be adapted to by the developers of the algorithms. 
 
-The simulator is based on SimPy and is developed using Python 3.6. 
+The simulator is based on SimPy and is tested with Python 3.6. 
 
 Project owner: Stefan Schneider, MSc, University of Paderborn. 
 
 Developers: 
 - Haydar Qarawlus, MSc. CS student, University of Paderborn. 
 - Adnan Manzoor, MSc. CS student, University of Paderborn. 
+- Sven Uthe, MSc, University of Paderbron. 
 
 
 
@@ -50,20 +52,20 @@ The main modules of the application are the following:
 The simulator works as follows:
 The user (coordination algorithm or cli) provide two main inputs for the simulator: 
 - Network file: GraphML file using the Zoo format. This file contains the network nodes and the edges.
-- VNF file: YAML file using that includes the list of SFCs and the list of SFs under each SFC in an ordered manner. The file can also include a specifiecd placement that can be used as a default placement. The SFs must include a processing delay mean and standard deviation values so that processing delays can be calculated for each flow passing through that SF.
+- VNF file: YAML file that includes the list of SFCs and the list of SFs under each SFC in an ordered manner. The file can also include a specifiecd placement that can be used as a default placement. The SFs must include a processing delay mean and standard deviation values so that processing delays can be calculated for each flow passing through that SF.
 
 Once the parameters are provided, the flow of data through the simulator is as follows:
 
 1. The input network and VNF files are parsed producing a NetworkX object containing the list of nodes and edges, and the shortest paths of the network (using Floyd-Warshall). The parsing also produces dictionaries that contain the list of SFCs and the list of SFs and their respective values. Additionally, the list of ingress nodes (nodes at which flows arrive) are also calculated from the GraphML file. These parameters are then passed to a SimulatorParams object, which holds all the parameters of the simulator, the simulator is then started using the FlowSimulator object's `start()` function
-2. At each ingress node, the function `generate_flow()` is called as a SimPy process, this function creates `Flow` objects with exonentially distributed random inter arrival times. The flow's data rate and size are generated using normally distributed random variables. All of the inter arrival time, data rate, and flow size parameters are user configurable. The flow is also assigned a random SFC chosen from the list of available SFC given in the VNF file.
-3. Once the flow is generated, `init_flow()` is called as a SimPy process which initializes the handling of the flow within the simulator. The function then calls `pass_flow()`, which then handles the scheduling of the flow according to the defined load balancing rules (flow schedule). Once the next node has been determined, the forwarding of the flow is simulated by halting the flow for the path delay duration using the `forward_flow-()` function. Once that is done, the processing of the flow is simulated by calling `process_flow()` as a SimPy process. If the requested SF was not found at the next node, the flow is then dropped. 
+2. At each ingress node, the function `generate_flow()` is called as a SimPy process, this function creates `Flow` objects with exponentially distributed random inter arrival times. The flow's data rate and size are generated using normally distributed random variables. All of the inter arrival time, data rate, and flow size parameters are user configurable. The flow is also assigned a random SFC chosen from the list of available SFC given in the VNF file.
+3. Once the flow is generated, `init_flow()` is called as a SimPy process which initializes the handling of the flow within the simulator. The function then calls `pass_flow()`, which then handles the scheduling of the flow according to the defined load balancing rules (flow schedule). Once the next node has been determined, the forwarding of the flow is simulated by halting the flow for the path delay duration using the `forward_flow()` function. Once that is done, the processing of the flow is simulated by calling `process_flow()` as a SimPy process. If the requested SF was not found at the next node, the flow is then dropped. 
 4. In `process_flow()`, the processing delay for that particular SF is generated using given mean and standard deviation values using a normal distribution. The simulator checks the node's remaining processing capacity to check if the node can handle the data rate requested by the SF, if there is not enough capacity, then the flow is dropped. For the duration that the flow is being processed by the SF, the flow's data rate is deducted from the node's capacity, and returned after the flow finished processing completely. 
 5. Once the flow was processed completely at each SF, `depart_flow()` is called to register the flow's departure from the network. If the flow still has other SFs to be processed at in the network, `process_flow()` calls `pass_flow()` again in a mutually recursive manner. This allows the flow to stay in the SF for processing, while the parts of the flow that were processed already to be sent to the next SF.
 
 
 ## Input Parameters
 The available input parameters that are configurable by the user are:
-- d: The duration of the simulation.
+- d: The duration of the simulation (simulates milliseconds).
 - s: The seed to use for the random number generator. 
 - n: The GraphML network file that specifies the nodes and edges of the network. 
 - sf: VNF file which contains the SFCs and their respective SFs and their properties. 
@@ -71,3 +73,13 @@ The available input parameters that are configurable by the user are:
 - fdm: The mean value for the generation of data rate values for each flow.
 - fds: The standard deviation value for the generation of data rate values for each flow.
 - fss: The shape of the Pareto distribution for the generation of the flow size values.
+
+## Running the simulator
+
+The simulator application is called `coord-sim`
+To run the simulator, the following call may be executed:
+
+`coord-sim -d 10 -n params/networks/Abilene.graphml -sf params/placements/Abilene.yaml`
+
+This will run the coord-sim simulator to simulate the given network and vnf parameter files for 10ms (environment time).
+
