@@ -237,9 +237,9 @@ def parse_args():
     # TODO: Research a valid defaults for these arguments. Also update defaults in SimulatorParams.
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
     parser.add_argument('-d', '--duration', required=True, default=None, dest="duration", type=int)
-    parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed", type=int)
+    parser.add_argument('-sf', '--sf', required=True, dest="sf")
     parser.add_argument('-n', '--network', required=True, dest='network')
-    parser.add_argument('-sf', '--sf', required=True, default=None, dest="sf")
+    parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed", type=int)
     parser.add_argument('-iam', '--inter_arr_mean', required=False, default=1.0, dest="inter_arr_mean", type=float)
     parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=5.0, dest="flow_dr_mean", type=float)
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev", type=float)
