@@ -1,4 +1,5 @@
 import logging
+import random
 import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.metrics import metrics
@@ -20,7 +21,7 @@ class FlowSimulator:
     def __init__(self, env, params):
         self.env = env
         self.params = params
-        self.flow_count = 0
+        self.total_flow_count = 0
 
     def start(self):
         """
@@ -39,38 +40,34 @@ class FlowSimulator:
         """
         Generate flows at the ingress nodes.
         """
-        # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
         while True:
-            self.flow_count += 1
+            self.total_flow_count += 1
 
-            # Exponentially distributed random inter arrival rate using a user set (or default) mean
-            # inter_arr_time = random.expovariate(self.params.inter_arr_mean)
-            # use deterministic, fixed inter-arrival time for now
-            inter_arr_time = self.params.inter_arr_mean
-
-            # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
-            # Abs here is necessary as normal dist. gives negative numbers.
-
-            # TODO: Change the abs here as it is not a real mean anymore. Will affect result accuracy when publishing.
+            # set normally distributed flow data rate
             flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
-            # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
-            # flow_size = np.random.pareto(self.params.flow_size_shape) + 1
-            # simplification: use fixed flow size for now
-            flow_size = self.params.flow_size_shape
 
-            # Ignore negative flow_dr or flow_size values
+            # if "deterministic = True" use deterministic flow size and inter-arrival times (eg, for debugging)
+            if self.params.deterministic:
+                # Exponentially distributed random inter arrival rate using a user set (or default) mean
+                #
+                # use deterministic, fixed inter-arrival time for now
+                inter_arr_time = self.params.inter_arr_mean
+                flow_size = self.params.flow_size_shape
+            # else use randomly distributed values (default)
+            else:
+                inter_arr_time = random.expovariate(self.params.inter_arr_mean)
+                # heavy-tail flow size
+                flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+            # Skip flows with negative flow_dr or flow_size values
             if flow_dr <= 0.00 or flow_size <= 0.00:
                 continue
 
-            # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.
-            # if flow_dr == 0 or flow_size == 0:
-            #     continue
             # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow = Flow(str(self.flow_count), flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
+            flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node

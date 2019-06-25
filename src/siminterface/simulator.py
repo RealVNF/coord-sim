@@ -6,6 +6,7 @@ from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
 import random
+import numpy
 
 DURATION = int(100)
 
@@ -15,7 +16,7 @@ class Simulator(SimulatorInterface):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
 
-    def init(self, network_file, service_functions_file, seed):
+    def init(self, network_file, service_functions_file, config_file):
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -30,13 +31,14 @@ class Simulator(SimulatorInterface):
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
-        # Get and plant random seed
-        self.seed = seed
-        random.seed(self.seed)
-
         # Instantiate the parameter object for the simulator.
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list,
-                                      self.seed, sf_placement=self.sf_placement)
+                                      config_file, sf_placement=self.sf_placement)
+
+        # Get and plant random seed
+        self.seed = self.params.seed
+        random.seed(self.seed)
+        numpy.random.seed(self.seed)
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
