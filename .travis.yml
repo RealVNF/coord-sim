@@ -8,4 +8,4 @@ install:
 script:
     - flake8 src
     - nose2
-    - coord-sim -d 20 -n params/networks/Abilene.graphml -sf params/placements/Abilene.yaml
+    - coord-sim -d 20 -n params/networks/triangle.graphml -sf params/service/abc.yaml
