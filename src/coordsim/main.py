@@ -60,7 +60,7 @@ def main():
 def parse_args():
     # TODO: Research a valid defaults for these arguments. Also update defaults in SimulatorParams.
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
-    parser.add_argument('-d', '--duration', required=True, default=None, dest="duration", type=int,
+    parser.add_argument('-d', '--duration', required=True, dest="duration", type=int,
                         help="The duration of the simulation (simulates milliseconds).")
     parser.add_argument('-sf', '--sf', required=True, dest="sf",
                         help="VNF file which contains the SFCs and their respective SFs and their properties.")
