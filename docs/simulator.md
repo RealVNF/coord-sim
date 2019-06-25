@@ -79,7 +79,9 @@ The available input parameters that are configurable by the user are:
 The simulator application is called `coord-sim`
 To run the simulator, the following call may be executed:
 
-`coord-sim -d 10 -n params/networks/Abilene.graphml -sf params/placements/Abilene.yaml`
+```bash
+coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml
+```
 
 This will run the coord-sim simulator to simulate the given network and vnf parameter files for 10ms (environment time).
 
