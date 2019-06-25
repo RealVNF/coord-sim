@@ -139,7 +139,7 @@ class FlowSimulator:
             schedule_sf = schedule_node[flow.sfc][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
-            next_node = np.random.choice(sf_nodes, 1, sf_probability)[0]
+            next_node = np.random.choice(sf_nodes, p=sf_probability)
             return next_node
         else:
             # Scheduling rule does not exist: drop flow
