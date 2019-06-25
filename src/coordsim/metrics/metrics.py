@@ -14,6 +14,7 @@ def reset():
     metrics['generated_flows'] = 0
     metrics['processed_flows'] = 0
     metrics['dropped_flows'] = 0
+    metrics['total_active_flows'] = 0
 
     metrics['total_processing_delay'] = 0.0
     metrics['num_processing_delays'] = 0
@@ -32,18 +33,16 @@ def reset():
 
     # Current number of active flows per each node
     metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
-    metrics['total_active_flows'] = 0
     metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
 
 
 def add_active_flow(flow, current_node_id, current_sf):
-    metrics['total_active_flows'] += 1
+    
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
 
 
 def remove_active_flow(flow, current_node_id, current_sf):
-    metrics['total_active_flows'] -= 1
 
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] -= 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] -= flow.dr
@@ -60,14 +59,19 @@ def remove_active_flow(flow, current_node_id, current_sf):
 
 def generated_flow():
     metrics['generated_flows'] += 1
+    metrics['total_active_flows'] += 1
 
 
 def processed_flow():
     metrics['processed_flows'] += 1
+    metrics['total_active_flows'] -= 1
+    assert metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
 
 def dropped_flow():
     metrics['dropped_flows'] += 1
+    metrics['total_active_flows'] -= 1
+    assert metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
 
 def add_processing_delay(delay):
