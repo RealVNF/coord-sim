@@ -1,8 +1,5 @@
 import argparse
 import simpy
-import random
-import numpy
-import yaml
 from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.reader import reader
 from coordsim.metrics import metrics

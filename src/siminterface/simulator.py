@@ -31,8 +31,7 @@ class Simulator(SimulatorInterface):
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list,
-                                      config_file, sf_placement=self.sf_placement)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, config_file)
 
         # Get and plant random seed
         self.seed = self.params.seed

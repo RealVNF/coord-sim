@@ -67,7 +67,8 @@ class FlowSimulator:
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
+            flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
+                        current_node_id=node_id)
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
