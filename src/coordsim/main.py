@@ -1,6 +1,8 @@
 import argparse
 import simpy
 import random
+import numpy
+import yaml
 from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.reader import networkreader
 from coordsim.metrics import metrics
@@ -14,9 +16,10 @@ log = logging.getLogger(__name__)
 
 
 def main():
-
-    # Parse arge, initialize metrics, record start time and configure logging level
+    # Parse arge and load config from specified file
     args = parse_args()
+
+    # reset metrics and start time and logging
     metrics.reset()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
@@ -24,7 +27,8 @@ def main():
     # Create a SimPy environment
     env = simpy.Environment()
     # Seed the random generator
-    random.seed(args.seed)
+    # random.seed(config['seed'])
+    # numpy.random.seed(config['seed'])
 
     # Parse network and get NetworkX object and ingress network list
     network, ing_nodes = networkreader.read_network(args.network, node_cap=10, link_cap=10)
@@ -33,13 +37,13 @@ def main():
     sf_placement, sfc_list, sf_list = networkreader.network_update(args.sf, network)
 
     # use dummy placement and schedule for running simulator without algorithm
+    # TODO: make configurable via CLI
     sf_placement = dummy_data.triangle_placement
     schedule = dummy_data.triangle_schedule
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, args.seed, sf_placement=sf_placement,
-                             schedule=schedule, inter_arr_mean=args.inter_arr_mean, flow_dr_mean=args.flow_dr_mean,
-                             flow_dr_stdev=args.flow_dr_stdev, flow_size_shape=args.flow_size_shape)
+    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, args.config, sf_placement=sf_placement,
+                             schedule=schedule)
     log.info(params)
 
     # Create a FlowSimulator object, pass the SimPy environment and params objects
@@ -56,9 +60,7 @@ def main():
     metrics.running_time(start_time, end_time)
 
 
-# parse CLI args
 def parse_args():
-    # TODO: Research a valid defaults for these arguments. Also update defaults in SimulatorParams.
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
     parser.add_argument('-d', '--duration', required=True, dest="duration", type=int,
                         help="The duration of the simulation (simulates milliseconds).")
@@ -66,6 +68,7 @@ def parse_args():
                         help="VNF file which contains the SFCs and their respective SFs and their properties.")
     parser.add_argument('-n', '--network', required=True, dest='network',
                         help="The GraphML network file that specifies the nodes and edges of the network.")
+    parser.add_argument('-c', '--config', required=True, dest='config', help="Path to the simulator config file.")
     parser.add_argument('-s', '--seed', required=False, default=random.randint(0, 9999), dest="seed", type=int,
                         help="The seed to use for the random number generator.")
     parser.add_argument('-iam', '--inter_arr_mean', required=False, default=10.0, dest="inter_arr_mean", type=float,
