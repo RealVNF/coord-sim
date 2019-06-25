@@ -190,7 +190,7 @@ class SimulatorInterface:
     Defines required method on the simulator object.
     """
 
-    def init(self, network_file: str, service_functions_file: str, seed: int) -> SimulatorState:
+    def init(self, network_file: str, service_functions_file: str, config_file: str, seed: int) -> SimulatorState:
         """Creates a new simulation environment.
 
         Parameters
@@ -199,11 +199,11 @@ class SimulatorInterface:
             (Absolute) path to the network description.
         service_functions_file : str
             (Absolute) path to the service function description file.
+        config_file : str
+            Config file with parameter settings for the simulator (eg, seed,
+            flow inter-arrival times, ...)
         seed : int
-            The seed value enables reproducible gym environments respectively
-            reproducible simulator environments. This value should initialize
-            the random number generator used by the simulator when executing
-            randomized functions.
+            Seed for reproducible randomness
 
         Returns
         -------

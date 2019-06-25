@@ -1,4 +1,4 @@
-import coordsim.reader.networkreader as networkreader
+import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
 import time
@@ -6,6 +6,7 @@ from coordsim.simulation.simulatorparams import SimulatorParams
 from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
 import random
+import numpy
 
 DURATION = int(100)
 
@@ -15,28 +16,28 @@ class Simulator(SimulatorInterface):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
 
-    def init(self, network_file, service_functions_file, seed):
+    def init(self, network_file, service_functions_file, config_file, seed):
 
         # Initialize metrics, record start time
         metrics.reset()
         self.start_time = time.time()
 
-        # Parse network (GraphML): Get NetworkX object and ingress nodes list
-        self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
-        # Parse placement (YAML): Getting current placement of VNFs(if exists), SFC list, and the SF list of each SFC.
-        self.sf_placement, self.sfc_list, self.sf_list = networkreader.network_update(service_functions_file,
-                                                                                      self.network)
+        # Parse network and SFC + SF file
+        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
+        self.sfc_list = reader.get_sfc(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file)
+        self.config = reader.get_config(config_file)
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
+        # Instantiate the parameter object for the simulator.
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
+
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
-
-        # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list,
-                                      self.seed, sf_placement=self.sf_placement)
+        numpy.random.seed(self.seed)
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
