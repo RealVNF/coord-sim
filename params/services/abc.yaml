@@ -1,0 +1,21 @@
+# simple chain of 3 SFs a->b->c with deterministic processing delays
+
+# list of SFCs and involved SFs (order of SFs matters)
+sfc_list:
+  # FIXME: breaks if there's no underscore, eg, for "sfc1"
+  sfc_1:
+    - a
+    - b
+    - c
+
+# SF attributes (for now, processing delay)
+sf_list:
+  a:
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 0.0
+  b:
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 0.0
+  c:
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 0.0
