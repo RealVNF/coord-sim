@@ -33,8 +33,8 @@ def main():
     sf_placement, sfc_list, sf_list = networkreader.network_update(args.sf, network)
 
     # use dummy placement and schedule for running simulator without algorithm
-    sf_placement = dummy_data.placement
-    schedule = dummy_data.schedule
+    sf_placement = dummy_data.triangle_placement
+    schedule = dummy_data.triangle_schedule
 
     # Create the simulator parameters object with the provided args
     params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, args.seed, sf_placement=sf_placement,

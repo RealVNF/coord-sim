@@ -7,6 +7,11 @@ placement = {
     'pop2': ['a', 'b']
 }
 
+triangle_placement = {
+    'pop0': ['a'],
+    'pop1': ['b'],
+    'pop2': ['c']
+}
 
 # schedules
 schedule = {
@@ -169,4 +174,27 @@ schedule = {
             }
         },
     },
+}
+
+# simple schedule sending flows along the triangle in deterministic way
+triangle_schedule = {
+    'pop0': {
+        'sfc_1': {
+            'a': {
+                'pop0': 1,
+                'pop1': 0,
+                'pop2': 0
+            },
+            'b': {
+                'pop0': 0,
+                'pop1': 1,
+                'pop2': 0
+            },
+            'c': {
+                'pop0': 0,
+                'pop1': 0,
+                'pop2': 1
+            }
+        }
+    }
 }

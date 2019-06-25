@@ -1,8 +1,7 @@
 # simple chain of 3 SFs a->b->c with deterministic processing delays
 
-# list of SFCs and involved SFs (order of SFs matters)
+# list of SFCs and involved SFs (order of SFs matters). names need to match dummy schedule and placement (dummy_data.py)
 sfc_list:
-  # FIXME: breaks if there's no underscore, eg, for "sfc1"
   sfc_1:
     - a
     - b
