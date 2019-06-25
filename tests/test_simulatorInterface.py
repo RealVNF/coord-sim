@@ -6,8 +6,8 @@ from unittest import TestCase
 
 from siminterface.interface.siminterface import SimulatorInterface, SimulatorAction, SimulatorState
 
-NETWORK_FILE = "params/networks/Abilene.graphml"
-SERVICE_FUNCTIONS_FILE = "params/placements/Abilene.yaml"
+NETWORK_FILE = "params/networks/triangle.graphml"
+SERVICE_FUNCTIONS_FILE = "params/services/3sfcs.yaml"
 
 SIMULATOR_MODULE_NAME = "siminterface.simulator"
 SIMULATOR_CLS_NAME = "Simulator"
@@ -28,14 +28,13 @@ class TestSimulatorInterface(TestCase):
         self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, 0)
 
     def test_apply(self):
-
+        # test if placement and schedule can be applied
         placement = {
             'pop0': ['a', 'b', 'c'],
             'pop1': ['a', 'b', 'c'],
             'pop2': ['a', 'b', 'c'],
 
         }
-
         flow_schedule = {
             'pop0': {
                 'sfc_1': {
@@ -198,60 +197,39 @@ class TestSimulatorInterface(TestCase):
                 },
             }
    
-        action = SimulatorAction(placement=placement,
-                                 scheduling=flow_schedule)
+        action = SimulatorAction(placement=placement, scheduling=flow_schedule)
         simulator_state = self.simulator.apply(action)
         self.assertIsInstance(simulator_state, SimulatorState)
 
-# network
-        """
-        simulator_state.network =
-            'nodes': [{
-                'id': str,
-                'resource': [float],
-                'used_resources': [float]
-            }],
-            'edges': [{
-                'src': str,
-                'dst': str,
-                'delay': int( in ns or ms?),
-                'data_rate': int(unit?),
-                'used_data_rate': int(unit?),
-            }],
-        """
+        # test if network is read correctly
         nw_nodes = simulator_state.network['nodes']
         self.assertIs(len(nw_nodes), 3)
-
+        # 3 bidirectional edges = 6 directional edges
+        edges = simulator_state.network['edges']
+        self.assertIs(len(edges), 6)
+        # with 5 edge attributes:
+        # 'edges': [{
+        #     'src': str,
+        #     'dst': str,
+        #     'delay': int (ms),
+        #     'data_rate': int (Mbit/s),
+        #     'used_data_rate': int (Mbit/s),
+        # }],
         nw_edges = simulator_state.network['edges'][0]
         self.assertIs(len(nw_edges), 5)
 
-# sfcs
-        """
-        sfcs : list
-            [{
-                'id': str,
-                'functions': list
-                    ['id': str]
-            }],
-        """
+        # test if sfcs are read correctly
         sfcs = simulator_state.sfcs
         self.assertIs(len(sfcs), 3)
 
-# service_functions
-        """
-        service_functions : list
-            [{
-                'id': str,
-                'processing_delay': int
-            }],
-        """
+        # SFs
         service_functions = simulator_state.service_functions
         self.assertIs(len(service_functions), 3)
 
-# traffic
+        # traffic
         # TODO: test traffic
 
-# network_stats
+        # network_stats
         """
         network_stats : dict
             {

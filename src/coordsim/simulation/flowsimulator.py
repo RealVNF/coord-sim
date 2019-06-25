@@ -1,6 +1,4 @@
-import random
 import logging
-import string
 import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.metrics import metrics
