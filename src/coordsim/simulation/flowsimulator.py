@@ -22,6 +22,7 @@ class FlowSimulator:
     def __init__(self, env, params):
         self.env = env
         self.params = params
+        self.flow_count = 0
 
     def start(self):
         """
@@ -42,8 +43,7 @@ class FlowSimulator:
         """
         # log.info flow arrivals, departures and waiting for flow to end (flow_duration) at a pre-specified rate
         while True:
-            flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
-            flow_id_str = "{}-{}".format(node_id, flow_id)
+            self.flow_count += 1
 
             # Exponentially distributed random inter arrival rate using a user set (or default) mean
             # inter_arr_time = random.expovariate(self.params.inter_arr_mean)
@@ -72,7 +72,7 @@ class FlowSimulator:
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow = Flow(flow_id_str, flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
+            flow = Flow(str(self.flow_count), flow_sfc, flow_dr, flow_size, creation_time, current_node_id=node_id)
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
