@@ -4,7 +4,7 @@ import random
 import numpy
 import yaml
 from coordsim.simulation.flowsimulator import FlowSimulator
-from coordsim.reader import networkreader
+from coordsim.reader import reader
 from coordsim.metrics import metrics
 from coordsim.simulation.simulatorparams import SimulatorParams
 import coordsim.network.dummy_data as dummy_data
@@ -28,11 +28,11 @@ def main():
     # numpy.random.seed(config['seed'])
 
     # Parse network and get NetworkX object and ingress network list
-    network, ing_nodes = networkreader.read_network(args.network, node_cap=10, link_cap=10)
+    network, ing_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
 
     # Getting current SFC list, and the SF list of each SFC.
-    sfc_list = networkreader.get_sfc(args.sf)
-    sf_list = networkreader.get_sf(args.sf)
+    sfc_list = reader.get_sfc(args.sf)
+    sf_list = reader.get_sf(args.sf)
 
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI

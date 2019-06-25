@@ -1,4 +1,4 @@
-import coordsim.reader.networkreader as networkreader
+import coordsim.reader.reader as networkreader
 from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
 import time
