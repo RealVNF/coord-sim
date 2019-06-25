@@ -80,7 +80,7 @@ The simulator application is called `coord-sim`
 To run the simulator, the following call may be executed:
 
 ```bash
-coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml
+coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -c params/config/sim_config.yaml
 ```
 
 This will run the coord-sim simulator to simulate the given network and vnf parameter files for 10ms (environment time).

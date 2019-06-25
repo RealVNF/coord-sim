@@ -29,9 +29,7 @@ Type `coord-sim -h` for help using the simulator. For now, this should print
 
 ``` 
 $ coord-sim -h
-usage: coord-sim [-h] -d DURATION -sf SF -n NETWORK [-s SEED]
-                 [-iam INTER_ARR_MEAN] [-fdm FLOW_DR_MEAN]
-                 [-fds FLOW_DR_STDEV] [-fss FLOW_SIZE_SHAPE]
+usage: coord-sim [-h] -d DURATION -sf SF -n NETWORK -c CONFIG
 
 Coordination-Simulation tool
 
@@ -45,19 +43,8 @@ optional arguments:
   -n NETWORK, --network NETWORK
                         The GraphML network file that specifies the nodes and
                         edges of the network.
-  -s SEED, --seed SEED  The seed to use for the random number generator.
-  -iam INTER_ARR_MEAN, --inter_arr_mean INTER_ARR_MEAN
-                        Inter arrival mean of the flows' arrival at ingress
-                        nodes.
-  -fdm FLOW_DR_MEAN, --flow_dr_mean FLOW_DR_MEAN
-                        The mean value for the generation of data rate values
-                        for each flow.
-  -fds FLOW_DR_STDEV, --flow_dr_stdev FLOW_DR_STDEV
-                        The standard deviation value for the generation of
-                        data rate values for each flow.
-  -fss FLOW_SIZE_SHAPE, --flow_size_shape FLOW_SIZE_SHAPE
-                        The shape of the Pareto distribution for the
-                        generation of the flow size values.
+  -c CONFIG, --config CONFIG
+                        Path to the simulator config file
 ```
 
 You can use the following command as an example (run from the root project folder)

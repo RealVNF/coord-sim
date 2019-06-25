@@ -16,10 +16,7 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    # Parse arge and load config from specified file
     args = parse_args()
-
-    # reset metrics and start time and logging
     metrics.reset()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
@@ -60,6 +57,7 @@ def main():
     metrics.running_time(start_time, end_time)
 
 
+# parse CLI args (when using simulator as stand-alone, not triggered through the interface)
 def parse_args():
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
     parser.add_argument('-d', '--duration', required=True, dest="duration", type=int,
@@ -69,16 +67,6 @@ def parse_args():
     parser.add_argument('-n', '--network', required=True, dest='network',
                         help="The GraphML network file that specifies the nodes and edges of the network.")
     parser.add_argument('-c', '--config', required=True, dest='config', help="Path to the simulator config file.")
-    parser.add_argument('-s', '--seed', required=False, default=random.randint(0, 9999), dest="seed", type=int,
-                        help="The seed to use for the random number generator.")
-    parser.add_argument('-iam', '--inter_arr_mean', required=False, default=10.0, dest="inter_arr_mean", type=float,
-                        help="Inter arrival mean of the flows' arrival at ingress nodes.")
-    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=1.0, dest="flow_dr_mean", type=float,
-                        help="The mean value for the generation of data rate values for each flow.")
-    parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=0.0, dest="flow_dr_stdev", type=float,
-                        help="The standard deviation value for the generation of data rate values for each flow.")
-    parser.add_argument('-fss', '--flow_size_shape', required=False, default=0.001, dest="flow_size_shape", type=float,
-                        help="The shape of the Pareto distribution for the generation of the flow size values.")
     return parser.parse_args()
 
 
