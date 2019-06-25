@@ -22,11 +22,10 @@ class Simulator(SimulatorInterface):
         metrics.reset()
         self.start_time = time.time()
 
-        # Parse network (GraphML): Get NetworkX object and ingress nodes list
+        # Parse network and SFC + SF file
         self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
-        # Parse placement (YAML): Getting current placement of VNFs(if exists), SFC list, and the SF list of each SFC.
-        self.sf_placement, self.sfc_list, self.sf_list = networkreader.network_update(service_functions_file,
-                                                                                      self.network)
+        self.sfc_list = networkreader.get_sfc(service_functions_file)
+        self.sf_list = networkreader.get_sf(service_functions_file)
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()

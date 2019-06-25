@@ -17,49 +17,26 @@ Network parsing module.
 """
 
 
-def network_update(yaml_file, network):
-    """
-    Open yaml file and pass data to other functions for procesing.
-    """
-    with open(yaml_file) as yaml_stream:
-        yaml_data = yaml.load(yaml_stream, Loader=yaml.FullLoader)
-    return get_placement(yaml_data, network), get_sfc(yaml_data), get_sf(yaml_data)
-
-
-def get_placement(placement_data, network):
-    """
-    Get the placement from the yaml data.
-    """
-    vnf_placements = defaultdict(list)
-    # Check to see if VNF file has placement data
-    if 'placement' in placement_data:
-        # Getting the placements
-        for vnf in placement_data['placement']['vnfs']:
-            node = vnf['node']
-            vnf_name = vnf['name']
-            vnf_placements[node].append(vnf_name)
-        # Updating the placements in the NetworkX Graph
-        for node in network.nodes().items():
-            node[1]['available_sf'] = {}
-            for sf in vnf_placements[node[0]]:
-                node[1]['available_sf'][sf] = 1
-    return vnf_placements
-
-
-def get_sfc(sfc_data):
+def get_sfc(sfc_file):
     """
     Get the list of SFCs from the yaml data.
     """
+    with open(sfc_file) as yaml_stream:
+        sfc_data = yaml.load(yaml_stream, Loader=yaml.FullLoader)
+
     sfc_list = defaultdict(None)
     for sfc_name, sfc_sf in sfc_data['sfc_list'].items():
         sfc_list[sfc_name] = sfc_sf
     return sfc_list
 
 
-def get_sf(sf_data):
+def get_sf(sf_file):
     """
     Get the list of SFs and their properties from the yaml data.
     """
+    with open(sf_file) as yaml_stream:
+        sf_data = yaml.load(yaml_stream, Loader=yaml.FullLoader)
+
     # Configureable default mean and stdev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0

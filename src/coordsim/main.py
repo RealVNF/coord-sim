@@ -31,7 +31,8 @@ def main():
     network, ing_nodes = networkreader.read_network(args.network, node_cap=10, link_cap=10)
 
     # Getting current SFC list, and the SF list of each SFC.
-    sf_placement, sfc_list, sf_list = networkreader.network_update(args.sf, network)
+    sfc_list = networkreader.get_sfc(args.sf)
+    sf_list = networkreader.get_sf(args.sf)
 
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI
