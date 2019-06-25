@@ -11,8 +11,9 @@ import yaml
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config_file, schedule={}, sf_placement={}):
-
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config_file, seed, schedule={}, sf_placement={}):
+        # Seed for the random generator: int
+        self.seed = seed
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -32,8 +33,6 @@ class SimulatorParams:
         with open(config_file) as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
-        # Seed for the random generator: int
-        self.seed = config['seed']
         # Flow interarrival exponential distribution mean: float
         self.inter_arr_mean = config['inter_arrival_mean']
         # Flow data rate normal distribution mean: float

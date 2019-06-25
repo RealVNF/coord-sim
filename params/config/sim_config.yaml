@@ -2,7 +2,6 @@
 # configuration parameters are loaded and used both when using the simulator via the CLI and via the interface
 # all parameters are required, defaults are in comments
 
-seed: 1234
 inter_arrival_mean: 10.0           # default: 10.0
 flow_dr_mean: 1.0                  # default: 1.0
 flow_dr_stdev: 0.0                 # default: 0.0

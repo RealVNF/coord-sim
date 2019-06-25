@@ -45,6 +45,7 @@ optional arguments:
                         edges of the network.
   -c CONFIG, --config CONFIG
                         Path to the simulator config file
+  -s SEED, --seed SEED  Random seed
 ```
 
 You can use the following command as an example (run from the root project folder)

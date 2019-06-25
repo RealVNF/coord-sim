@@ -190,7 +190,7 @@ class SimulatorInterface:
     Defines required method on the simulator object.
     """
 
-    def init(self, network_file: str, service_functions_file: str, config_file: str) -> SimulatorState:
+    def init(self, network_file: str, service_functions_file: str, config_file: str, seed: int) -> SimulatorState:
         """Creates a new simulation environment.
 
         Parameters
@@ -202,6 +202,8 @@ class SimulatorInterface:
         config_file : str
             Config file with parameter settings for the simulator (eg, seed,
             flow inter-arrival times, ...)
+        seed : int
+            Seed for reproducible randomness
 
         Returns
         -------

@@ -16,7 +16,7 @@ class Simulator(SimulatorInterface):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
 
-    def init(self, network_file, service_functions_file, config_file):
+    def init(self, network_file, service_functions_file, config_file, seed):
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -31,10 +31,10 @@ class Simulator(SimulatorInterface):
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, config_file)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, config_file, seed)
 
         # Get and plant random seed
-        self.seed = self.params.seed
+        self.seed = seed
         random.seed(self.seed)
         numpy.random.seed(self.seed)
 

@@ -26,7 +26,7 @@ class TestSimulatorInterface(TestCase):
         """
         # TODO: replace SimulatorInterface with implementation
         self.simulator = SIMULATOR_CLS()
-        self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE)
+        self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, 1234)
 
     def test_apply(self):
         # test if placement and schedule can be applied
