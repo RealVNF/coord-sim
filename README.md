@@ -28,31 +28,40 @@ python setup.py install
 Type `coord-sim -h` for help using the simulator. For now, this should print 
 
 ``` 
-usage: coord-sim [-h] -d DURATION [-s SEED] -n NETWORK -sf SF
-                 [-iam INTER_ARR_MEAN] [-fdm FLOW_DR_MEAN]
-                 [-fds FLOW_DR_STDEV] [-fss FLOW_SIZE_SHAPE]
+$ coord-sim -h
+usage: coord-sim [-h] -d DURATION -sf SF -n NETWORK -c CONFIG
 
 Coordination-Simulation tool
 
 optional arguments:
   -h, --help            show this help message and exit
   -d DURATION, --duration DURATION
-  -s SEED, --seed SEED
+                        The duration of the simulation (simulates
+                        milliseconds).
+  -sf SF, --sf SF       VNF file which contains the SFCs and their respective
+                        SFs and their properties.
   -n NETWORK, --network NETWORK
-  -sf SF, --sf SF
-  -iam INTER_ARR_MEAN, --inter_arr_mean INTER_ARR_MEAN
-  -fdm FLOW_DR_MEAN, --flow_dr_mean FLOW_DR_MEAN
-  -fds FLOW_DR_STDEV, --flow_dr_stdev FLOW_DR_STDEV
-  -fss FLOW_SIZE_SHAPE, --flow_size_shape FLOW_SIZE_SHAPE
+                        The GraphML network file that specifies the nodes and
+                        edges of the network.
+  -c CONFIG, --config CONFIG
+                        Path to the simulator config file
+  -s SEED, --seed SEED  Random seed
 ```
 
 You can use the following command as an example (run from the root project folder)
 
 ```bash 
-coord-sim -d 20 -n params/networks/Abilene.graphml -sf params/placements/Abilene.yaml 
+coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml 
 ```
 This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps. 
 
+
 ## Tests
 
-## Development
+```bash
+# style check
+flake8 src
+
+# tests
+nose2
+```
