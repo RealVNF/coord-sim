@@ -40,6 +40,7 @@ def main():
     params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, args.seed, sf_placement=sf_placement,
                              schedule=schedule, inter_arr_mean=args.inter_arr_mean, flow_dr_mean=args.flow_dr_mean,
                              flow_dr_stdev=args.flow_dr_stdev, flow_size_shape=args.flow_size_shape)
+    log.info(params)
 
     # Create a FlowSimulator object, pass the SimPy environment and params objects
     simulator = FlowSimulator(env, params)
@@ -73,7 +74,7 @@ def parse_args():
                         help="The mean value for the generation of data rate values for each flow.")
     parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=0.0, dest="flow_dr_stdev", type=float,
                         help="The standard deviation value for the generation of data rate values for each flow.")
-    parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape", type=float,
+    parser.add_argument('-fss', '--flow_size_shape', required=False, default=0.001, dest="flow_size_shape", type=float,
                         help="The shape of the Pareto distribution for the generation of the flow size values.")
     return parser.parse_args()
 

@@ -44,19 +44,24 @@ class FlowSimulator:
         while True:
             flow_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(6))
             flow_id_str = "{}-{}".format(node_id, flow_id)
+
             # Exponentially distributed random inter arrival rate using a user set (or default) mean
-            inter_arr_time = random.expovariate(self.params.inter_arr_mean)
+            # inter_arr_time = random.expovariate(self.params.inter_arr_mean)
+            # use deterministic, fixed inter-arrival time for now
+            inter_arr_time = self.params.inter_arr_mean
+
             # Assign a random flow datarate and size according to a normal distribution with config. mean and stdev.
             # Abs here is necessary as normal dist. gives negative numbers.
 
-            # TODO: Change the abs here as it is not a real mean anymore. Will affect result accuracy when
-            # publishing.
+            # TODO: Change the abs here as it is not a real mean anymore. Will affect result accuracy when publishing.
             flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
             # Use a Pareto distribution (Heavy tail) random variable to generate flow sizes
-            flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+            # flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+            # simplification: use fixed flow size for now
+            flow_size = self.params.flow_size_shape
 
             # Ignore negative flow_dr or flow_size values
-            if(flow_dr <= 0.00 or flow_size <= 0.00):
+            if flow_dr <= 0.00 or flow_size <= 0.00:
                 continue
 
             # Normal Dist. may produce zeros. That is not desired. We skip the remainder of the loop.

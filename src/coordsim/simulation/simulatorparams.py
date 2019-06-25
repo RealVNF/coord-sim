@@ -34,3 +34,13 @@ class SimulatorParams:
         self.flow_size_shape = flow_size_shape
         # Flow forwarding schedule: dict
         self.schedule = schedule
+
+    # string representation for logging
+    def __str__(self):
+        params_str = "Simulator parameters: "
+        params_str += "seed: {}\n".format(self.seed)
+        params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
+        params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
+        params_str += "flow_dr_stdv: {}\n".format(self.flow_dr_stdev)
+        params_str += "flow_size_shape: {}".format(self.flow_size_shape)
+        return params_str
