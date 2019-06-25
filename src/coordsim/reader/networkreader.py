@@ -22,7 +22,7 @@ def network_update(yaml_file, network):
     Open yaml file and pass data to other functions for procesing.
     """
     with open(yaml_file) as yaml_stream:
-        yaml_data = yaml.load(yaml_stream)
+        yaml_data = yaml.load(yaml_stream, Loader=yaml.FullLoader)
     return get_placement(yaml_data, network), get_sfc(yaml_data), get_sf(yaml_data)
 
 
