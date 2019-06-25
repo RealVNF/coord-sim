@@ -37,7 +37,7 @@ def reset():
 
 
 def add_active_flow(flow, current_node_id, current_sf):
-    
+
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
 
