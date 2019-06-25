@@ -236,14 +236,22 @@ def parse_args():
 
     # TODO: Research a valid defaults for these arguments. Also update defaults in SimulatorParams.
     parser = argparse.ArgumentParser(description="Coordination-Simulation tool")
-    parser.add_argument('-d', '--duration', required=True, default=None, dest="duration", type=int)
-    parser.add_argument('-sf', '--sf', required=True, dest="sf")
-    parser.add_argument('-n', '--network', required=True, dest='network')
-    parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed", type=int)
-    parser.add_argument('-iam', '--inter_arr_mean', required=False, default=1.0, dest="inter_arr_mean", type=float)
-    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=5.0, dest="flow_dr_mean", type=float)
-    parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev", type=float)
-    parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape", type=float)
+    parser.add_argument('-d', '--duration', required=True, default=None, dest="duration", type=int,
+                        help="The duration of the simulation (simulates milliseconds).")
+    parser.add_argument('-sf', '--sf', required=True, dest="sf",
+                        help="VNF file which contains the SFCs and their respective SFs and their properties.")
+    parser.add_argument('-n', '--network', required=True, dest='network',
+                        help="The GraphML network file that specifies the nodes and edges of the network.")
+    parser.add_argument('-s', '--seed', required=False, default=default_seed, dest="seed", type=int,
+                        help="The seed to use for the random number generator.")
+    parser.add_argument('-iam', '--inter_arr_mean', required=False, default=1.0, dest="inter_arr_mean", type=float,
+                        help="Inter arrival mean of the flows' arrival at ingress nodes.")
+    parser.add_argument('-fdm', '--flow_dr_mean', required=False, default=5.0, dest="flow_dr_mean", type=float,
+                        help="The mean value for the generation of data rate values for each flow.")
+    parser.add_argument('-fds', '--flow_dr_stdev', required=False, default=1.0, dest="flow_dr_stdev", type=float,
+                        help="The standard deviation value for the generation of data rate values for each flow.")
+    parser.add_argument('-fss', '--flow_size_shape', required=False, default=1.0, dest="flow_size_shape", type=float,
+                        help="The shape of the Pareto distribution for the generation of the flow size values.")
     return parser.parse_args()
 
 
