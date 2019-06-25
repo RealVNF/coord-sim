@@ -1,4 +1,4 @@
-import coordsim.reader.reader as networkreader
+import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
 import time
@@ -23,15 +23,16 @@ class Simulator(SimulatorInterface):
         self.start_time = time.time()
 
         # Parse network and SFC + SF file
-        self.network, self.ing_nodes = networkreader.read_network(network_file, node_cap=10, link_cap=10)
-        self.sfc_list = networkreader.get_sfc(service_functions_file)
-        self.sf_list = networkreader.get_sf(service_functions_file)
+        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
+        self.sfc_list = reader.get_sfc(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file)
+        self.config = reader.get_config(config_file)
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, config_file, seed)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
 
         # Get and plant random seed
         self.seed = seed

@@ -30,9 +30,10 @@ def main():
     # Parse network and get NetworkX object and ingress network list
     network, ing_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
 
-    # Getting current SFC list, and the SF list of each SFC.
+    # Getting current SFC list, and the SF list of each SFC, and config
     sfc_list = reader.get_sfc(args.sf)
     sf_list = reader.get_sf(args.sf)
+    config = reader.get_config(args.config)
 
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI
@@ -40,7 +41,7 @@ def main():
     schedule = dummy_data.triangle_schedule
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, args.config, args.seed, sf_placement=sf_placement,
+    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, args.seed, sf_placement=sf_placement,
                              schedule=schedule)
     log.info(params)
 

@@ -7,11 +7,9 @@ other parameters for the simulator.
 
 """
 
-import yaml
-
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config_file, seed, schedule={}, sf_placement={}):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={}):
         # Seed for the random generator: int
         self.seed = seed
         # NetworkX network object: DiGraph
@@ -28,10 +26,6 @@ class SimulatorParams:
         self.schedule = schedule
         # Placement of SFs in each node: defaultdict(list)
         self.sf_placement = sf_placement
-
-        # read config params from file
-        with open(config_file) as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
 
         # Flow interarrival exponential distribution mean: float
         self.inter_arr_mean = config['inter_arrival_mean']

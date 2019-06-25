@@ -17,6 +17,16 @@ Network parsing module.
 """
 
 
+def get_config(config_file):
+    """
+    Parse simulator config params in specified yaml file and return as Python dict
+    """
+    # TODO: specify defaults as fall back if param is not set in config
+    with open(config_file) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    return config
+
+
 def get_sfc(sfc_file):
     """
     Get the list of SFCs from the yaml data.
