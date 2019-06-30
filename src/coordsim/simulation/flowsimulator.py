@@ -130,7 +130,7 @@ class FlowSimulator:
         """
         schedule = self.params.schedule
         # Check if scheduling rule exists
-        if (flow.current_node_id in schedule) and flow.sfc in schedule[flow.current_node_id]:
+        if flow.current_node_id in schedule:
             schedule_node = schedule[flow.current_node_id]
             schedule_sf = schedule_node[flow.sfc][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
