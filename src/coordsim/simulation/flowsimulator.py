@@ -135,8 +135,18 @@ class FlowSimulator:
             schedule_sf = schedule_node[flow.sfc][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
-            next_node = np.random.choice(sf_nodes, p=sf_probability)
-            return next_node
+            try:
+                next_node = np.random.choice(sf_nodes, p=sf_probability)
+                return next_node
+
+            except Exception as ex:
+
+                # Scheduling rule does not exist: drop flow
+                log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct '
+                            f'Dropping flow!')
+                log.warning(ex)
+                metrics.dropped_flow()
+                self.env.exit()
         else:
             # Scheduling rule does not exist: drop flow
             log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
