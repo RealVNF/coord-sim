@@ -3,7 +3,7 @@ from coordsim.simulation.flowsimulator import FlowSimulator
 import coordsim.metrics.metrics as metrics
 import time
 from coordsim.simulation.simulatorparams import SimulatorParams
-from siminterface.interface.siminterface import SimulatorAction, SimulatorInterface, SimulatorState
+from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 import simpy
 import random
 import numpy

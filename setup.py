@@ -1,11 +1,14 @@
 from setuptools import setup, find_packages
-
+import os
+# Not recommended but for now only solution since repo is private
+os.system('pip install git+ssh://git@github.com/RealVNF/coord-env-interface.git')
 requirements = [
     'simpy',
     'networkx',
     'geopy',
     'pyyaml',
-    'numpy'
+    'numpy',
+    'coord-interface'
 ]
 
 test_requirements = [
@@ -16,7 +19,7 @@ test_requirements = [
 
 setup(
     name='coord-sim',
-    version='0.9',
+    version='0.9.1',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     url='https://github.com/CN-UPB/coordination-simulation',
