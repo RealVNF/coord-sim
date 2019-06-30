@@ -4,7 +4,7 @@ Simulator interface tests
 """
 from unittest import TestCase
 
-from siminterface.interface.siminterface import SimulatorInterface, SimulatorAction, SimulatorState
+from spinterface import SimulatorInterface, SimulatorAction, SimulatorState
 
 NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/3sfcs.yaml"
