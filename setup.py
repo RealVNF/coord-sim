@@ -6,7 +6,7 @@ requirements = [
     'simpy',
     'networkx',
     'geopy',
-    'pyyaml',
+    'pyyaml>=5.1',
     'numpy',
     'coord-interface'
 ]
