@@ -117,6 +117,7 @@ class SimulatorState:
     """
     def __init__(self,
                  network,
+                 placement,
                  sfcs,
                  service_functions,
                  traffic,
@@ -140,7 +141,10 @@ class SimulatorState:
                     'used_data_rate': int (Mbit/s),
                 }],
             }
-
+        placement : dict
+            {
+                'node id' : [list of SF ids]
+            }
         sfcs : dict
             {
                 'sfc_id': list
@@ -179,6 +183,7 @@ class SimulatorState:
             }
         """
         self.network = network
+        self.placement = placement
         self.sfcs = sfcs
         self.service_functions = service_functions
         self.traffic = traffic

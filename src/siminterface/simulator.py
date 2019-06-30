@@ -60,8 +60,8 @@ class Simulator(SimulatorInterface):
         # Record end time and running time metrics
         self.end_time = time.time()
         metrics.running_time(self.start_time, self.end_time)
-        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
-                                         self.network_stats)
+        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+                                         self.sf_list, self.traffic, self.network_stats)
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
@@ -95,8 +95,8 @@ class Simulator(SimulatorInterface):
         metrics.running_time(self.start_time, self.end_time)
 
         # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.sfc_list, self.sf_list, self.traffic,
-                                         self.network_stats)
+        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+                                         self.sf_list, self.traffic, self.network_stats)
         return simulator_state
 
     def parse_network(self) -> dict:

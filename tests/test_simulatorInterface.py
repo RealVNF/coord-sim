@@ -34,7 +34,6 @@ class TestSimulatorInterface(TestCase):
             'pop0': ['a', 'b', 'c'],
             'pop1': ['a', 'b', 'c'],
             'pop2': ['a', 'b', 'c'],
-
         }
         flow_schedule = {
             'pop0': {
@@ -197,7 +196,7 @@ class TestSimulatorInterface(TestCase):
                     },
                 },
             }
-   
+
         action = SimulatorAction(placement=placement, scheduling=flow_schedule)
         simulator_state = self.simulator.apply(action)
         self.assertIsInstance(simulator_state, SimulatorState)
@@ -218,6 +217,10 @@ class TestSimulatorInterface(TestCase):
         # }],
         nw_edges = simulator_state.network['edges'][0]
         self.assertIs(len(nw_edges), 5)
+
+        # Check if placement is read correctly
+        sim_placement = simulator_state.placement
+        self.assertIs(len(sim_placement), 3)
 
         # test if sfcs are read correctly
         sfcs = simulator_state.sfcs
