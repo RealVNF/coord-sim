@@ -201,7 +201,10 @@ class FlowSimulator:
                 "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                               processing_delay))
 
-            node_remaining_cap -= flow.dr
+            self.params.network.nodes[flow.current_node_id]["remaining_cap"] -= flow.dr
+            # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
+            node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
+
             yield self.env.timeout(processing_delay)
             log.info(
                 "Flow {} started departing sf '{}' at node {}."
@@ -222,7 +225,10 @@ class FlowSimulator:
                          .format(flow.flow_id, current_sf, current_node_id, self.env.now))
                 # Remove the active flow from the SF after it departed the SF
                 metrics.remove_active_flow(flow, current_node_id, current_sf)
-            node_remaining_cap += flow.dr
+            self.params.network.nodes[flow.current_node_id]["remaining_cap"] += flow.dr
+            # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
+            node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
+
             # We assert that remaining capacity must at all times be less than the node capacity so that
             # nodes dont put back more capacity than the node's capacity.
             assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
