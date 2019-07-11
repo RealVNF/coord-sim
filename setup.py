@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 # Not recommended but for now only solution since repo is private
-os.system('pip install git+ssh://git@github.com/RealVNF/coord-env-interface.git')
+os.system('pip install git+https://github.com/RealVNF/coord-env-interface.git')
 requirements = [
     'simpy',
     'networkx',
