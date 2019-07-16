@@ -1,12 +1,16 @@
+import logging
+import random
+import time
+
+import coordsim.metrics.metrics as metrics
 import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
-import coordsim.metrics.metrics as metrics
-import time
 from coordsim.simulation.simulatorparams import SimulatorParams
-from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
-import simpy
-import random
 import numpy
+import simpy
+from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
+
+logger = logging.getLogger(__name__)
 
 DURATION = int(100)
 
@@ -65,6 +69,10 @@ class Simulator(SimulatorInterface):
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
+
+        # increase performance when debug logging is disabled
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"SimulatorAction: %s", repr(actions))
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
