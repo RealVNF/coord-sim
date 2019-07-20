@@ -14,7 +14,7 @@ def create_csv_stream():
     """
     now = dt.datetime.now()
     file_name = os.path.join(f'results/placements_{now.strftime("%d-%m-%Y--%H-%M-%S")}.csv')
-    stream = open(file_name, 'a')
+    stream = open(file_name, 'a+')
     output_header = ['time', 'node', 'sf']
     writer = csv.writer(stream)
     writer.writerow(output_header)
