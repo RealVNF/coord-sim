@@ -9,7 +9,7 @@ from coordsim.simulation.simulatorparams import SimulatorParams
 import numpy
 import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
-
+from coordsim.writer import writer
 logger = logging.getLogger(__name__)
 
 DURATION = int(100)
@@ -19,6 +19,9 @@ class Simulator(SimulatorInterface):
     def __init__(self):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
+        # Create a CSV write stream
+        self.write_stream = writer.create_csv_stream()
+
 
     def init(self, network_file, service_functions_file, config_file, seed):
 
@@ -69,6 +72,9 @@ class Simulator(SimulatorInterface):
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
+
+        # Add placement data to csv
+        writer.write_placement_result(self.write_stream, self.env, actions)
 
         # increase performance when debug logging is disabled
         if logger.isEnabledFor(logging.DEBUG):
@@ -146,3 +152,5 @@ class Simulator(SimulatorInterface):
             'in_network_flows': stats['total_active_flows'],
             'avg_end_2_end_delay': stats['avg_end2end_delay']
         }
+    def __del__(self):
+        self.write_stream.close()
