@@ -1,10 +1,11 @@
-""" 
+"""
 Simulator file writer module
 """
 
 import csv
 import datetime as dt
 from spinterface import SimulatorAction
+
 
 def create_csv_stream():
     """
@@ -17,6 +18,7 @@ def create_csv_stream():
     writer = csv.writer(stream)
     writer.writerow(output_header)
     return stream
+
 
 def write_placement_result(stream, env, action: SimulatorAction):
     """
@@ -31,7 +33,3 @@ def write_placement_result(stream, env, action: SimulatorAction):
             output_row = [time, node_id, sf]
             output.append(output_row)
     writer.writerows(output)
-
-    
-    
-

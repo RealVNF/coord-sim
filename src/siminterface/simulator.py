@@ -22,7 +22,6 @@ class Simulator(SimulatorInterface):
         # Create a CSV write stream
         self.write_stream = writer.create_csv_stream()
 
-
     def init(self, network_file, service_functions_file, config_file, seed):
 
         # Initialize metrics, record start time
@@ -152,5 +151,6 @@ class Simulator(SimulatorInterface):
             'in_network_flows': stats['total_active_flows'],
             'avg_end_2_end_delay': stats['avg_end2end_delay']
         }
+
     def __del__(self):
         self.write_stream.close()
