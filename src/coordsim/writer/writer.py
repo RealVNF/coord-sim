@@ -13,7 +13,8 @@ def create_csv_stream():
     Creates a CSV file in append mode. Returns the opened stream
     """
     now = dt.datetime.now()
-    file_name = os.path.join(f'results/placements_{now.strftime("%d-%m-%Y--%H-%M-%S")}.csv')
+    file_name = f"results/placements-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
     stream = open(file_name, 'a+')
     output_header = ['time', 'node', 'sf']
     writer = csv.writer(stream)
