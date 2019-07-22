@@ -142,7 +142,7 @@ class FlowSimulator:
             except Exception as ex:
 
                 # Scheduling rule does not exist: drop flow
-                log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct '
+                log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
                             f'Dropping flow!')
                 log.warning(ex)
                 metrics.dropped_flow()
