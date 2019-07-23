@@ -4,7 +4,8 @@ requirements = [
     'networkx',
     'geopy',
     'pyyaml>=5.1',
-    'numpy'
+    'numpy',
+    'coord-interface'
 ]
 
 test_requirements = [
@@ -14,7 +15,7 @@ test_requirements = [
 ]
 
 dependency_links = [
-    'https://github.com/RealVNF/coord-env-interface/tarball/master'
+    'git+https://github.com/RealVNF/coord-env-interface'
 ]
 
 setup(
@@ -24,12 +25,12 @@ setup(
                 'scheduling/balancing traffic between them.',
     url='https://github.com/CN-UPB/coordination-simulation',
     author='Stefan Schneider',
+    dependency_links=dependency_links,
     author_email='stefan.schneider@upb.de',
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=requirements + test_requirements,
     test_requirements=test_requirements,
-    dependency_links=dependency_links,
     zip_safe=False,
     entry_points={
         'console_scripts': [
