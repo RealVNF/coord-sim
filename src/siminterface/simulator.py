@@ -39,8 +39,7 @@ class Simulator(SimulatorInterface):
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
 
         # Create CSV writer
-        self.writer = ResultWriter(self.params)
-
+        self.writer = ResultWriter(self.params.training)
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
@@ -69,7 +68,7 @@ class Simulator(SimulatorInterface):
         metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        self.writer.write_state_results(self.env, simulator_state)
+        # self.writer.write_state_results(self.env, simulator_state)
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
@@ -152,7 +151,3 @@ class Simulator(SimulatorInterface):
             'in_network_flows': stats['total_active_flows'],
             'avg_end_2_end_delay': stats['avg_end2end_delay']
         }
-
-    def __del__(self):
-        # Close all writer streams
-        self.writer.close_streams()

@@ -6,19 +6,18 @@ import csv
 import os
 import datetime as dt
 from spinterface import SimulatorAction, SimulatorState
-from coordsim.simulation.simulatorparams import SimulatorParams
 
 
 class ResultWriter():
     """
     Result Writer module
     """
-    def __init__(self, params: SimulatorParams):
+    def __init__(self, training: bool):
         """
         If the simulator is not in training mode, create result folder and CSV files
         """
-        self.params = params
-        if not self.params.training:
+        self.training = training
+        if not self.training:
             now = dt.datetime.now()
 
             self.scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
@@ -43,16 +42,6 @@ class ResultWriter():
             # Write the headers to the files
             self.create_csv_headers()
 
-    def close_streams(self):
-        """
-        Close open streams
-        """
-        if not self.params.training:
-            self.placement_stream.close()
-            self.scheduleing_stream.close()
-            self.resources_stream.close()
-            self.metrics_stream.close()
-
     def create_csv_headers(self):
         """
         Creates statistics CSV headers and writes them to their files
@@ -75,7 +64,7 @@ class ResultWriter():
         """
         Write simulator actions to CSV files for statistics purposes
         """
-        if not self.params.training:
+        if not self.training:
             placement = action.placement
             scheduling = action.scheduling
             time = env.now
@@ -101,7 +90,7 @@ class ResultWriter():
         """
         Write node resource consumption to CSV file
         """
-        if not self.params.training:
+        if not self.training:
             network = state.network
             stats = state.network_stats
             time = env.now
@@ -119,3 +108,17 @@ class ResultWriter():
 
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
+
+    def close_streams(self):
+        """
+        Close open streams
+        """
+        if not self.training:
+            self.placement_stream.close()
+            self.scheduleing_stream.close()
+            self.resources_stream.close()
+            self.metrics_stream.close()
+
+    def __del__(self):
+        # Close all writer streams
+        self.close_streams()
