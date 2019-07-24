@@ -6,87 +6,114 @@ import csv
 import os
 import datetime as dt
 from spinterface import SimulatorAction, SimulatorState
+from coordsim.simulation.simulatorparams import SimulatorParams
 
 
-def create_csv_streams():
+class ResultWriter():
     """
-    Creates statistics CSV files in append mode. Returns opened streams
+    Result Writer module
     """
-    now = dt.datetime.now()
+    def __init__(self, params: SimulatorParams):
+        """
+        If the simulator is not in training mode, create result folder and CSV files
+        """
+        if not params.training:
+            now = dt.datetime.now()
 
-    scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
-    placement_file_name = f"results/placements-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
-    resources_file_name = f"results/resources-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+            self.scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+            self.placement_file_name = f"results/placements-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+            self.resources_file_name = f"results/resources-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+            self.metrics_file_name = f"results/metrics-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
 
-    # Create the results directory if not exists
-    os.makedirs(os.path.dirname(placement_file_name), exist_ok=True)
+            # Create the results directory if not exists
+            os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
 
-    placement_stream = open(placement_file_name, 'a+')
-    scheduleing_stream = open(scheduling_file_name, 'a+')
-    resources_stream = open(resources_file_name, 'a+')
+            self.placement_stream = open(self.placement_file_name, 'a+')
+            self.scheduleing_stream = open(self.scheduling_file_name, 'a+')
+            self.resources_stream = open(self.resources_file_name, 'a+')
+            self.metrics_stream = open(self.metrics_file_name, 'a+')
 
-    # Create CSV headers
-    scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
-    placement_output_header = ['time', 'node', 'sf']
-    resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
+            # Write the headers to the files
+            self.create_csv_headers()
 
-    # Create CSV writers
-    placement_writer = csv.writer(placement_stream)
-    scheduling_writer = csv.writer(scheduleing_stream)
-    resources_writer = csv.writer(resources_stream)
+    def close_streams(self):
+        """
+        Close open streams
+        """
+        if not self.params.training:
+            self.placement_stream.close()
+            self.scheduleing_stream.close()
+            self.resources_stream.close()
+            self.metrics_stream.close()
 
-    # Write headers to CSV files
-    placement_writer.writerow(placement_output_header)
-    scheduling_writer.writerow(scheduling_output_header)
-    resources_writer.writerow(resources_output_header)
+    def create_csv_headers(self):
+        """
+        Creates statistics CSV headers and writes them to their files
+        """
 
-    return placement_stream, scheduleing_stream, resources_stream
+        # Create CSV headers
+        scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
+        placement_output_header = ['time', 'node', 'sf']
+        resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
+        metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
+                                 'avg_end_2_end_delay']
 
+        # Create CSV writers
+        self.placement_writer = csv.writer(self.placement_stream)
+        self.scheduling_writer = csv.writer(self.scheduleing_stream)
+        self.resources_writer = csv.writer(self.resources_stream)
+        self.metrics_writer = csv.writer(self.metrics_stream)
+        # Write headers to CSV files
+        self.placement_writer.writerow(placement_output_header)
+        self.scheduling_writer.writerow(scheduling_output_header)
+        self.resources_writer.writerow(resources_output_header)
+        self.metrics_writer.writerow(metrics_output_header)
 
-def write_placement_result(stream, env, action: SimulatorAction):
-    """
-    Write simulator placement action to a CSV file for statistics purposes
-    """
-    placement = action.placement
-    time = env.now
-    writer = csv.writer(stream)
-    output = []
-    for node_id, sfs in placement.items():
-        for sf in sfs:
-            output_row = [time, node_id, sf]
-            output.append(output_row)
-    writer.writerows(output)
+    def write_action_result(self, env, action: SimulatorAction):
+        """
+        Write simulator actions to CSV files for statistics purposes
+        """
+        if not self.params.training:
+            placement = action.placement
+            scheduling = action.scheduling
+            time = env.now
+            placement_output = []
+            scheduling_output = []
 
+            for node_id, sfs in placement.items():
+                for sf in sfs:
+                    placement_output_row = [time, node_id, sf]
+                    placement_output.append(placement_output_row)
 
-def write_scheduling_results(stream, env, action: SimulatorAction):
-    """
-    Write scheduling rules to a CSV file
-    """
-    scheduling = action.scheduling
-    time = env.now
-    writer = csv.writer(stream)
-    output = []
-    for node, sfcs in scheduling.items():
-        for sfc, sfs in sfcs.items():
-            for sf, scheduling in sfs.items():
-                for schedule_node, schedule_prob in scheduling.items():
-                    output_row = [time, node, sfc, sf, schedule_node, schedule_prob]
-                    output.append(output_row)
-    writer.writerows(output)
+            for node, sfcs in scheduling.items():
+                for sfc, sfs in sfcs.items():
+                    for sf, scheduling in sfs.items():
+                        for schedule_node, schedule_prob in scheduling.items():
+                            scheduling_output_row = [time, node, sfc, sf, schedule_node, schedule_prob]
+                            scheduling_output.append(scheduling_output_row)
 
+            self.placement_writer.writerows(placement_output)
+            self.scheduling_writer.writerows(scheduling_output)
 
-def write_resource_results(stream, env, state: SimulatorState):
-    """
-    Write node resource consumption to CSV file
-    """
-    network = state.network
-    time = env.now
-    writer = csv.writer(stream)
-    output = []
-    for node in network['nodes']:
-        node_id = node['id']
-        node_cap = node['resource']
-        used_resources = node['used_resources']
-        output_row = [time, node_id, node_cap, used_resources]
-        output.append(output_row)
-    writer.writerows(output)
+    def write_state_results(self, env, state: SimulatorState):
+        """
+        Write node resource consumption to CSV file
+        """
+        if not self.params.training:
+            network = state.network
+            stats = state.network_stats
+            time = env.now
+
+            metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
+                              stats['in_network_flows'], stats['avg_end_2_end_delay']]
+
+            resource_output = []
+            for node in network['nodes']:
+                node_id = node['id']
+                node_cap = node['resource']
+                used_resources = node['used_resources']
+                resource_output_row = [time, node_id, node_cap, used_resources]
+                resource_output.append(resource_output_row)
+
+            self.metrics_writer.writerow(metrics_output)
+            self.resources_writer.writerows(resource_output)

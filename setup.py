@@ -20,7 +20,7 @@ dependency_links = [
 
 setup(
     name='coord-sim',
-    version='0.9.2',
+    version='0.9.3',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     url='https://github.com/CN-UPB/coordination-simulation',

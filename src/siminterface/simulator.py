@@ -9,7 +9,7 @@ from coordsim.simulation.simulatorparams import SimulatorParams
 import numpy
 import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
-from coordsim.writer import writer
+from coordsim.writer.writer import ResultWriter
 logger = logging.getLogger(__name__)
 
 DURATION = int(100)
@@ -19,8 +19,6 @@ class Simulator(SimulatorInterface):
     def __init__(self):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
-        # Create a CSV write stream
-        self.placement_stream, self.scheduling_stream, self.resources_stream = writer.create_csv_streams()
 
     def init(self, network_file, service_functions_file, config_file, seed):
 
@@ -39,6 +37,9 @@ class Simulator(SimulatorInterface):
 
         # Instantiate the parameter object for the simulator.
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
+
+        # Create CSV writer
+        self.writer = ResultWriter(self.params)
 
         # Get and plant random seed
         self.seed = seed
@@ -68,14 +69,12 @@ class Simulator(SimulatorInterface):
         metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
+        self.writer.write_state_results(self.env, simulator_state)
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
 
-        # Add placement data to csv
-        writer.write_placement_result(self.placement_stream, self.env, actions)
-        writer.write_scheduling_results(self.scheduling_stream, self.env, actions)  # TODO: Combine these two calls
-
+        self.writer.write_action_result(self.env, actions)
         # increase performance when debug logging is disabled
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"SimulatorAction: %s", repr(actions))
@@ -111,7 +110,7 @@ class Simulator(SimulatorInterface):
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        writer.write_resource_results(self.resources_stream, self.env, simulator_state)
+        self.writer.write_state_results(self.env, simulator_state)
         return simulator_state
 
     def parse_network(self) -> dict:
@@ -156,6 +155,4 @@ class Simulator(SimulatorInterface):
 
     def __del__(self):
         # Close all writer streams
-        self.placement_stream.close()
-        self.scheduling_stream.close()
-        self.resources_stream.close()
+        self.writer.close_streams()
