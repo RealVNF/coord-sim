@@ -17,7 +17,8 @@ class ResultWriter():
         """
         If the simulator is not in training mode, create result folder and CSV files
         """
-        if not params.training:
+        self.params = params
+        if not self.params.training:
             now = dt.datetime.now()
 
             self.scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
