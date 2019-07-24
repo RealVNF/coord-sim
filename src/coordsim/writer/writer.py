@@ -34,6 +34,12 @@ class ResultWriter():
             self.resources_stream = open(self.resources_file_name, 'a+')
             self.metrics_stream = open(self.metrics_file_name, 'a+')
 
+            # Create CSV writers
+            self.placement_writer = csv.writer(self.placement_stream)
+            self.scheduling_writer = csv.writer(self.scheduleing_stream)
+            self.resources_writer = csv.writer(self.resources_stream)
+            self.metrics_writer = csv.writer(self.metrics_stream)
+
             # Write the headers to the files
             self.create_csv_headers()
 
@@ -59,11 +65,6 @@ class ResultWriter():
         metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
                                  'avg_end_2_end_delay']
 
-        # Create CSV writers
-        self.placement_writer = csv.writer(self.placement_stream)
-        self.scheduling_writer = csv.writer(self.scheduleing_stream)
-        self.resources_writer = csv.writer(self.resources_stream)
-        self.metrics_writer = csv.writer(self.metrics_stream)
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
         self.scheduling_writer.writerow(scheduling_output_header)
