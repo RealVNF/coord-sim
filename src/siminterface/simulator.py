@@ -16,9 +16,12 @@ DURATION = int(100)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self):
+    def __init__(self, test_mode: bool):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
+        self.test_mode = test_mode
+        # Create CSV writer
+        self.writer = ResultWriter(self.test_mode)
 
     def init(self, network_file, service_functions_file, config_file, seed):
 
@@ -37,9 +40,6 @@ class Simulator(SimulatorInterface):
 
         # Instantiate the parameter object for the simulator.
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
-
-        # Create CSV writer
-        self.writer = ResultWriter(self.params.training)
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
