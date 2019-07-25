@@ -16,7 +16,7 @@ DURATION = int(100)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self, test_mode: bool):
+    def __init__(self, test_mode=False):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.test_mode = test_mode
