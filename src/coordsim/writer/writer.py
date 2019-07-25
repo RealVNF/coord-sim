@@ -12,12 +12,12 @@ class ResultWriter():
     """
     Result Writer module
     """
-    def __init__(self, training: bool):
+    def __init__(self, test_mode: bool):
         """
-        If the simulator is not in training mode, create result folder and CSV files
+        If the simulator is in test mode, create result folder and CSV files
         """
-        self.training = training
-        if not self.training:
+        self.test_mode = test_mode
+        if self.test_mode:
             now = dt.datetime.now()
 
             self.scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
@@ -64,7 +64,7 @@ class ResultWriter():
         """
         Write simulator actions to CSV files for statistics purposes
         """
-        if not self.training:
+        if self.test_mode:
             placement = action.placement
             scheduling = action.scheduling
             time = env.now
@@ -90,7 +90,7 @@ class ResultWriter():
         """
         Write node resource consumption to CSV file
         """
-        if not self.training:
+        if self.test_mode:
             network = state.network
             stats = state.network_stats
             time = env.now
@@ -113,7 +113,7 @@ class ResultWriter():
         """
         Close open streams
         """
-        if not self.training:
+        if self.test_mode:
             self.placement_stream.close()
             self.scheduleing_stream.close()
             self.resources_stream.close()

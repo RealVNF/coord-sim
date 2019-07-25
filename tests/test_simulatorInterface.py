@@ -14,7 +14,7 @@ SIMULATOR_MODULE_NAME = "siminterface.simulator"
 SIMULATOR_CLS_NAME = "Simulator"
 SIMULATOR_MODULE = __import__(SIMULATOR_MODULE_NAME)
 SIMULATOR_CLS = getattr(SIMULATOR_MODULE, SIMULATOR_CLS_NAME)
-TEST_MODE = True
+TEST_MODE = False
 
 
 class TestSimulatorInterface(TestCase):
