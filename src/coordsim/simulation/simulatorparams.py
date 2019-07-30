@@ -38,9 +38,6 @@ class SimulatorParams:
         # if deterministic = True, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape as fixed
         # deterministic values rather than means of a random distribution
         self.deterministic = config['deterministic']
-        # Training mode: Letting the simulator know that the agent is in training mode.
-        # In training mode, no statistics CSV files will be recorded.
-        self.training = config['training']
 
     # string representation for logging
     def __str__(self):

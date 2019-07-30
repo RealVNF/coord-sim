@@ -12,7 +12,7 @@ from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 logger = logging.getLogger(__name__)
 
-DURATION = int(100)
+DURATION = int(100)  # TODO: Move to config file
 
 
 class Simulator(SimulatorInterface):
