@@ -1,7 +1,4 @@
 from setuptools import setup, find_packages
-import os
-# Not recommended but for now only solution since repo is private
-os.system('pip install git+https://github.com/RealVNF/coord-env-interface.git')
 requirements = [
     'simpy',
     'networkx',
@@ -9,7 +6,6 @@ requirements = [
     'pyyaml>=5.1',
     'numpy',
     'coord-interface'
-
 ]
 
 test_requirements = [
@@ -18,13 +14,18 @@ test_requirements = [
     'nose2'
 ]
 
+dependency_links = [
+    'git+https://github.com/RealVNF/coord-env-interface'
+]
+
 setup(
     name='coord-sim',
-    version='0.9.1',
+    version='0.9.3',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     url='https://github.com/CN-UPB/coordination-simulation',
     author='Stefan Schneider',
+    dependency_links=dependency_links,
     author_email='stefan.schneider@upb.de',
     package_dir={'': 'src'},
     packages=find_packages('src'),

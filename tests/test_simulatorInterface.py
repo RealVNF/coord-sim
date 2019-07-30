@@ -14,6 +14,7 @@ SIMULATOR_MODULE_NAME = "siminterface.simulator"
 SIMULATOR_CLS_NAME = "Simulator"
 SIMULATOR_MODULE = __import__(SIMULATOR_MODULE_NAME)
 SIMULATOR_CLS = getattr(SIMULATOR_MODULE, SIMULATOR_CLS_NAME)
+TEST_MODE = False
 
 
 class TestSimulatorInterface(TestCase):
@@ -25,7 +26,7 @@ class TestSimulatorInterface(TestCase):
         create simulator for test cases
         """
         # TODO: replace SimulatorInterface with implementation
-        self.simulator = SIMULATOR_CLS()
+        self.simulator = SIMULATOR_CLS(TEST_MODE)
         self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, 1234)
 
     def test_apply(self):
