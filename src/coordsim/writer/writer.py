@@ -10,7 +10,8 @@ from spinterface import SimulatorAction, SimulatorState
 
 class ResultWriter():
     """
-    Result Writer module
+    Result Writer
+    Helper class to write results to CSV files.
     """
     def __init__(self, test_mode: bool):
         """
@@ -19,11 +20,11 @@ class ResultWriter():
         self.test_mode = test_mode
         if self.test_mode:
             now = dt.datetime.now()
-
-            self.scheduling_file_name = f"results/scheduling-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
-            self.placement_file_name = f"results/placements-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
-            self.resources_file_name = f"results/resources-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
-            self.metrics_file_name = f"results/metrics-{now.strftime('%d-%m-%Y--%H-%M-%S')}.csv"
+            "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
+            self.scheduling_file_name = f"results/scheduling_{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+            self.placement_file_name = f"results/placements-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+            self.resources_file_name = f"results/resources-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+            self.metrics_file_name = f"results/metrics-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
