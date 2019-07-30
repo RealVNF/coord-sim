@@ -60,9 +60,6 @@ class Simulator(SimulatorInterface):
         self.parse_network()
         self.network_metrics()
 
-        # Increment the run times variable to indicate the simulator has run an additional time.
-        self.run_times += 1
-
         # Record end time and running time metrics
         self.end_time = time.time()
         metrics.running_time(self.start_time, self.end_time)
