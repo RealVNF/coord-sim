@@ -29,10 +29,10 @@ class ResultWriter():
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
 
-            self.placement_stream = open(self.placement_file_name, 'a+')
-            self.scheduleing_stream = open(self.scheduling_file_name, 'a+')
-            self.resources_stream = open(self.resources_file_name, 'a+')
-            self.metrics_stream = open(self.metrics_file_name, 'a+')
+            self.placement_stream = open(self.placement_file_name, 'a+', newline='')
+            self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
+            self.resources_stream = open(self.resources_file_name, 'a+', newline='')
+            self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
 
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
