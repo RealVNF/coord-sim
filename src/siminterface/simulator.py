@@ -12,8 +12,6 @@ from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 logger = logging.getLogger(__name__)
 
-DURATION = int(100)  # TODO: Move to config file
-
 
 class Simulator(SimulatorInterface):
     def __init__(self, test_mode=False):
@@ -40,6 +38,7 @@ class Simulator(SimulatorInterface):
 
         # Instantiate the parameter object for the simulator.
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
+        self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
@@ -87,7 +86,7 @@ class Simulator(SimulatorInterface):
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
         # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
-        self.env.run(until=(DURATION * self.run_times))
+        self.env.run(until=(self.duration * self.run_times))
 
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.

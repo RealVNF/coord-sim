@@ -38,6 +38,8 @@ class SimulatorParams:
         # if deterministic = True, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape as fixed
         # deterministic values rather than means of a random distribution
         self.deterministic = config['deterministic']
+        # The duration of a run in the simulator's interface
+        self.run_duration = config['run_duration']
 
     # string representation for logging
     def __str__(self):
