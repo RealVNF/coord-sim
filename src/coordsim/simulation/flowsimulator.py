@@ -208,7 +208,7 @@ class FlowSimulator:
             yield self.env.timeout(processing_delay)
             log.info(
                 "Flow {} started departing sf {} at node {}."
-                " Time {}".format(flow.flow_id, flow.current_sf, current_node_id, self.env.now))
+                " Time {}".format(flow.flow_id, current_sf, current_node_id, self.env.now))
 
             # Check if flow is currently in last SF, if so, then depart flow.
             if (flow.current_position == len(sfc) - 1):
