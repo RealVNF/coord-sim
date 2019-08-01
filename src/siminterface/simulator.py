@@ -25,6 +25,7 @@ class Simulator(SimulatorInterface):
 
         # Initialize metrics, record start time
         metrics.reset()
+        self.run_times = int(1)
         self.start_time = time.time()
 
         # Parse network and SFC + SF file
@@ -86,7 +87,9 @@ class Simulator(SimulatorInterface):
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
         # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
-        self.env.run(until=(self.duration * self.run_times))
+        runtime_steps = self.duration * self.run_times
+        logger.debug("Running Simulator for %s", runtime_steps)
+        self.env.run(until=runtime_steps)
 
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.
