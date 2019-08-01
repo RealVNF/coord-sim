@@ -190,25 +190,25 @@ class FlowSimulator:
         metrics.add_processing_delay(processing_delay)
         flow.end2end_delay += processing_delay
         # Get node capacities
-        node_cap = self.params.network.nodes[flow.current_node_id]["cap"]
-        node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
+        node_cap = self.params.network.nodes[current_node_id]["cap"]
+        node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
         assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
         # Metrics: Add active flow to the SF once the flow has begun processing.
         metrics.add_active_flow(flow, current_node_id, current_sf)
         if flow.dr <= node_remaining_cap:
             log.info(
-                "Flow {} started proccessing at sf '{}' at node {}. Time: {}, "
+                "Flow {} started proccessing at sf {} at node {}. Time: {}, "
                 "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                               processing_delay))
 
-            self.params.network.nodes[flow.current_node_id]["remaining_cap"] -= flow.dr
+            self.params.network.nodes[current_node_id]["remaining_cap"] -= flow.dr
             # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
-            node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
+            node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
             yield self.env.timeout(processing_delay)
             log.info(
-                "Flow {} started departing sf '{}' at node {}."
-                " Time {}".format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
+                "Flow {} started departing sf {} at node {}."
+                " Time {}".format(flow.flow_id, current_sf, current_node_id, self.env.now))
 
             # Check if flow is currently in last SF, if so, then depart flow.
             if (flow.current_position == len(sfc) - 1):
@@ -225,9 +225,9 @@ class FlowSimulator:
                          .format(flow.flow_id, current_sf, current_node_id, self.env.now))
                 # Remove the active flow from the SF after it departed the SF
                 metrics.remove_active_flow(flow, current_node_id, current_sf)
-            self.params.network.nodes[flow.current_node_id]["remaining_cap"] += flow.dr
+            self.params.network.nodes[current_node_id]["remaining_cap"] += flow.dr
             # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
-            node_remaining_cap = self.params.network.nodes[flow.current_node_id]["remaining_cap"]
+            node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
             # We assert that remaining capacity must at all times be less than the node capacity so that
             # nodes dont put back more capacity than the node's capacity.

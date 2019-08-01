@@ -2,6 +2,7 @@
 
 Flow class.
 This identifies the flow and its parameters.
+TODO: Add get/set methods
 
 """
 
