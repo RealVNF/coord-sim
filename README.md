@@ -51,7 +51,7 @@ optional arguments:
 You can use the following command as an example (run from the root project folder)
 
 ```bash 
-coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml 
+coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -c params/config/sim_config.yaml
 ```
 This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps. 
 
