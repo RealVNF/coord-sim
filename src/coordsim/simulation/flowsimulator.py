@@ -94,7 +94,7 @@ class FlowSimulator:
             # Iterate over the SFs and process the flow at each SF.
             yield self.env.process(self.pass_flow(flow, sfc))
         else:
-            log.warning("Requested SFC was not found. Dropping flow {}".format(flow.flow_id))
+            log.info(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
             # Update metrics for the dropped flow
             metrics.dropped_flow()
             self.env.exit()
@@ -120,7 +120,7 @@ class FlowSimulator:
                      .format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
             yield self.env.process(self.process_flow(flow, sfc))
         else:
-            log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
+            log.info(f"SF was not found at requested node. Dropping flow {flow.flow_id}")
             metrics.dropped_flow()
             self.env.exit()
 
@@ -233,8 +233,7 @@ class FlowSimulator:
             # nodes dont put back more capacity than the node's capacity.
             assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
         else:
-            log.warning("Not enough capacity for flow {} at node {}. Dropping flow."
-                        .format(flow.flow_id, flow.current_node_id))
+            log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
             # Update metrics for the dropped flow
             metrics.dropped_flow()
             metrics.remove_active_flow(flow, current_node_id, current_sf)
