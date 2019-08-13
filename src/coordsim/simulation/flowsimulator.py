@@ -155,7 +155,10 @@ class FlowSimulator:
 
     def forward_flow_to_neighbor(self, flow, neighbor_id):
         '''
-
+        Forward the flow over a link from the current node to a direct neighbor.
+        Link capacities are claimed as soon as the flow starts traversing the flow and will not be freed before the
+        flow has completly traversed the link.
+        If not capacity is available the flow will be dropped
         '''
         if neighbor_id not in self.params.network.neighbors(flow.current_node_id):
             # Forwarding target is actually not a neighbor of the flows current node: drop flow
@@ -178,7 +181,7 @@ class FlowSimulator:
                 assert forwarding_link['remaining_cap'] >= 0, "Remaining link capacity cannot be less than 0 (zero)!"
                 # Check if link has enough capacity
                 if flow.dr <= forwarding_link['remaining_cap']:
-                    # Claim link resources
+                    # Claim link capacities
                     forwarding_link['remaining_cap'] -= flow.dr
                     log.info(f'Flow {flow.flow_id} will leave node {flow.current_node_id} towards node {neighbor_id}. Time {self.env.now}')
                     yield self.env.timeout(link_delay)
@@ -189,7 +192,7 @@ class FlowSimulator:
 
                     yield self.env.timeout(flow.duration)
                     log.info(f'Flow {flow.flow_id} FINISHED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
-                    # Free link resources
+                    # Free link capacities
                     forwarding_link['remaining_cap'] += flow.dr
                     assert forwarding_link['remaining_cap'] <= forwarding_link['cap'], "Link remaining capacity cannot be more than link capacity!"
                 else:
