@@ -88,7 +88,7 @@ class Simulator(SimulatorInterface):
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
         # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
         runtime_steps = self.duration * self.run_times
-        logger.debug("Running Simulator for %s", runtime_steps)
+        logger.debug("Running simulator until time step %s", runtime_steps)
         self.env.run(until=runtime_steps)
 
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
