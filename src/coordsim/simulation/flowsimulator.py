@@ -153,6 +153,53 @@ class FlowSimulator:
             metrics.dropped_flow()
             self.env.exit()
 
+    def forward_flow_to_neighbor(self, flow, neighbor_id):
+        '''
+
+        '''
+        if neighbor_id not in self.params.network.neighbors(flow.current_node_id):
+            # Forwarding target is actually not a neighbor of the flows current node: drop flow
+            log.warning(f'Flow {flow.flow_id}: Cannot forward from node {flow.current_node_id} to node {neighbor_id} over non-existent link. Dropping flow!')
+            metrics.dropped_flow()
+            self.env.exit()
+        else:
+            sfc = self.params.sfc_list[flow.sfc]
+            forwarding_link = self.params.network[flow.current_node_id][neighbor_id]
+            link_delay = 0
+            if flow.current_node_id == neighbor_id:
+                # Flow stays at neighbor, no link capacities are claimed
+                assert link_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
+                log.info(f'Flow {flow.flow_id} will stay in node {flow.current_node_id}. Time: {self.env.now}.')
+                self.env.process(self.pass_flow(flow, sfc))
+            else:
+                # Flow will be forwared, link capacities are claimed
+                link_delay = forwarding_link['delay']
+                flow.end2end_delay += link_delay
+                assert forwarding_link['remaining_cap'] >= 0, "Remaining link capacity cannot be less than 0 (zero)!"
+                # Check if link has enough capacity
+                if flow.dr <= forwarding_link['remaining_cap']:
+                    # Claim link resources
+                    forwarding_link['remaining_cap'] -= flow.dr
+                    log.info(f'Flow {flow.flow_id} will leave node {flow.current_node_id} towards node {neighbor_id}. Time {self.env.now}')
+                    yield self.env.timeout(link_delay)
+
+                    flow.current_node_id = neighbor_id
+                    log.info(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
+                    self.env.process(self.pass_flow(flow, sfc))
+
+                    yield self.env.timeout(flow.duration)
+                    log.info(f'Flow {flow.flow_id} FINISHED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
+                    # Free link resources
+                    forwarding_link['remaining_cap'] += flow.dr
+                    assert forwarding_link['remaining_cap'] <= forwarding_link['cap'], "Link remaining capacity cannot be more than link capacity!"
+                else:
+                    log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
+                    # Update metrics for the dropped flow
+                    metrics.dropped_flow()
+                    metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
+                    self.env.exit()
+
+
     def forward_flow(self, flow, next_node):
         """
         Calculates the path delays occurring when forwarding a node
