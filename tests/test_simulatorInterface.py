@@ -205,9 +205,9 @@ class TestSimulatorInterface(TestCase):
         # test if network is read correctly
         nw_nodes = simulator_state.network['nodes']
         self.assertIs(len(nw_nodes), 3)
-        # 3 bidirectional edges = 6 directional edges
+        # 3 bidirectional edges
         edges = simulator_state.network['edges']
-        self.assertIs(len(edges), 6)
+        self.assertIs(len(edges), 3)
         # with 5 edge attributes:
         # 'edges': [{
         #     'src': str,
