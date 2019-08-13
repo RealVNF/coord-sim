@@ -109,7 +109,7 @@ def read_network(file, node_cap=None, link_cap=None):
     if not file.endswith(".graphml"):
         raise ValueError("{} is not a GraphML file".format(file))
     graphml_network = nx.read_graphml(file, node_type=int)
-    networkx_network = nx.DiGraph()
+    networkx_network = nx.Graph()
 
     #  Setting the nodes of the NetworkX Graph
     for n in graphml_network.nodes(data=True):
@@ -137,9 +137,9 @@ def read_network(file, node_cap=None, link_cap=None):
         source = "pop{}".format(e[0])
         target = "pop{}".format(e[1])
         link_delay = e[2].get("LinkDelay", None)
+        # As edges are undirectional, only LinkFwdCap determines the available data rate
         link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
-        link_bkwd_cap = e[2].get("LinkBkwdCap", link_cap)
-        if e[2].get("LinkFwdCap") is None and e[2].get("LinkBkwdCap") is None:
+        if e[2].get("LinkFwdCap") is None:
             log.warning("Link {} has no capacity defined in graphml file. So, Using the default capacity".format(e))
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
@@ -159,10 +159,9 @@ def read_network(file, node_cap=None, link_cap=None):
         else:
             delay = link_delay
 
-        # Adding the directed edges(forward and backward) for each link defined in the network.
-        # delay = edge delay , cap = edge capacity in that direction
-        networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap)
-        networkx_network.add_edge(target, source, delay=delay, cap=link_bkwd_cap)
+        # Adding the undirected edges for each link defined in the network.
+        # delay = edge delay , cap = edge capacity
+        networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap, remaining_cap=link_fwd_cap)
 
     # setting the weight property for each edge in the NetworkX Graph
     # weight attribute is used to find the shortest paths
