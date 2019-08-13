@@ -157,7 +157,7 @@ class FlowSimulator:
         '''
         Forward the flow over a link from the current node to a direct neighbor.
         Link capacities are claimed as soon as the flow starts traversing the flow and will not be freed before the
-        flow has completly traversed the link.
+        flow has completely traversed the link.
         If not capacity is available the flow will be dropped
         '''
         if neighbor_id not in self.params.network.neighbors(flow.current_node_id):
