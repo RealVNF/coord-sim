@@ -12,6 +12,48 @@ from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 logger = logging.getLogger(__name__)
 
+class ExtendedSimulatorAction(SimulatorAction):
+    def __init__(self,
+                 placement: dict,
+                 scheduling: dict,
+                 flow_forwarding_rules: dict,
+                 flow_processing_rules: dict):
+        SimulatorAction.__init__(self, placement, scheduling)
+        self.flow_forwarding_rules = flow_forwarding_rules
+        self.flow_processing_rules = flow_processing_rules
+
+    @staticmethod
+    def convert(actions: SimulatorAction, flow_forwarding_rules={}, flow_processing_rules={}):
+        return ExtendedSimulatorAction(actions.placement,
+                                       actions.scheduling,
+                                       flow_forwarding_rules,
+                                       flow_processing_rules)
+
+class ExtendedSimulatorState(SimulatorState):
+    def __init__(self,
+                 network,
+                 placement,
+                 sfcs,
+                 service_functions,
+                 traffic,
+                 network_stats,
+                 flow_forwarding_rules: dict,
+                 flow_processing_rules: dict):
+        SimulatorState.__init__(self, network, placement, sfcs, service_functions, traffic, network_stats)
+        self.flow_forwarding_rules = flow_forwarding_rules
+        self.flow_processing_rules = flow_processing_rules
+
+
+    @staticmethod
+    def convert(state: SimulatorState, flow_forwarding_rules={}, flow_processing_rules={}):
+        return ExtendedSimulatorState(state.network,
+                                      state.placement,
+                                      state.sfcs,
+                                      state.service_functions,
+                                      state.traffic,
+                                      state.network_stats,
+                                      flow_forwarding_rules,
+                                      flow_processing_rules)
 
 class Simulator(SimulatorInterface):
     def __init__(self, test_mode=False):
@@ -21,7 +63,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
 
-    def init(self, network_file, service_functions_file, config_file, seed):
+    def init(self, network_file, service_functions_file, config_file, seed, interception_callbacks={}) -> ExtendedSimulatorState:
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -33,12 +75,13 @@ class Simulator(SimulatorInterface):
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file)
         self.config = reader.get_config(config_file)
+        self.interception_callbacks = interception_callbacks
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed, interception_callbacks=self.interception_callbacks)
         self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
@@ -66,9 +109,11 @@ class Simulator(SimulatorInterface):
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         # self.writer.write_state_results(self.env, simulator_state)
-        return simulator_state
+        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
+                                                          self.params.flow_processing_rules)
+        return extended_simulator_state
 
-    def apply(self, actions: SimulatorAction):
+    def apply(self, actions: ExtendedSimulatorAction) -> ExtendedSimulatorState:
 
         self.writer.write_action_result(self.env, actions)
         # increase performance when debug logging is disabled
@@ -82,6 +127,10 @@ class Simulator(SimulatorInterface):
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
         self.simulator.params.schedule = actions.scheduling
+
+        self.params.flow_forwarding_rules = actions.flow_forwarding_rules
+        self.params.flow_processing_interception_rules = actions.flow_processing_rules
+
 
         # Run the simulation again with the new params for the set duration.
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
@@ -108,8 +157,19 @@ class Simulator(SimulatorInterface):
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
+        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
+                                                          self.params.flow_processing_rules)
         self.writer.write_state_results(self.env, simulator_state)
-        return simulator_state
+        return extended_simulator_state
+
+    def get_simulator_state(self) -> ExtendedSimulatorState:
+        self.parse_network()
+        self.network_metrics()
+        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+                                 self.sf_list, self.traffic, self.network_stats)
+        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
+                                                          self.params.flow_processing_rules)
+        return extended_simulator_state
 
     def parse_network(self) -> dict:
         """

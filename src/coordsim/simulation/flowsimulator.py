@@ -113,7 +113,10 @@ class FlowSimulator:
         """
         sf = sfc[flow.current_position]
         flow.current_sf = sf
+        if 'pass_flow' in self.params.interception_callbacks:
+            self.params.interception_callbacks['pass_flow'](flow)
         next_node = self.get_next_node(flow, sf)
+        #yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
         yield self.env.process(self.forward_flow(flow, next_node))
         if sf in self.params.sf_placement[next_node]:
             log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
