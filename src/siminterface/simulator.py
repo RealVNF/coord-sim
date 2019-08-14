@@ -188,7 +188,7 @@ class Simulator(SimulatorInterface):
             # We use a fixed user data rate for the edges here as the functionality is not yet incorporated in the
             # simulator.
             # TODO: Implement used edge data rates in the simulator.
-            edge_used_dr = 0
+            edge_used_dr =  edge[2]['cap'] - edge[2]['remaining_cap']
             self.network_dict['edges'].append({
                 'src': edge_src,
                 'dst': edge_dest,
