@@ -129,7 +129,7 @@ class Simulator(SimulatorInterface):
         self.simulator.params.schedule = actions.scheduling
 
         self.params.flow_forwarding_rules = actions.flow_forwarding_rules
-        self.params.flow_processing_interception_rules = actions.flow_processing_rules
+        self.params.flow_processing_rules = actions.flow_processing_rules
 
 
         # Run the simulation again with the new params for the set duration.
