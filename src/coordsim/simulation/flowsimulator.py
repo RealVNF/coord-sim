@@ -126,12 +126,12 @@ class FlowSimulator:
                     log.info(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at node {flow.current_node_id} for processing. Time: {self.env.now}')
                     yield self.env.process(self.process_flow(flow, sfc))
                 else:
-                    log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}')
+                    log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}.')
                     metrics.dropped_flow()
                     self.env.exit()
             else:
                 # Flow has no permission for requested service: fallback to forward flow
-                log.warning(f'Flow {flow.flow_id}: Processing rules exist, but not for SF {flow.current_sf} at {flow.current_node_id}. Fallback to forward')
+                log.warning(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id}, but not for SF {flow.current_sf}. Fallback to forward.')
                 next_node = self.get_next_node(flow, sf)
                 yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
         else:
@@ -173,7 +173,7 @@ class FlowSimulator:
                 self.env.exit()
         else:
             # Next node could not determined: drop flow
-            log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
+            log.warning(f'Flow {flow.flow_id}: Forwarding rule not found at {flow.current_node_id}. Dropping flow!')
             metrics.dropped_flow()
             self.env.exit()
 
@@ -270,7 +270,7 @@ class FlowSimulator:
         metrics.add_active_flow(flow, current_node_id, current_sf)
         if flow.dr <= node_remaining_cap:
             log.info(
-                "Flow {} started proccessing at sf {} at node {}. Time: {}, "
+                "Flow {} started processing at sf {} at node {}. Time: {}, "
                 "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                               processing_delay))
 
