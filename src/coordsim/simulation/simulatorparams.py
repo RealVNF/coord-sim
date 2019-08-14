@@ -9,7 +9,7 @@ other parameters for the simulator.
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={}):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={}, flow_forwarding_rules={}, flow_processing_rules={}, interception_callbacks={}):
         # Seed for the random generator: int
         self.seed = seed
         # NetworkX network object: DiGraph
@@ -26,6 +26,12 @@ class SimulatorParams:
         self.schedule = schedule
         # Placement of SFs in each node: defaultdict(list)
         self.sf_placement = sf_placement
+        # Flow forwarding rules
+        self.flow_forwarding_rules = flow_forwarding_rules
+        # Flow processing rules
+        self.flow_processing_rules = flow_processing_rules
+        # Callbacks to allow the flowsimulator interact with external function at certain events
+        self.interception_callbacks = interception_callbacks
 
         # Flow interarrival exponential distribution mean: float
         self.inter_arr_mean = config['inter_arrival_mean']
