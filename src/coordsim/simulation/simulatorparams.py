@@ -30,7 +30,7 @@ class SimulatorParams:
         self.flow_forwarding_rules = flow_forwarding_rules
         # Flow processing rules
         self.flow_processing_rules = flow_processing_rules
-        # Callbacks to allow the flowsimulator interact with external function at certain events
+        # Callbacks to allow the flowsimulator interact with external functions at certain events
         self.interception_callbacks = interception_callbacks
 
         # Flow interarrival exponential distribution mean: float

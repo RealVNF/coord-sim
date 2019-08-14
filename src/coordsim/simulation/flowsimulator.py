@@ -11,8 +11,16 @@ Flow Simulator class
 This class holds the flow simulator and its internal flow handling functions.
 Flow of data through the simulator (abstract):
 
-start() -> generate_flow() -> init_flow() -> pass_flow() -> process_flow()
-and forward_flow() -> depart_flow() or pass_flow()
+             +--------------------------+                      +-------------------------------------------------------------+
+             |                          |                      |                                                             |
+             |                          |                      |                                                             |
++-------+    V     +---------------+    |     +-----------+    V     +-----------+          +--------------------------+     |
+| start +----o---->+ generate_flow +----+---->+ init_flow +----o---->+ pass_flow +----+---->+ forward_flow_to_neighbor +---->o
++-------+          +---------------+          +-----------+          +-----------+    |     +--------------------------+     ^
+                                                                                      |                                      |
+                                                                                      |     +--------------+                 |           +-------------+
+                                                                                      ----->+ process_flow +-----------------+---------->+ depart_flow |
+                                                                                            +--------------+                             +-------------+
 
 """
 
@@ -101,12 +109,24 @@ class FlowSimulator:
 
     def pass_flow(self, flow, sfc):
         """
-        Passes the flow to the next node to begin processing.
+        Passes the flow to the node to decide how to handle the flow.
         The flow might still be arriving at a previous node or SF.
-        This function is used in a mutual recursion alongside process_flow() function to allow flows to arrive and begin
-        processing without waiting for the flow to completely arrive.
-        The mutual recursion is as follows:
-        pass_flow() -> process_flow() -> pass_flow() and so on...
+
+        This function is used in a mutual recursion alongside forward_flow_to_neighbor() and process_flow()
+        functions to allow flows to arrive and begin further handling without waiting for the flow to completely arrive.
+        The recursion is as follows:
+
+             +-------------------------------------------------------------+
+             |                                                             |
+             |                                                             |
+             V     +-----------+          +--------------------------+     |
+        ---->o---->+ pass_flow +----+---->+ forward_flow_to_neighbor +---->o
+                   +-----------+    |     +--------------------------+     ^
+                                    |                                      |
+                                    |     +--------------+                 |
+                                    ----->+ process_flow +-----------------+---->
+                                          +--------------+
+
         Breaking condition: Flow reaches last position within the SFC, then process_flow() calls depart_flow()
         instead of pass_flow(). The position of the flow within the SFC is determined using current_position
         attribute of the flow object.
@@ -225,28 +245,6 @@ class FlowSimulator:
                     metrics.dropped_flow()
                     metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
                     self.env.exit()
-
-    def forward_flow(self, flow, next_node):
-        """
-        Calculates the path delays occurring when forwarding a node
-        Path delays are calculated using the Shortest path
-        The delay is simulated by timing out for the delay amount of duration
-        """
-        path_delay = 0
-        if flow.current_node_id != next_node:
-            path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
-
-        # Metrics calculation for path delay. Flow's end2end delay is also incremented.
-        metrics.add_path_delay(path_delay)
-        flow.end2end_delay += path_delay
-        if flow.current_node_id == next_node:
-            assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
-            log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, self.env.now))
-        else:
-            log.info("Flow {} will leave node {} towards node {}. Time {}"
-                     .format(flow.flow_id, flow.current_node_id, next_node, self.env.now))
-            yield self.env.timeout(path_delay)
-            flow.current_node_id = next_node
 
     def process_flow(self, flow, sfc):
         """
