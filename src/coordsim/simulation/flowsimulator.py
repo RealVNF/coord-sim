@@ -115,43 +115,64 @@ class FlowSimulator:
         flow.current_sf = sf
         if 'pass_flow' in self.params.interception_callbacks:
             self.params.interception_callbacks['pass_flow'](flow)
-        next_node = self.get_next_node(flow, sf)
-        #yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
-        yield self.env.process(self.forward_flow(flow, next_node))
-        if sf in self.params.sf_placement[next_node]:
-            log.info("Flow {} STARTED ARRIVING at SF {} at node {} for processing. Time: {}"
-                     .format(flow.flow_id, flow.current_sf, flow.current_node_id, self.env.now))
-            yield self.env.process(self.process_flow(flow, sfc))
+
+        flow_processing_rules = self.params.flow_processing_rules
+        if (flow.current_node_id in flow_processing_rules) and (flow.flow_id in flow_processing_rules[flow.current_node_id]):
+            # Try to process Flow
+            processing_rule = flow_processing_rules[flow.current_node_id][flow.flow_id]
+            if sf in processing_rule:
+                # Flow has permission to be processed for requested service. Check if service function actually exists
+                if sf in self.params.sf_placement[flow.current_node_id]:
+                    log.info(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at node {flow.current_node_id} for processing. Time: {self.env.now}')
+                    yield self.env.process(self.process_flow(flow, sfc))
+                else:
+                    log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}')
+                    metrics.dropped_flow()
+                    self.env.exit()
+            else:
+                # Flow has no permission for requested service: fallback to forward flow
+                log.warning(f'Flow {flow.flow_id}: Processing rules exist, but not for SF {flow.current_sf} at {flow.current_node_id}. Fallback to forward')
+                next_node = self.get_next_node(flow, sf)
+                yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
         else:
-            log.warning("SF was not found at requested node. Dropping flow {}".format(flow.flow_id))
-            metrics.dropped_flow()
-            self.env.exit()
+            # There are no rules which instruct the flow to be processed at this node: forward flow
+            next_node = self.get_next_node(flow, sf)
+            yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
 
     def get_next_node(self, flow, sf):
         """
-        Get next node using weighted probabilites from the scheduler
+        Determine next node for a flow from its current node
+        First individual flow forwarding rules will be checked, if none exists it will fallback to general
+        scheduling policy. If no forwarding target can determined, the flow will be dropped.
         """
         schedule = self.params.schedule
-        # Check if scheduling rule exists
-        if (flow.current_node_id in schedule) and flow.sfc in schedule[flow.current_node_id]:
+        flow_forwarding_rules = self.params.flow_forwarding_rules
+
+        if (flow.current_node_id in flow_forwarding_rules) and (flow.flow_id in flow_forwarding_rules[flow.current_node_id]):
+            # Check if individual forwarding rule exists
+            next_node = flow_forwarding_rules[flow.current_node_id][flow.flow_id]
+            return next_node
+
+        elif (flow.current_node_id in schedule) and flow.sfc in schedule[flow.current_node_id]:
+            # Check if scheduling rule exists
             schedule_node = schedule[flow.current_node_id]
             schedule_sf = schedule_node[flow.sfc][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
             try:
                 next_node = np.random.choice(sf_nodes, p=sf_probability)
+                log.warning(f'Flow {flow.flow_id}: Had to fallback to scheduling policy at {flow.current_node_id}.')
                 return next_node
 
             except Exception as ex:
-
-                # Scheduling rule does not exist: drop flow
+                # Next node could not determined with given scheduling policy: drop flow
                 log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
                             f'Dropping flow!')
                 log.warning(ex)
                 metrics.dropped_flow()
                 self.env.exit()
         else:
-            # Scheduling rule does not exist: drop flow
+            # Next node could not determined: drop flow
             log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
             metrics.dropped_flow()
             self.env.exit()
@@ -204,7 +225,6 @@ class FlowSimulator:
                     metrics.dropped_flow()
                     metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
                     self.env.exit()
-
 
     def forward_flow(self, flow, next_node):
         """
