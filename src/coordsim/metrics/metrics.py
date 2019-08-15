@@ -27,6 +27,9 @@ def reset():
     metrics['num_path_delays'] = 0
     metrics['avg_path_delay'] = 0.0
 
+    metrics['total_path_delay_of_processed_flows'] = 0.0
+    metrics['avg_path_delay_of_processed_flows'] = 0.0
+
     metrics['total_end2end_delay'] = 0.0
     metrics['avg_end2end_delay'] = 0.0
 
@@ -87,9 +90,10 @@ def add_processing_delay(delay):
 
 
 def add_path_delay(delay):
-    metrics['num_path_delays'] += 1
     metrics['total_path_delay'] += delay
 
+def add_path_delay_of_processed_flows(delay):
+    metrics['total_path_delay_of_processed_flows'] += delay
 
 def add_end2end_delay(delay):
     metrics['total_end2end_delay'] += delay
@@ -107,10 +111,16 @@ def calc_avg_processing_delay():
 
 
 def calc_avg_path_delay():
-    if metrics['num_path_delays'] > 0:
-        metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
+    if metrics['generated_flows'] > 0:
+        metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['generated_flows']
     else:
         metrics['avg_path_delay'] = 9999
+
+def calc_avg_path_delay_of_processed_flows():
+    if metrics['processed_flows'] > 0:
+        metrics['avg_path_delay_of_processed_flows'] = metrics['total_path_delay_of_processed_flows'] / metrics['processed_flows']
+    else:
+        metrics['avg_path_delay_of_processed_flows'] = 9999
 
 
 def calc_avg_end2end_delay():
@@ -136,4 +146,6 @@ def get_metrics():
     calc_avg_path_delay()
     calc_avg_total_delay()
     calc_avg_end2end_delay()
+    calc_avg_path_delay()
+    calc_avg_path_delay_of_processed_flows()
     return metrics
