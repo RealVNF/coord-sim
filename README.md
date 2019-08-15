@@ -5,7 +5,7 @@ Simulate flow-level, inter-node network coordination including scaling and place
 
 **Additional features**:
 
-* Forwarding capabilities. Prior to this forwarding happened implicit, now flows are explicit forwarded over link, taking into account individual link utilization
+* Forwarding capabilities. Prior to this, forwarding happened implicit. Now flows are explicit forwarded over link, taking into account individual link utilization
 * Individual flow forwarding rules. A node can make a forwarding decision on individual flows.
 * Individual flow processing rules. A node can explicit decide if it will process a flow.
 * Extended simulator state and action interface.
