@@ -10,6 +10,8 @@ import numpy
 import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
+import copy
+import networkx
 logger = logging.getLogger(__name__)
 
 class ExtendedSimulatorAction(SimulatorAction):
@@ -171,6 +173,15 @@ class Simulator(SimulatorInterface):
                                                           self.params.flow_processing_rules)
         return extended_simulator_state
 
+    def get_network_copy(self) -> networkx.Graph:
+        """
+        Returns a deepcopy of the network topology and its current state. The returned network can be used by external
+        algorithms for e.g. calculating shortest path based on their restricted knowledge, without altering the internal
+        simulator state.
+        """
+        copy_network = copy.deepcopy(self.params.network)
+        return copy_network
+
     def parse_network(self) -> dict:
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
@@ -187,7 +198,6 @@ class Simulator(SimulatorInterface):
             edge_dr = edge[2]['cap']
             # We use a fixed user data rate for the edges here as the functionality is not yet incorporated in the
             # simulator.
-            # TODO: Implement used edge data rates in the simulator.
             edge_used_dr =  edge[2]['cap'] - edge[2]['remaining_cap']
             self.network_dict['edges'].append({
                 'src': edge_src,
