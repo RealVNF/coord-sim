@@ -1,67 +1,25 @@
-[![Build Status](https://travis-ci.com/RealVNF/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/RealVNF/coordination-simulation)
-
 # Simulation: Coordination of chained virtual network functions
 
-Simulate flow-level, inter-node network coordination including scaling and placement of services and scheduling/balancing traffic between them.
+Simulate flow-level, inter-node network coordination including scaling and placement of services and routing flows between them. Note: this repository holds an altered version of the original simulator [coord-sim](https://github.com/RealVNF/coordination-simulation), adapted to my needs in order to accomplish my bachelor thesis.
 
 
-**Goal**:
+**Additonal features**:
 
-* Simulate any given network topology with node and link capacities using NetworkX
-* Simulate network traffic in the form of flow arrivals at various ingress nodes with varying arrival rate, flow length, volume, etc
-* Run algorithms for scaling, placement, and scheduling/load balancing of these incoming flows across the nodes in the network. Coordination within each node is out of scope (e.g., handled by Kubernetes).
-* Discrete event simulation to evaluate coordination over time with SimPy
-* Integration with OpenAI Gym to allow training and evaluating reinforcement learning algorithms
+* Forwarding capabilities. Prior to this forwarding happened implicit, now flows are explicit forwarded over link, taking into account individual link utilization
+* Individual flow forwarding rules. A node can make a forwarding decision on individual flows.
+* Individual flow processing rules. A node can explicit decide if it will process a flow.
+* Extended simulator state and action interface.
+* Algorithm callback interface. To allow a external algorithm to capture certain event, it can register callback functions invoked by the flowsimulator.
 
 
 ## Setup
 
-Requires Python 3.6. Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
+Requires Python 3.6. Install with [virtualenv](https://virtualenv.pypa.io/en/stable/) to not break original coord-sim installation. Make sure to install simulator with adapted source files, located on the `adapted` branch:
+```bash
+git checkout adapted
+```
 
+Then follow original setup procedure:
 ```bash
 pip install -r requirements.txt
-```
-
-
-## Usage
-
-Type `coord-sim -h` for help using the simulator. For now, this should print 
-
-``` 
-$ coord-sim -h
-usage: coord-sim [-h] -d DURATION -sf SF -n NETWORK -c CONFIG
-
-Coordination-Simulation tool
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -d DURATION, --duration DURATION
-                        The duration of the simulation (simulates
-                        milliseconds).
-  -sf SF, --sf SF       VNF file which contains the SFCs and their respective
-                        SFs and their properties.
-  -n NETWORK, --network NETWORK
-                        The GraphML network file that specifies the nodes and
-                        edges of the network.
-  -c CONFIG, --config CONFIG
-                        Path to the simulator config file
-  -s SEED, --seed SEED  Random seed
-```
-
-You can use the following command as an example (run from the root project folder)
-
-```bash 
-coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -c params/config/sim_config.yaml
-```
-This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps. 
-
-
-## Tests
-
-```bash
-# style check
-flake8 src
-
-# tests
-nose2
 ```

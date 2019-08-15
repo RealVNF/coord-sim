@@ -112,8 +112,8 @@ class FlowSimulator:
         Passes the flow to the node to decide how to handle the flow.
         The flow might still be arriving at a previous node or SF.
 
-        This function is used in a mutual recursion alongside forward_flow_to_neighbor() and process_flow()
-        functions to allow flows to arrive and begin further handling without waiting for the flow to completely arrive.
+        This process is used in a recursion alongside forward_flow_to_neighbor() and process_flow()
+        processes to allow flows to arrive and begin further handling without waiting for the flow to completely arrive.
         The recursion is as follows:
 
              +-------------------------------------------------------------+
@@ -127,7 +127,7 @@ class FlowSimulator:
                                     ----->+ process_flow +-----------------+---->
                                           +--------------+
 
-        Breaking condition: Flow reaches last position within the SFC, then process_flow() calls depart_flow()
+        Breaking condition: Flow reaches last position within the SFC, then process_flow() creates depart_flow()
         instead of pass_flow(). The position of the flow within the SFC is determined using current_position
         attribute of the flow object.
         """
