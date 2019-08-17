@@ -33,8 +33,10 @@ class Flow:
         self.size = size
         # The current SF that the flow is being processed in.
         self.current_sf = current_sf
-        # The current node that the flow is being processed in
+        # The node where the flows head currently resides at
         self.current_node_id = current_node_id
+        # The specified egress node of the flow. The flow will depart at the egress node. Might be non-existent.
+        self.destination_id = destination_id
         # The duration of the flow calculated in ms.
         self.duration = (float(size) / float(dr)) * 1000  # Converted flow duration to ms
         # Current flow position within the SFC
