@@ -167,8 +167,12 @@ class FlowSimulator:
 
         # Decide how to handle the flow
         if flow_is_processed:
-            if (flow.current_node_id == flow.destination_id) or (flow.destination_id is None):
+            if flow.current_node_id == flow.destination_id:
                 # Flow head is processed and resides at egress node: depart flow
+                self.env.process(self.depart_flow(flow))
+            elif flow.destination_id is None:
+                # Flow head is processed and resides at egress node: depart flow
+                log.info(f'Flow {flow.flow_id} has no egress node, will depart from current node {flow.current_node_id}. Time {self.env.now}.')
                 self.env.process(self.depart_flow(flow))
             else:
                 # Forward flow
@@ -386,7 +390,7 @@ class FlowSimulator:
 
         log.info(f'Flow {flow.flow_id} was processed and starts departing the network from {flow.current_node_id}. Time {self.env.now}')
         yield self.env.timeout(flow.duration)
-        log.info(f'Flow {flow.flow_id} was processed and departed the network from {flow.current_node_id}. Time {self.env.now}')
+        log.info(f'Flow {flow.flow_id} has completely departed the network from {flow.current_node_id}. Time {self.env.now}')
 
         # Update metrics for the processed flow
         metrics.processed_flow()
