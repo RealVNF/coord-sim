@@ -325,19 +325,36 @@ class FlowSimulator:
             # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
             node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
-            yield self.env.timeout(processing_delay)
-            log.info(
-                f'Flow {flow.flow_id} started departing sf {current_sf} at node {current_node_id}. Time {self.env.now}')
-            # Increment the position of the flow within SFC
-            flow.current_position += 1
-            # Update metrics for the processing delay
-            # Add the delay to the flow's end2end delay
-            metrics.add_processing_delay(processing_delay)
-            flow.end2end_delay += processing_delay
+            if processing_delay > flow.duration:
+                yield self.env.timeout(flow.duration)
+                log.info(
+                    f'Flow {flow.flow_id} FINISHED ARRIVING at SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
 
-            self.env.process(self.pass_flow(flow, sfc))
+                yield self.env.timeout((processing_delay - flow.duration))
+                log.info(
+                    f'Flow {flow.flow_id} started departing sf {current_sf} at node {current_node_id}. Time {self.env.now}')
+                flow.current_position += 1
+                self.env.process(self.pass_flow(flow, sfc))
+                metrics.add_processing_delay(processing_delay)
+                flow.end2end_delay += processing_delay
 
-            yield self.env.timeout(flow.duration)
+                yield self.env.timeout(flow.duration)
+            else:
+                yield self.env.timeout(processing_delay)
+                log.info(
+                    f'Flow {flow.flow_id} started departing sf {current_sf} at node {current_node_id}. Time {self.env.now}')
+                # Increment the position of the flow within SFC
+                flow.current_position += 1
+                self.env.process(self.pass_flow(flow, sfc))
+                metrics.add_processing_delay(processing_delay)
+                flow.end2end_delay += processing_delay
+
+                yield self.env.timeout((flow.duration - processing_delay))
+                log.info(
+                    f'Flow {flow.flow_id} FINISHED ARRIVING at SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
+
+                yield self.env.timeout(processing_delay)
+
             log.info(f'Flow {flow.flow_id} has departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
 
             # Remove the active flow from the SF after it departed the SF
