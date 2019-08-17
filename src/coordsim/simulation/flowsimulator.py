@@ -310,11 +310,7 @@ class FlowSimulator:
         vnf_delay_mean = self.params.sf_list[flow.current_sf]["processing_delay_mean"]
         vnf_delay_stdev = self.params.sf_list[flow.current_sf]["processing_delay_stdev"]
         processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
-        # Update metrics for the processing delay
-        # Add the delay to the flow's end2end delay
-        # Remove
-        # metrics.add_processing_delay(processing_delay)
-        # flow.end2end_delay += processing_delay
+
         # Get node capacities
         node_cap = self.params.network.nodes[current_node_id]["cap"]
         node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
@@ -334,9 +330,12 @@ class FlowSimulator:
                 f'Flow {flow.flow_id} started departing sf {current_sf} at node {current_node_id}. Time {self.env.now}')
             # Increment the position of the flow within SFC
             flow.current_position += 1
-            self.env.process(self.pass_flow(flow, sfc))
+            # Update metrics for the processing delay
+            # Add the delay to the flow's end2end delay
             metrics.add_processing_delay(processing_delay)
             flow.end2end_delay += processing_delay
+
+            self.env.process(self.pass_flow(flow, sfc))
 
             yield self.env.timeout(flow.duration)
             log.info(f'Flow {flow.flow_id} has departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
@@ -355,8 +354,6 @@ class FlowSimulator:
             log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
             # Update metrics for the dropped flow
             metrics.dropped_flow()
-            # Should have never been included, remove
-            #metrics.remove_active_flow(flow, current_node_id, current_sf)
             self.env.exit()
 
     def depart_flow(self, flow):
