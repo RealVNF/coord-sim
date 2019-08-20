@@ -21,7 +21,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
 
-    def init(self, network_file, service_functions_file, config_file, seed):
+    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path):
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -31,7 +31,7 @@ class Simulator(SimulatorInterface):
         # Parse network and SFC + SF file
         self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
         self.sfc_list = reader.get_sfc(service_functions_file)
-        self.sf_list = reader.get_sf(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
 
         # Generate SimPy simulation environment

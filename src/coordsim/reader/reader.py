@@ -5,6 +5,7 @@ import logging as log
 import yaml
 import math
 from collections import defaultdict
+import importlib
 
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
@@ -40,7 +41,21 @@ def get_sfc(sfc_file):
     return sfc_list
 
 
-def get_sf(sf_file):
+def load_resource_function(name, path):
+    try:
+        spec = importlib.util.spec_from_file_location(name, path + '/' + name + '.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception as ex:
+        raise Exception(f'Cannot load file {name}.py located at {path}.')
+
+    try:
+        return getattr(module, 'resource_function')
+    except Exception as ex:
+        raise Exception(f'There is no resource_function defined in file {name}.py')
+
+
+def get_sf(sf_file, resource_functions_path):
     """
     Get the list of SFs and their properties from the yaml data.
     """
@@ -58,6 +73,17 @@ def get_sf(sf_file):
                                                                          default_processing_delay_mean)
         sf_list[sf_name]["processing_delay_stdev"] = sf_list[sf_name].get("processing_delay_stdev",
                                                                           default_processing_delay_stdev)
+        if 'resource_function_id' in sf_list[sf_name]:
+            try:
+                sf_list[sf_name]["resource_function"] = load_resource_function(sf_list[sf_name]['resource_function_id'],
+                                                                               resource_functions_path)
+            except Exception as ex:
+                sf_list[sf_name]["resource_function_id"] = 'default'
+                sf_list[sf_name]["resource_function"] = lambda x: x
+                log.warning(f'{repr(ex)} Default resource function will be used instead.')
+        else:
+            sf_list[sf_name]["resource_function_id"] = 'default'
+            sf_list[sf_name]["resource_function"] = lambda x: x
     return sf_list
 
 
