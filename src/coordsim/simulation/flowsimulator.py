@@ -53,6 +53,7 @@ class FlowSimulator:
 
     def periodic_measurement(self):
         """
+        SimPy process.
         This process allows external algorithms to capture simulator state in a specified intervals, independent of the
         overall simulation run duration and algorithm interaction.
 
@@ -71,7 +72,8 @@ class FlowSimulator:
 
     def generate_flow(self, node_id):
         """
-        Generate flows at the ingress nodes.
+        SimPy process.
+        Generates flows at the ingress nodes.
 
         The process interaction is visualized as:
 
@@ -116,7 +118,8 @@ class FlowSimulator:
 
     def init_flow(self, flow):
         """
-        Initialize flows within the network. This function takes the generated flow object at the ingress node
+        SimPy process.
+        Initializes flows within the network. This function takes the generated flow object at the ingress node
         and handles it according to the requested SFC. We check if the SFC that is being requested is indeed
         within the schedule, otherwise we log a warning and drop the flow.
         The algorithm will check the flow's requested SFC, and will forward the flow through the network using the
@@ -140,12 +143,12 @@ class FlowSimulator:
             yield self.env.process(self.pass_flow(flow, sfc))
         else:
             log.info(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
-            # Update metrics for the dropped flow
-            metrics.dropped_flow()
+            self.drop_flow(flow)
             self.env.exit()
 
     def pass_flow(self, flow, sfc):
         """
+        SimPy process.
         Passes the flow to the node, to decide how to handle it.
         The flow might still be arriving at a previous node or SF.
 
@@ -211,7 +214,7 @@ class FlowSimulator:
                         yield self.env.process(self.process_flow(flow, sfc))
                     else:
                         log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}.')
-                        metrics.dropped_flow()
+                        self.drop_flow(flow)
                         self.env.exit()
                 else:
                     # Flow has no permission for requested service: fallback to forward flow
@@ -254,20 +257,21 @@ class FlowSimulator:
                 log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
                             f'Dropping flow!')
                 log.warning(ex)
-                metrics.dropped_flow()
+                self.drop_flow(flow)
                 self.env.exit()
         else:
             # Next node could not determined: drop flow
             log.warning(f'Flow {flow.flow_id}: Forwarding rule not found at {flow.current_node_id}. Dropping flow!')
-            metrics.dropped_flow()
+            self.drop_flow(flow)
             self.env.exit()
 
     def forward_flow_to_neighbor(self, flow, neighbor_id):
         '''
-        Forward the flow over a link from the current node to a direct neighbor. Forwarding a flow to itself is not
+        SimPy process.
+        Forwards the flow over a link from the current node to a direct neighbor. Forwarding a flow to itself is not
         permitted.
-        Link capacities are claimed as soon as the flow starts traversing the flow and will not be freed before the
-        flow has completely traversed the link. If not capacity is available the flow will be dropped
+        Link capacities are claimed as soon as the flow starts traversing the link and will not be freed before the
+        flow has completely traversed the link. If not enough capacity is available the flow will be dropped
 
         The process interaction is visualized as:
 
@@ -278,7 +282,7 @@ class FlowSimulator:
         if neighbor_id not in self.params.network.neighbors(flow.current_node_id):
             # Forwarding target is actually not a neighbor of the flows current node: drop flow
             log.warning(f'Flow {flow.flow_id}: Cannot forward from node {flow.current_node_id} to node {neighbor_id} over non-existent link. Dropping flow!')
-            metrics.dropped_flow()
+            self.drop_flow(flow)
             self.env.exit()
         else:
             forwarding_link = self.params.network[flow.current_node_id][neighbor_id]
@@ -309,14 +313,13 @@ class FlowSimulator:
                     "Link remaining capacity cannot be more than link capacity!"
             else:
                 log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
-                # Update metrics for the dropped flow
-                metrics.dropped_flow()
-                metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
+                self.drop_flow(flow)
                 self.env.exit()
 
     def process_flow(self, flow, sfc):
         """
-        Process the flow at the requested SF of the current node.
+        SimPy process.
+        Processes the flow at the requested SF of the current node.
 
         The process interaction is visualized as:
 
@@ -374,13 +377,13 @@ class FlowSimulator:
             assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
         else:
             log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
-            # Update metrics for the dropped flow
-            metrics.dropped_flow()
+            self.drop_flow(flow)
             self.env.exit()
 
     def depart_flow(self, flow):
         """
-        Process the flow at the requested SF of the current node.
+        SimPy process.
+        Departs the flow from the network
 
         The process interaction is visualized as:
 
@@ -399,3 +402,11 @@ class FlowSimulator:
         metrics.add_path_delay_of_processed_flows(flow.path_delay)
 
         self.env.exit()
+
+    def drop_flow(self, flow):
+        """
+        This function concentrates actions that need to be carried out when dropping a flow. At the moment
+        there is no real advantage in this outsourcing, but future version might introduce more actions.
+        """
+        # Update metrics for the dropped flow
+        metrics.dropped_flow()
