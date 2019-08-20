@@ -78,6 +78,7 @@ def generated_flow():
 
 def processed_flow():
     metrics['processed_flows'] += 1
+    metrics['run_processed_flows'] += 1
     metrics['total_active_flows'] -= 1
     assert metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
@@ -134,9 +135,12 @@ def calc_avg_end2end_delay():
     # We devide by number of processed flows to get end2end delays for processed flows only
     if metrics['processed_flows'] > 0:
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
-        metrics['run_avg_end2end_delay'] = metrics['run_end2end_delay'] / metrics['run_processed_flows']
     else:
         metrics['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
+
+    if metrics['run_processed_flows'] > 0:
+        metrics['run_avg_end2end_delay'] = metrics['run_end2end_delay'] / metrics['run_processed_flows']
+    else:
         metrics['run_avg_end2end_delay'] = 9999  # No run avg end2end delay yet (no processed flows yet)
 
 
