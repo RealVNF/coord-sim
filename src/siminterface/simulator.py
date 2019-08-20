@@ -173,6 +173,10 @@ class Simulator(SimulatorInterface):
                                                           self.params.flow_processing_rules)
         return extended_simulator_state
 
+    def write_simulator_state(self):
+        extended = self.get_simulator_state()
+        self.writer.write_state_results(self.env, extended)
+
     def get_network_copy(self) -> networkx.Graph:
         """
         Returns a deepcopy of the network topology and its current state. The returned network can be used by external

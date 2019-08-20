@@ -215,7 +215,7 @@ class FlowSimulator:
                         self.env.exit()
                 else:
                     # Flow has no permission for requested service: fallback to forward flow
-                    log.warning(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id}, but not for SF {flow.current_sf}. Fallback to forward.')
+                    log.debug(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id}, but not for SF {flow.current_sf}. Fallback to forward.')
                     next_node = self.get_next_node(flow, sf)
                     yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
 
