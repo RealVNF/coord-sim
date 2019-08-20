@@ -16,6 +16,7 @@ metrics = {}
 def reset():
     metrics['generated_flows'] = 0
     metrics['processed_flows'] = 0
+    metrics['run_processed_flows'] = 0
     metrics['dropped_flows'] = 0
     metrics['total_active_flows'] = 0
 
@@ -32,6 +33,9 @@ def reset():
 
     metrics['total_end2end_delay'] = 0.0
     metrics['avg_end2end_delay'] = 0.0
+    metrics['run_end2end_delay'] = 0.0
+    metrics['run_avg_end2end_delay'] = 0.0
+    metrics['run_max_end2end_delay'] = 9999
 
     metrics['avg_total_delay'] = 0.0
 
@@ -97,6 +101,9 @@ def add_path_delay_of_processed_flows(delay):
 
 def add_end2end_delay(delay):
     metrics['total_end2end_delay'] += delay
+    metrics['run_end2end_delay'] += delay
+    if delay > metrics['run_max_end2end_delay']:
+        metrics['run_max_end2end_delay'] = delay
 
 
 def running_time(start_time, end_time):
@@ -127,8 +134,10 @@ def calc_avg_end2end_delay():
     # We devide by number of processed flows to get end2end delays for processed flows only
     if metrics['processed_flows'] > 0:
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
+        metrics['run_avg_end2end_delay'] = metrics['run_end2end_delay'] / metrics['run_processed_flows']
     else:
         metrics['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
+        metrics['run_avg_end2end_delay'] = 9999  # No run avg end2end delay yet (no processed flows yet)
 
 
 def calc_avg_total_delay():
@@ -149,3 +158,9 @@ def get_metrics():
     calc_avg_path_delay()
     calc_avg_path_delay_of_processed_flows()
     return metrics
+
+
+def reset_run():
+    metrics['run_end2end_delay'] = 0
+    metrics['run_processed_flows'] = 0
+    metrics['run_max_end2end_delay'] = 9999
