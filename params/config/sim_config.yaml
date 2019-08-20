@@ -10,3 +10,4 @@ flow_size_shape: 0.001             # default: 0.001
 # deterministic values rather than means of a random distribution
 deterministic: True                # default: False
 run_duration: 100                  # default: 100
+inter_measurement: 10

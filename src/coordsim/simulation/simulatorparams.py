@@ -46,6 +46,9 @@ class SimulatorParams:
         self.deterministic = config['deterministic']
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
+        # The duration in between simulator state measurements
+        self.inter_measurement = config['inter_measurement']
+
 
     # string representation for logging
     def __str__(self):

@@ -10,7 +10,9 @@ Simulate flow-level, inter-node network coordination including scaling and place
 * Individual flow processing rules. A node can explicit decide if it will process a flow.
 * Extended simulator state and action interface.
 * Algorithm callback interface. To allow a external algorithm to capture certain event, it can register callback functions invoked by the flowsimulator.
+	* Periodic measurement callbacks.
 * Adapted metrics.
+* Egress node routing.
 
 
 ## Setup

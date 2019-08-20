@@ -9,24 +9,24 @@ log = logging.getLogger(__name__)
 """
 Flow Simulator class
 This class holds the flow simulator and its internal flow handling functions.
-The abstracted core logic of the simulator is presented in the following chart. Boxed name present simpy processes,
-directed link illustrate which process interact by spawing a new process.
+The abstracted core logic of the simulator is presented in the following chart. Boxed names present SimPy processes,
+directed links illustrate how processes interact with each other, by spawning a new instance of the corresponding SimPy process.
 
-             +--------------------------+                      +-------------------------------------------------------------+
-             |                          |                      |                                                             |
-             |                          |                      |                                                             |
-             V     +---------------+    |     +-----------+    V     +-----------+          +--------------------------+     |
- start() ----o---->+ generate_flow +----+---->+ init_flow +----o---->+ pass_flow +----+---->+ forward_flow_to_neighbor +---->o
-                   +---------------+          +-----------+          +-----------+    |     +--------------------------+     ^
-                                                                                      |                                      |
-                                                                                      |     +--------------+                 |
-                                                                                      +---->+ process_flow +-----------------+
-                                                                                      |     +--------------+
-                                                                                      |
-                                                                                      |
-                                                                                      |     +-------------+
-                                                                                      +---->+ depart_flow |
-                                                                                            +-------------+
+                                                                  +-------------------------------------------------------------+
+                                                                  |                                                             |
+                                                                  |                                                             |
+                      +---------------+          +-----------+    V     +-----------+          +--------------------------+     |
+start() ----+-------->+ generate_flow +--------->+ init_flow +----o---->+ pass_flow +----+---->+ forward_flow_to_neighbor +---->o
+            |         +---------------+          +-----------+          +-----------+    |     +--------------------------+     ^
+            |                                                                            |                                      |
+            |         +----------------------+                                           |     +--------------+                 |
+            +-------->+ periodic_measurement |                                           +---->+ process_flow +-----------------+
+                      +----------------------+                                           |     +--------------+
+                                                                                         |
+                                                                                         |
+                                                                                         |     +-------------+
+                                                                                         +---->+ depart_flow |
+                                                                                               +-------------+
 """
 
 
@@ -48,6 +48,26 @@ class FlowSimulator:
         for node in self.params.ing_nodes:
             node_id = node[0]
             self.env.process(self.generate_flow(node_id))
+        # Start periodic measurement process
+        self.env.process(self.periodic_measurement())
+
+    def periodic_measurement(self):
+        """
+        This process allows external algorithms to capture simulator state in a specified intervals, independent of the
+        overall simulation run duration and algorithm interaction.
+
+        The process interaction is visualized as:
+
+             +----------------------+
+        ---->+ periodic_measurement |
+             +----------------------+
+        """
+        while True:
+            log.debug(f'measurement interception. Time {self.env.now}.')
+            # Allow algorithm to collect state for measurement, invoke interception callback
+            if 'periodic_measurement' in self.params.interception_callbacks:
+                self.params.interception_callbacks['periodic_measurement']()
+            yield self.env.timeout(self.params.inter_measurement)
 
     def generate_flow(self, node_id):
         """
@@ -55,12 +75,9 @@ class FlowSimulator:
 
         The process interaction is visualized as:
 
-            +--------------------------+
-            |                          |
-            |                          |
-            V     +---------------+    |     +-----------+
-        ----o---->+ generate_flow +----+---->+ init_flow +---->
-                  +---------------+          +-----------+
+             +---------------+          +-----------+
+        ---->+ generate_flow +--------->+ init_flow +---->
+             +---------------+          +-----------+
         """
         while True:
             self.total_flow_count += 1
@@ -157,7 +174,7 @@ class FlowSimulator:
         if (flow.current_position == len(sfc))
         """
         # Determine flow status
-        flow_is_processed =  (flow.current_position == len(sfc))
+        flow_is_processed = (flow.current_position == len(sfc))
         if not flow_is_processed:
             # Flow not fully processed, update next service function before callback interception
             flow.current_sf = sfc[flow.current_position]
