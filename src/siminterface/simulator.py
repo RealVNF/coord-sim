@@ -83,6 +83,9 @@ class Simulator(SimulatorInterface):
         # Set it in the params of the instantiated simulator object.
         self.simulator.params.schedule = actions.scheduling
 
+        # reset metrics for steps
+        metrics.reset_run()
+
         # Run the simulation again with the new params for the set duration.
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
@@ -148,5 +151,7 @@ class Simulator(SimulatorInterface):
             'successful_flows': stats['processed_flows'],
             'dropped_flows': stats['dropped_flows'],
             'in_network_flows': stats['total_active_flows'],
-            'avg_end_2_end_delay': stats['avg_end2end_delay']
+            'avg_end_2_end_delay': stats['avg_end2end_delay'],
+            'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
+            'run_max_end2end_delay': stats['run_max_end2end_delay']
         }
