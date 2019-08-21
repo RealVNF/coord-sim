@@ -21,7 +21,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
 
-    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path):
+    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path=""):
 
         # Initialize metrics, record start time
         metrics.reset()
