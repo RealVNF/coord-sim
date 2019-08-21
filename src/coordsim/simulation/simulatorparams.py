@@ -32,8 +32,6 @@ class SimulatorParams:
             for sf in placed_sf_list:
                 available_sf[sf] = self.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
             self.network.nodes[node_id]['available_sf'] = available_sf
-
-
         # Flow interarrival exponential distribution mean: float
         self.inter_arr_mean = config['inter_arrival_mean']
         # Flow data rate normal distribution mean: float
