@@ -30,8 +30,8 @@ class TestFlowSimulator(TestCase):
         self.env = simpy.Environment()
         # Configure simulator parameters
         network, ing_nodes = reader.read_network(NETWORK_FILE, node_cap=10, link_cap=10)
-        sfc_list = reader.get_sfc(SERVICE_FUNCTIONS_FILE, RESOURCE_FUNCTION_PATH)
-        sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE)
+        sfc_list = reader.get_sfc(SERVICE_FUNCTIONS_FILE)
+        sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE, RESOURCE_FUNCTION_PATH)
         config = reader.get_config(CONFIG_FILE)
 
         sf_placement = dummy_data.triangle_placement
