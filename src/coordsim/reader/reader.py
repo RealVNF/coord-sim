@@ -1,12 +1,13 @@
 import networkx as nx
 from geopy.distance import distance as dist
 import numpy as np
-import logging as log
+import logging
 import yaml
 import math
 from collections import defaultdict
 import importlib
 
+log = logging.getLogger(__name__)
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
@@ -47,12 +48,12 @@ def load_resource_function(name, path):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     except Exception as ex:
-        raise Exception(f'Cannot load file {name}.py located at {path}.')
+        raise Exception(f'Cannot load file {name}.py from specified location {path}.')
 
     try:
         return getattr(module, 'resource_function')
     except Exception as ex:
-        raise Exception(f'There is no resource_function defined in file {name}.py')
+        raise Exception(f'There is no resource_function defined in file {name}.py.')
 
 
 def get_sf(sf_file, resource_functions_path):
@@ -81,11 +82,11 @@ def get_sf(sf_file, resource_functions_path):
             except Exception as ex:
                 sf_list[sf_name]["resource_function_id"] = 'default'
                 sf_list[sf_name]["resource_function"] = default_resource_function
-                log.warning(f'{repr(ex)} Default resource function will be used instead.')
+                log.warning(f'{str(ex)} SF {sf_name} will use default resource function instead.')
         else:
             sf_list[sf_name]["resource_function_id"] = 'default'
             sf_list[sf_name]["resource_function"] = default_resource_function
-            log.warning(f'No resource function specified. Default resource function will be used instead.')
+            log.info(f'No resource function specified for SF {sf_name}. Default resource function will be used instead.')
     return sf_list
 
 
