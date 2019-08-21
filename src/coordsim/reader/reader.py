@@ -65,6 +65,7 @@ def get_sf(sf_file, resource_functions_path):
     # Configureable default mean and stdev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
+    default_resource_function = lambda x: x
     sf_list = defaultdict(None)
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
@@ -79,11 +80,12 @@ def get_sf(sf_file, resource_functions_path):
                                                                                resource_functions_path)
             except Exception as ex:
                 sf_list[sf_name]["resource_function_id"] = 'default'
-                sf_list[sf_name]["resource_function"] = lambda x: x
+                sf_list[sf_name]["resource_function"] = default_resource_function
                 log.warning(f'{repr(ex)} Default resource function will be used instead.')
         else:
             sf_list[sf_name]["resource_function_id"] = 'default'
-            sf_list[sf_name]["resource_function"] = lambda x: x
+            sf_list[sf_name]["resource_function"] = default_resource_function
+            log.warning(f'No resource function specified. Default resource function will be used instead.')
     return sf_list
 
 
