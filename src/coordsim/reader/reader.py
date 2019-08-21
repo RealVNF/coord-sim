@@ -47,12 +47,12 @@ def load_resource_function(name, path):
         spec = importlib.util.spec_from_file_location(name, path + '/' + name + '.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-    except Exception as ex:
+    except Exception:
         raise Exception(f'Cannot load file "{name}.py" from specified location "{path}".')
 
     try:
         return getattr(module, 'resource_function')
-    except Exception as ex:
+    except Exception:
         raise Exception(f'There is no "resource_function" defined in file "{name}.py."')
 
 
@@ -66,7 +66,7 @@ def get_sf(sf_file, resource_functions_path):
     # Configureable default mean and stdev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
-    default_resource_function = lambda x: x
+    def default_resource_function(x): return x
     sf_list = defaultdict(None)
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
@@ -86,7 +86,8 @@ def get_sf(sf_file, resource_functions_path):
         else:
             sf_list[sf_name]["resource_function_id"] = 'default'
             sf_list[sf_name]["resource_function"] = default_resource_function
-            log.info(f'No resource function specified for SF {sf_name}. Default resource function will be used instead.')
+            log.info(
+                f'No resource function specified for SF {sf_name}. Default resource function will be used instead.')
     return sf_list
 
 

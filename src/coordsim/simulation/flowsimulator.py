@@ -190,7 +190,7 @@ class FlowSimulator:
 
             # Calculate the demanded capacity when the flow is processed at this node
             demanded_total_capacity = 0.0
-            for sf_i, sf_data in self.params.network.nodes[current_node_id]["available_sf"].items():
+            for sf_i, sf_data in self.params.network.nodes[current_node_id]['available_sf'].items():
                 if sf == sf_i:
                     # Include flows data rate in requested sf capacity calculation
                     demanded_total_capacity += self.params.sf_list[sf]['resource_function'](sf_data['load'] + flow.dr)
@@ -210,9 +210,9 @@ class FlowSimulator:
                                                   processing_delay))
 
                 # Add load to sf
-                self.params.network.nodes[current_node_id]["available_sf"][sf]['load'] += flow.dr
+                self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] += flow.dr
                 # Set remaining node capacity
-                self.params.network.nodes[current_node_id]["remaining_cap"] = node_cap - demanded_total_capacity
+                self.params.network.nodes[current_node_id]['remaining_cap'] = node_cap - demanded_total_capacity
                 # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
                 node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
@@ -238,13 +238,13 @@ class FlowSimulator:
                     metrics.remove_active_flow(flow, current_node_id, current_sf)
 
                 # Remove load from sf
-                self.params.network.nodes[current_node_id]["available_sf"][sf]['load'] -= flow.dr
+                self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
                 # Recalculation is necessary because other flows could have already arrived or departed at the node
                 used_total_capacitiy = 0.0
-                for sf_i, sf_data in self.params.network.nodes[current_node_id]["available_sf"].items():
+                for sf_i, sf_data in self.params.network.nodes[current_node_id]['available_sf'].items():
                     used_total_capacitiy += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
                 # Set remaining node capacity
-                self.params.network.nodes[current_node_id]["remaining_cap"] = node_cap - used_total_capacitiy
+                self.params.network.nodes[current_node_id]['remaining_cap'] = node_cap - used_total_capacitiy
                 # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
                 node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
