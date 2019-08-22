@@ -14,6 +14,7 @@ import copy
 import networkx
 logger = logging.getLogger(__name__)
 
+
 class ExtendedSimulatorAction(SimulatorAction):
     def __init__(self,
                  placement: dict,
@@ -31,6 +32,7 @@ class ExtendedSimulatorAction(SimulatorAction):
                                        flow_forwarding_rules,
                                        flow_processing_rules)
 
+
 class ExtendedSimulatorState(SimulatorState):
     def __init__(self,
                  network,
@@ -45,7 +47,6 @@ class ExtendedSimulatorState(SimulatorState):
         self.flow_forwarding_rules = flow_forwarding_rules
         self.flow_processing_rules = flow_processing_rules
 
-
     @staticmethod
     def convert(state: SimulatorState, flow_forwarding_rules={}, flow_processing_rules={}):
         return ExtendedSimulatorState(state.network,
@@ -56,6 +57,7 @@ class ExtendedSimulatorState(SimulatorState):
                                       state.network_stats,
                                       flow_forwarding_rules,
                                       flow_processing_rules)
+
 
 class Simulator(SimulatorInterface):
     def __init__(self, test_mode=False):
@@ -84,7 +86,8 @@ class Simulator(SimulatorInterface):
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed, interception_callbacks=self.interception_callbacks)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed,
+                                      interception_callbacks=self.interception_callbacks)
         self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
@@ -113,12 +116,62 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         # self.writer.write_state_results(self.env, simulator_state)
         extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                          self.params.flow_processing_rules)
+                                                                  self.params.flow_processing_rules)
+        return extended_simulator_state
+
+    def init_inter(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
+                   interception_callbacks={}):
+        # Initialize metrics, record start time
+        metrics.reset()
+        self.run_times = int(1)
+        self.start_time = time.time()
+
+        # Parse network and SFC + SF file
+        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
+        self.sfc_list = reader.get_sfc(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
+        self.config = reader.get_config(config_file)
+        self.interception_callbacks = interception_callbacks
+
+        # Generate SimPy simulation environment
+        self.env = simpy.Environment()
+
+        # Instantiate the parameter object for the simulator.
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed,
+                                      interception_callbacks=self.interception_callbacks)
+        self.duration = self.params.run_duration
+        # Get and plant random seed
+        self.seed = seed
+        random.seed(self.seed)
+        numpy.random.seed(self.seed)
+
+        # Instantiate a simulator object, pass the environment and params
+        self.simulator = FlowSimulator(self.env, self.params)
+
+        # Start the simulator
+        self.simulator.start()
+
+        # Run the environment for one step to get initial stats.
+        self.env.step()
+
+        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # for changing node remaining capacities.
+        # Also, parse the network stats and prepare it in SimulatorState format.
+        self.parse_network()
+        self.network_metrics()
+
+        # Record end time and running time metrics
+        self.end_time = time.time()
+        metrics.running_time(self.start_time, self.end_time)
+        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+                                         self.sf_list, self.traffic, self.network_stats)
+        # self.writer.write_state_results(self.env, simulator_state)
+        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
+                                                                  self.params.flow_processing_rules)
         return extended_simulator_state
 
     def apply(self, actions: ExtendedSimulatorAction) -> ExtendedSimulatorState:
-
-        self.writer.write_action_result(self.env, actions)
+        # self.writer.write_action_result(self.env, actions)
         # increase performance when debug logging is disabled
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"SimulatorAction: %s", repr(actions))
@@ -170,20 +223,46 @@ class Simulator(SimulatorInterface):
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                          self.params.flow_processing_rules)
+                                                                  self.params.flow_processing_rules)
         self.writer.write_state_results(self.env, simulator_state)
         return extended_simulator_state
+
+    def apply_inter(self, actions: ExtendedSimulatorAction):
+        # increase performance when debug logging is disabled
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"SimulatorAction: %s", repr(actions))
+
+        # Get the new placement from the action passed by the RL agent
+        # Modify and set the placement parameter of the instantiated simulator object.
+        self.simulator.params.sf_placement = actions.placement
+        # Update which sf is available at which node
+        for node_id, placed_sf_list in actions.placement.items():
+            available_sf = {}
+            for sf in placed_sf_list:
+                available_sf[sf] = self.simulator.params.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
+            self.simulator.params.network.nodes[node_id]['available_sf'] = available_sf
+
+        # Get the new schedule from the SimulatorAction
+        # Set it in the params of the instantiated simulator object.
+        self.simulator.params.schedule = actions.scheduling
+        # Set forwarding rules
+        self.params.flow_forwarding_rules = actions.flow_forwarding_rules
+        # Set processing rules
+        self.params.flow_processing_rules = actions.flow_processing_rules
 
     def get_simulator_state(self) -> ExtendedSimulatorState:
         self.parse_network()
         self.network_metrics()
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                 self.sf_list, self.traffic, self.network_stats)
+                                         self.sf_list, self.traffic, self.network_stats)
         extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                          self.params.flow_processing_rules)
+                                                                  self.params.flow_processing_rules)
         return extended_simulator_state
 
     def write_simulator_state(self):
+        # reset metrics for steps
+        metrics.reset_run()
+
         extended = self.get_simulator_state()
         self.writer.write_state_results(self.env, extended)
 

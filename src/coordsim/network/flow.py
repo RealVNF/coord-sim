@@ -11,7 +11,8 @@ class Flow:
 
     def __init__(self,
                  flow_id,
-                 sfc,
+                 sfc_id,
+                 sfc_components,
                  dr,
                  size,
                  creation_time,
@@ -22,11 +23,12 @@ class Flow:
                  end2end_delay=0.0,
                  path_delay=0.0):
 
-
         # Flow ID: Unique ID string
         self.flow_id = flow_id
-        # The requested SFC
-        self.sfc = sfc
+        # The requested SFC id
+        self.sfc_id = sfc_id
+        # The requested SFC id
+        self.sfc_components = sfc_components
         # The requested data rate in Megabits per second (Mbit/s)
         self.dr = dr
         # The size of the flow in Megabit (Mb)
@@ -49,3 +51,6 @@ class Flow:
         self.creation_time = creation_time
         # Flow destination
         self.destination_id = destination_id
+
+    def processed(self):
+        return self.current_position == len(self.sfc_components)

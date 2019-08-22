@@ -1,4 +1,3 @@
-from siminterface.simulator import Simulator
 import logging
 import os
 from datetime import datetime
@@ -17,8 +16,8 @@ class StaticTriangleAlgo:
     the internal flowsimulator can directly execute the algorithm at certain events. In some cases the algorithm is
     then provided with additional event information. In general the algorithm queries the current network state from
     the simulator interface. The simulator state is composed of original and referenced data. Therefore the algorithm
-    directly operates on parts of the internal simulator state. These parts are restricted on placement and node
-    behavior rules.
+    directly operates on parts of the internal simulator state. Nevertheless the algorithm has to call simulator.apply
+    to let all changes come into effect.
     """
 
     def __init__(self, simulator: Simulator):
@@ -70,8 +69,9 @@ class StaticTriangleAlgo:
 
         state = self.simulator.get_simulator_state()
         placement = state.placement
-        processing_rules = state.flow_processing_rules
+        scheduling = {}
         forwarding_rules = state.flow_forwarding_rules
+        processing_rules = state.flow_processing_rules
         node_id = flow.current_node_id
 
         if node_id == 'pop0':
@@ -99,6 +99,10 @@ class StaticTriangleAlgo:
             if flow.flow_id not in processing_rules[node_id]:
                 # Arriving flows are instructed to be processed by 'b' and 'c' at this node
                 processing_rules[node_id][flow.flow_id] = ['b', 'c']
+
+        # Although the algorithm directly manipultes flowsimulator internal state as placement, forwarding_rules and
+        processing_rules
+        self.simulator.apply(ExtendedSimulatorAction(placement, scheduling, forwarding_rules, processing_rules))
 
     def periodic_measurement(self):
         """

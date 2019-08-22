@@ -9,7 +9,8 @@ other parameters for the simulator.
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={}, flow_forwarding_rules={}, flow_processing_rules={}, interception_callbacks={}):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={},
+                 flow_forwarding_rules={}, flow_processing_rules={}, interception_callbacks={}):
         # Seed for the random generator: int
         self.seed = seed
         # NetworkX network object: DiGraph
@@ -55,7 +56,6 @@ class SimulatorParams:
         self.run_duration = config['run_duration']
         # The duration in between simulator state measurements
         self.inter_measurement = config['inter_measurement']
-
 
     # string representation for logging
     def __str__(self):

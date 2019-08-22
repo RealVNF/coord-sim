@@ -104,12 +104,13 @@ class FlowSimulator:
                 continue
 
             # Assign a random SFC to the flow
-            flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
+            flow_sfc_id = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
+            flow_sfc_components = self.params.sfc_list[flow_sfc_id]
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
-                        current_node_id=node_id)
+            flow = Flow(str(self.total_flow_count), flow_sfc_id, flow_sfc_components, flow_dr, flow_size, creation_time,
+                        current_node_id=node_id, )
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
@@ -134,9 +135,9 @@ class FlowSimulator:
         """
         log.info(
             "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}ms, "
-            "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
+            "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc_id, flow.duration, flow.dr,
                                            self.env.now))
-        sfc = self.params.sfc_list[flow.sfc]
+        sfc = self.params.sfc_list[flow.sfc_id]
         # Check to see if requested SFC exists
         if sfc is not None:
             # Iterate over the SFs and process the flow at each SF.
@@ -241,10 +242,10 @@ class FlowSimulator:
             next_node = flow_forwarding_rules[flow.current_node_id][flow.flow_id]
             return next_node
 
-        elif (sf is not None) and (flow.current_node_id in schedule) and (flow.sfc in schedule[flow.current_node_id]):
+        elif (sf is not None) and (flow.current_node_id in schedule) and (flow.sfc_id in schedule[flow.current_node_id]):
             # Check if scheduling rule exists
             schedule_node = schedule[flow.current_node_id]
-            schedule_sf = schedule_node[flow.sfc][sf]
+            schedule_sf = schedule_node[flow.sfc_id][sf]
             sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
             sf_probability = [prob for name, prob in schedule_sf.items()]
             try:
@@ -303,7 +304,7 @@ class FlowSimulator:
                 metrics.add_path_delay(link_delay)
                 flow.end2end_delay += link_delay
                 log.info(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
-                self.env.process(self.pass_flow(flow, self.params.sfc_list[flow.sfc]))
+                self.env.process(self.pass_flow(flow, self.params.sfc_list[flow.sfc_id]))
 
                 yield self.env.timeout(flow.duration)
                 log.info(f'Flow {flow.flow_id} FINISHED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
