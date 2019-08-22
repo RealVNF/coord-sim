@@ -56,6 +56,7 @@ class StaticTriangleAlgo:
         action = ExtendedSimulatorAction(placement=placement, scheduling={}, flow_forwarding_rules=forwarding_rules,
                                          flow_processing_rules=processing_rules)
         self.simulator.apply(action)
+        self.simulator.run()
 
     def pass_flow(self, flow):
         """
@@ -101,7 +102,7 @@ class StaticTriangleAlgo:
                 processing_rules[node_id][flow.flow_id] = ['b', 'c']
 
         # Although the algorithm directly manipultes flowsimulator internal state as placement, forwarding_rules and
-        processing_rules
+        # processing_rules
         self.simulator.apply(ExtendedSimulatorAction(placement, scheduling, forwarding_rules, processing_rules))
 
     def periodic_measurement(self):

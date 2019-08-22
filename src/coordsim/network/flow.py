@@ -11,7 +11,7 @@ class Flow:
 
     def __init__(self,
                  flow_id,
-                 sfc_id,
+                 sfc,
                  sfc_components,
                  dr,
                  size,
@@ -26,7 +26,7 @@ class Flow:
         # Flow ID: Unique ID string
         self.flow_id = flow_id
         # The requested SFC id
-        self.sfc_id = sfc_id
+        self.sfc = sfc
         # The requested SFC id
         self.sfc_components = sfc_components
         # The requested data rate in Megabits per second (Mbit/s)

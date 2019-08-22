@@ -60,15 +60,26 @@ class ExtendedSimulatorState(SimulatorState):
 
 
 class Simulator(SimulatorInterface):
+    """
+    This class presents an general interface to the simulator and is designed to handle interactions with external
+    algorithms. External algorithms interact with the simulator through init(), run() and apply().
+    The simulator interact with the external algorithms through callbacks.
+    """
+
     def __init__(self, test_mode=False):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
+        self.start_time = 0
         self.test_mode = test_mode
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
 
     def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
              interception_callbacks={}) -> ExtendedSimulatorState:
+        """
+        Initialize the simulator with all necessary parameters. After this function call the simulation is ready
+        to start. The initial state will be returned.
+        """
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -119,115 +130,38 @@ class Simulator(SimulatorInterface):
                                                                   self.params.flow_processing_rules)
         return extended_simulator_state
 
-    def init_inter(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
-                   interception_callbacks={}):
-        # Initialize metrics, record start time
-        metrics.reset()
-        self.run_times = int(1)
-        self.start_time = time.time()
-
-        # Parse network and SFC + SF file
-        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
-        self.sfc_list = reader.get_sfc(service_functions_file)
-        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
-        self.config = reader.get_config(config_file)
-        self.interception_callbacks = interception_callbacks
-
-        # Generate SimPy simulation environment
-        self.env = simpy.Environment()
-
-        # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed,
-                                      interception_callbacks=self.interception_callbacks)
-        self.duration = self.params.run_duration
-        # Get and plant random seed
-        self.seed = seed
-        random.seed(self.seed)
-        numpy.random.seed(self.seed)
-
-        # Instantiate a simulator object, pass the environment and params
-        self.simulator = FlowSimulator(self.env, self.params)
-
-        # Start the simulator
-        self.simulator.start()
-
-        # Run the environment for one step to get initial stats.
-        self.env.step()
-
-        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
-        # for changing node remaining capacities.
-        # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
-
-        # Record end time and running time metrics
+    def run(self):
+        """
+        Start the simulation and run it for the specified duration.
+        """
+        logger.debug(f'Running simulator until time {self.duration}')
+        # Run simulation for specified duration
+        self.env.run(until=self.duration)
         self.end_time = time.time()
         metrics.running_time(self.start_time, self.end_time)
+
+        # Return the end state
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        # self.writer.write_state_results(self.env, simulator_state)
         extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
                                                                   self.params.flow_processing_rules)
         return extended_simulator_state
 
-    def apply(self, actions: ExtendedSimulatorAction) -> ExtendedSimulatorState:
+    def apply(self, actions: ExtendedSimulatorAction):
+        """
+        This function has to be called by an external algorithm to correctly apply changes to the internal simulator
+        state. This function shall only be called by the algorithm through a callback functions registered at simulator
+        or direct after the init() and before run() call, to preset parameters like the placement.
+
+        +-------------------------- callback functions ----------------------------+
+        |                                                                          |
+        |                                                                          |
+        |    +-----------+                +-----------+       +---------------+    |
+        +--->+ Algorithm +--- apply() --->+ Simulator +------>| FlowSimulator +----+
+             +-----------+                +-----------+       +---------------+
+        """
+
         # self.writer.write_action_result(self.env, actions)
-        # increase performance when debug logging is disabled
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"SimulatorAction: %s", repr(actions))
-
-        # Get the new placement from the action passed by the RL agent
-        # Modify and set the placement parameter of the instantiated simulator object.
-        self.simulator.params.sf_placement = actions.placement
-        # Update which sf is available at which node
-        for node_id, placed_sf_list in actions.placement.items():
-            available_sf = {}
-            for sf in placed_sf_list:
-                available_sf[sf] = self.simulator.params.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
-            self.simulator.params.network.nodes[node_id]['available_sf'] = available_sf
-
-        # Get the new schedule from the SimulatorAction
-        # Set it in the params of the instantiated simulator object.
-        self.simulator.params.schedule = actions.scheduling
-        # Set forwarding rules
-        self.params.flow_forwarding_rules = actions.flow_forwarding_rules
-        # Set processing rules
-        self.params.flow_processing_rules = actions.flow_processing_rules
-
-        # reset metrics for steps
-        metrics.reset_run()
-
-        # Run the simulation again with the new params for the set duration.
-        # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
-        # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
-        # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
-        runtime_steps = self.duration * self.run_times
-        logger.debug("Running simulator until time step %s", runtime_steps)
-        self.env.run(until=runtime_steps)
-
-        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
-        # for changing node remaining capacities.
-        # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
-
-        # Increment the run times variable
-        self.run_times += 1
-
-        # Record end time of the apply round, doesn't change start time to show the running time of the entire
-        # simulation at the end of the simulation.
-        self.end_time = time.time()
-        metrics.running_time(self.start_time, self.end_time)
-
-        # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
-        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                                  self.params.flow_processing_rules)
-        self.writer.write_state_results(self.env, simulator_state)
-        return extended_simulator_state
-
-    def apply_inter(self, actions: ExtendedSimulatorAction):
         # increase performance when debug logging is disabled
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"SimulatorAction: %s", repr(actions))
