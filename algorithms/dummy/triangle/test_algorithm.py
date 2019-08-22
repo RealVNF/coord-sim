@@ -23,7 +23,7 @@ class StaticTriangleAlgo:
     def __init__(self, simulator: Simulator):
         self.simulator = simulator
 
-    def init(self, network_path, service_functions_path, config_path, seed):
+    def init(self, network_path, service_functions_path, config_path, seed, resource_functions_path=""):
         """
         The algorithm initializes the simulator by its own.
         """
@@ -31,6 +31,7 @@ class StaticTriangleAlgo:
         init_state = self.simulator.init(network_path,
                                          service_functions_path,
                                          config_path, seed,
+                                         resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
                                                                  'periodic_measurement': self.periodic_measurement})
 
@@ -119,6 +120,7 @@ def main():
     args = {
         'network': '../../../params/networks/triangle.graphml',
         'service_functions': '../../../params/services/abc.yaml',
+        'resource_functions': '../../../params/services/resource_functions',
         'config': '../../../params/config/sim_config.yaml',
         'seed': 9999
     }
@@ -136,7 +138,8 @@ def main():
     algo.init(os.path.abspath(args['network']),
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
-              args['seed'])
+              args['seed'],
+              resource_functions_path=os.path.abspath(args['resource_functions']))
     # Execute orchestrated simulation
     algo.run()
 
