@@ -205,7 +205,7 @@ class FlowSimulator:
             metrics.add_active_flow(flow, current_node_id, current_sf)
             if demanded_total_capacity <= node_cap:
                 log.info(
-                    "Flow {} started proccessing at sf {} at node {}. Time: {}, "
+                    "Flow {} started processing at sf {} at node {}. Time: {}, "
                     "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
                                                   processing_delay))
 
@@ -239,12 +239,14 @@ class FlowSimulator:
 
                 # Remove load from sf
                 self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
+                assert self.params.network.nodes[current_node_id]['available_sf'][sf][
+                           'load'] >= 0, 'SF load cannot be less than 0!'
                 # Recalculation is necessary because other flows could have already arrived or departed at the node
-                used_total_capacitiy = 0.0
+                used_total_capacity = 0.0
                 for sf_i, sf_data in self.params.network.nodes[current_node_id]['available_sf'].items():
-                    used_total_capacitiy += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
+                    used_total_capacity += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
                 # Set remaining node capacity
-                self.params.network.nodes[current_node_id]['remaining_cap'] = node_cap - used_total_capacitiy
+                self.params.network.nodes[current_node_id]['remaining_cap'] = node_cap - used_total_capacity
                 # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
                 node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
