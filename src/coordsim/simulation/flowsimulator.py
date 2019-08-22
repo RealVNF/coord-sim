@@ -3,8 +3,8 @@ import random
 import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.metrics import metrics
-log = logging.getLogger(__name__)
 
+log = logging.getLogger(__name__)
 
 """
 Flow Simulator class
