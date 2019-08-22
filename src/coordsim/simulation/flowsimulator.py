@@ -241,6 +241,12 @@ class FlowSimulator:
                 self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
                 assert self.params.network.nodes[current_node_id]['available_sf'][sf][
                            'load'] >= 0, 'SF load cannot be less than 0!'
+                # Check if SF is not processing any more flows AND if SF is removed from placement. If so the SF will
+                # be removed from the load recording. This allows SFs to be handed gracefully.
+                if (self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] == 0) and (
+                        sf not in self.params.sf_placement[current_node_id]):
+                    del self.params.network.nodes[current_node_id]['available_sf'][sf]
+
                 # Recalculation is necessary because other flows could have already arrived or departed at the node
                 used_total_capacity = 0.0
                 for sf_i, sf_data in self.params.network.nodes[current_node_id]['available_sf'].items():
