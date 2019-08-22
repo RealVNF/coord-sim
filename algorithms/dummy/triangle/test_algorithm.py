@@ -58,6 +58,7 @@ class StaticTriangleAlgo:
                                          flow_processing_rules=processing_rules)
         self.simulator.apply(action)
         self.simulator.run()
+        log.info("Network Stats after init(): %s", self.simulator.get_state().network_stats)
 
     def pass_flow(self, flow):
         """
@@ -69,7 +70,7 @@ class StaticTriangleAlgo:
         - f was processed by SF placed at n
         """
 
-        state = self.simulator.get_simulator_state()
+        state = self.simulator.get_state()
         placement = state.placement
         scheduling = {}
         forwarding_rules = state.flow_forwarding_rules
@@ -112,7 +113,7 @@ class StaticTriangleAlgo:
         Called after a the specified inter_measurement interval. Used to record simulator state
         in regular intervals.
         """
-        self.simulator.write_simulator_state()
+        self.simulator.write_state()
 
 
 def main():

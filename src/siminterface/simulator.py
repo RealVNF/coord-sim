@@ -184,7 +184,7 @@ class Simulator(SimulatorInterface):
         # Set processing rules
         self.params.flow_processing_rules = actions.flow_processing_rules
 
-    def get_simulator_state(self) -> ExtendedSimulatorState:
+    def get_state(self) -> ExtendedSimulatorState:
         self.parse_network()
         self.network_metrics()
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -193,11 +193,11 @@ class Simulator(SimulatorInterface):
                                                                   self.params.flow_processing_rules)
         return extended_simulator_state
 
-    def write_simulator_state(self):
+    def write_state(self):
         # reset metrics for steps
-        metrics.reset_run()
+        #metrics.reset_run()
 
-        extended = self.get_simulator_state()
+        extended = self.get_state()
         self.writer.write_state_results(self.env, extended)
 
     def get_network_copy(self) -> networkx.Graph:
@@ -217,7 +217,8 @@ class Simulator(SimulatorInterface):
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
             used_node_cap = node[1]['cap'] - node[1]['remaining_cap']
-            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap, 'used_resources': used_node_cap})
+            available_sf = node[1]['available_sf']
+            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap, 'used_resources': used_node_cap, 'available_sf': available_sf})
         for edge in self.network.edges(data=True):
             edge_src = edge[0]
             edge_dest = edge[1]
