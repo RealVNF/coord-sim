@@ -65,7 +65,8 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
 
-    def init(self, network_file, service_functions_file, config_file, seed, interception_callbacks={}) -> ExtendedSimulatorState:
+    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
+             interception_callbacks={}) -> ExtendedSimulatorState:
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -75,7 +76,7 @@ class Simulator(SimulatorInterface):
         # Parse network and SFC + SF file
         self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
         self.sfc_list = reader.get_sfc(service_functions_file)
-        self.sf_list = reader.get_sf(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
         self.interception_callbacks = interception_callbacks
 
@@ -125,12 +126,19 @@ class Simulator(SimulatorInterface):
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
         self.simulator.params.sf_placement = actions.placement
+        # Update which sf is available at which node
+        for node_id, placed_sf_list in actions.placement.items():
+            available_sf = {}
+            for sf in placed_sf_list:
+                available_sf[sf] = self.simulator.params.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
+            self.simulator.params.network.nodes[node_id]['available_sf'] = available_sf
 
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
         self.simulator.params.schedule = actions.scheduling
-
+        # Set forwarding rules
         self.params.flow_forwarding_rules = actions.flow_forwarding_rules
+        # Set processing rules
         self.params.flow_processing_rules = actions.flow_processing_rules
 
         # reset metrics for steps

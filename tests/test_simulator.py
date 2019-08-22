@@ -10,6 +10,7 @@ import logging
 
 NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/abc.yaml"
+RESOURCE_FUNCTION_PATH = "params/services/resource_functions"
 CONFIG_FILE = "params/config/sim_config.yaml"
 SIMULATION_DURATION = 1000
 SEED = 1234
@@ -30,7 +31,7 @@ class TestFlowSimulator(TestCase):
         # Configure simulator parameters
         network, ing_nodes = reader.read_network(NETWORK_FILE, node_cap=10, link_cap=10)
         sfc_list = reader.get_sfc(SERVICE_FUNCTIONS_FILE)
-        sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE)
+        sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE, RESOURCE_FUNCTION_PATH)
         config = reader.get_config(CONFIG_FILE)
 
         sf_placement = dummy_data.triangle_placement

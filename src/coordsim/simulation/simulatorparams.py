@@ -26,6 +26,13 @@ class SimulatorParams:
         self.schedule = schedule
         # Placement of SFs in each node: defaultdict(list)
         self.sf_placement = sf_placement
+        # Update which sf is available at which node
+        for node_id, placed_sf_list in sf_placement.items():
+            available_sf = {}
+            for sf in placed_sf_list:
+                available_sf[sf] = self.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
+            self.network.nodes[node_id]['available_sf'] = available_sf
+
         # Flow forwarding rules
         self.flow_forwarding_rules = flow_forwarding_rules
         # Flow processing rules
