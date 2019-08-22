@@ -29,7 +29,8 @@ Type `coord-sim -h` for help using the simulator. For now, this should print
 
 ``` 
 $ coord-sim -h
-usage: coord-sim [-h] -d DURATION -sf SF -n NETWORK -c CONFIG
+usage: coord-sim [-h] -d DURATION -sf SF [-sfr SFR] -n NETWORK -c CONFIG
+                 [-s SEED]
 
 Coordination-Simulation tool
 
@@ -40,20 +41,44 @@ optional arguments:
                         milliseconds).
   -sf SF, --sf SF       VNF file which contains the SFCs and their respective
                         SFs and their properties.
+  -sfr SFR, --sfr SFR   Path which contains the SF resource consumption
+                        functions.
   -n NETWORK, --network NETWORK
                         The GraphML network file that specifies the nodes and
                         edges of the network.
   -c CONFIG, --config CONFIG
-                        Path to the simulator config file
+                        Path to the simulator config file.
   -s SEED, --seed SEED  Random seed
 ```
 
 You can use the following command as an example (run from the root project folder)
 
 ```bash 
-coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -c params/config/sim_config.yaml
+coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -sfr params/services/resource_functions -c params/config/sim_config.yaml
 ```
-This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps. 
+This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps.
+
+
+### Dynamic SF resource consumption
+
+By default, all SFs have a node resource consumption, which exactly equals the aggregated traffic that they have to handle.
+
+It is possible to specify arbitrary other resource consumption models simply by implementing a python module with a 
+function `resource_function(load)` (see examples [here](https://github.com/RealVNF/coordination-simulation/tree/master/params/services/resource_functions)).
+
+To use these modules, they need to be referenced in the service file:
+
+```
+sf_list:
+  a:
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 0.0
+    resource_function_id: A
+```
+
+And the path to the folder with the Python modules needs to be passed via the `-sfr` argument.
+
+See PR https://github.com/RealVNF/coordination-simulation/pull/78 for details.
 
 
 ## Tests

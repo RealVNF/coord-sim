@@ -12,6 +12,7 @@ sf_list:
   a:
     processing_delay_mean: 5.0
     processing_delay_stdev: 0.0
+    # reference to module A.py in 'resource_functions' (specified via -sfr arg)
     resource_function_id: A
   b:
     processing_delay_mean: 5.0
@@ -20,3 +21,4 @@ sf_list:
   c:
     processing_delay_mean: 5.0
     processing_delay_stdev: 0.0
+    # no resource_function_id defaults to linear resource consumption, equal to the load
