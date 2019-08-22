@@ -32,7 +32,7 @@ def main():
 
     # Getting current SFC list, and the SF list of each SFC, and config
     sfc_list = reader.get_sfc(args.sf)
-    sf_list = reader.get_sf(args.sf)
+    sf_list = reader.get_sf(args.sf, args.sfr)
     config = reader.get_config(args.config)
 
     # use dummy placement and schedule for running simulator without algorithm
@@ -66,6 +66,8 @@ def parse_args():
                         help="The duration of the simulation (simulates milliseconds).")
     parser.add_argument('-sf', '--sf', required=True, dest="sf",
                         help="VNF file which contains the SFCs and their respective SFs and their properties.")
+    parser.add_argument('-sfr', '--sfr', required=False, default='', dest='sfr',
+                        help="Path which contains the SF resource consumption functions.")
     parser.add_argument('-n', '--network', required=True, dest='network',
                         help="The GraphML network file that specifies the nodes and edges of the network.")
     parser.add_argument('-c', '--config', required=True, dest='config', help="Path to the simulator config file.")

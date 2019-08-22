@@ -12,9 +12,11 @@ sf_list:
   a:
     processing_delay_mean: 5.0
     processing_delay_stdev: 0.0
+    resource_function_id: A
   b:
     processing_delay_mean: 5.0
     processing_delay_stdev: 0.0
+    resource_function_id: B
   c:
     processing_delay_mean: 5.0
     processing_delay_stdev: 0.0

@@ -1,11 +1,13 @@
 import networkx as nx
 from geopy.distance import distance as dist
 import numpy as np
-import logging as log
+import logging
 import yaml
 import math
 from collections import defaultdict
+import importlib
 
+log = logging.getLogger(__name__)
 
 # Disclaimer: Some snippets of the following file were imported/modified from B-JointSP on GitHub.
 # Original code can be found on https://github.com/CN-UPB/B-JointSP
@@ -40,7 +42,21 @@ def get_sfc(sfc_file):
     return sfc_list
 
 
-def get_sf(sf_file):
+def load_resource_function(name, path):
+    try:
+        spec = importlib.util.spec_from_file_location(name, path + '/' + name + '.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception:
+        raise Exception(f'Cannot load file "{name}.py" from specified location "{path}".')
+
+    try:
+        return getattr(module, 'resource_function')
+    except Exception:
+        raise Exception(f'There is no "resource_function" defined in file "{name}.py."')
+
+
+def get_sf(sf_file, resource_functions_path):
     """
     Get the list of SFs and their properties from the yaml data.
     """
@@ -50,6 +66,7 @@ def get_sf(sf_file):
     # Configureable default mean and stdev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
+    def default_resource_function(x): return x
     sf_list = defaultdict(None)
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details
@@ -58,6 +75,19 @@ def get_sf(sf_file):
                                                                          default_processing_delay_mean)
         sf_list[sf_name]["processing_delay_stdev"] = sf_list[sf_name].get("processing_delay_stdev",
                                                                           default_processing_delay_stdev)
+        if 'resource_function_id' in sf_list[sf_name]:
+            try:
+                sf_list[sf_name]['resource_function'] = load_resource_function(sf_list[sf_name]['resource_function_id'],
+                                                                               resource_functions_path)
+            except Exception as ex:
+                sf_list[sf_name]['resource_function_id'] = 'default'
+                sf_list[sf_name]['resource_function'] = default_resource_function
+                log.warning(f'{str(ex)} SF {sf_name} will use default resource function instead.')
+        else:
+            sf_list[sf_name]["resource_function_id"] = 'default'
+            sf_list[sf_name]["resource_function"] = default_resource_function
+            log.info(
+                f'No resource function specified for SF {sf_name}. Default resource function will be used instead.')
     return sf_list
 
 
