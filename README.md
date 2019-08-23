@@ -5,13 +5,17 @@
 Simulate flow-level, inter-node network coordination including scaling and placement of services and scheduling/balancing traffic between them.
 
 
-**Goal**:
+**Features**:
 
-* Simulate any given network topology with node and link capacities using NetworkX
-* Simulate network traffic in the form of flow arrivals at various ingress nodes with varying arrival rate, flow length, volume, etc
-* Run algorithms for scaling, placement, and scheduling/load balancing of these incoming flows across the nodes in the network. Coordination within each node is out of scope (e.g., handled by Kubernetes).
+* Simulate any given network topology with arbitrary node and link capacities and link delays
+* Simulatie any given network service consisting of linearly chained SFs/VNFs
+* VNFs can specify arbitrary resource consumption as function of their load using Python modules. Also VNF delay can be specified individually and may be normally distributed.
+* Simulate network traffic in the form of flow arrivals at various ingress nodes with varying arrival rate, flow length, volume, etc according to stochastic distributions
+* Simple and clear interface to run algorithms for scaling, placement, and scheduling/load balancing of these incoming flows across the nodes in the network. Coordination within each node is out of scope.
+* Interface allows easy integration with OpenAI Gym to enable training and evaluating reinforcement learning algorithms
+* Collection of metrics like successful/dropped flows, end-to-end delay, resource consumption, etc over time. Easily extensible.
 * Discrete event simulation to evaluate coordination over time with SimPy
-* Integration with OpenAI Gym to allow training and evaluating reinforcement learning algorithms
+* Gracefull adjustment of placements: When VNFs are removed from a placement by an algorithm. Currently processing flows are allowed to finish processing before the VNF is completely removed (see PR [#78](https://github.com/RealVNF/coordination-simulation/pull/78) and [#81](https://github.com/RealVNF/coordination-simulation/pull/81)).
 
 
 ## Setup
