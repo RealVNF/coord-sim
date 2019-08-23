@@ -238,15 +238,14 @@ class FlowSimulator:
                     metrics.remove_active_flow(flow, current_node_id, current_sf)
 
                 # Remove load from sf
-                if sf in self.params.network.nodes[current_node_id]['available_sf']:
-                    self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
-                    assert self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] >= 0, \
-                        'SF load cannot be less than 0!'
-                else:
-                    log.debug(f"SF {sf} was removed from {current_node_id}, while flow {flow.flow_id} was being "
-                              f"processed. Still assume the flow could finish processing successfully.")
-                    # TODO: drop the flow instead? or at least account for sf resources?
-                    #  see https://github.com/RealVNF/coordination-simulation/pull/78#issuecomment-523921483
+                self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
+                assert self.params.network.nodes[current_node_id]['available_sf'][sf][
+                           'load'] >= 0, 'SF load cannot be less than 0!'
+                # Check if SF is not processing any more flows AND if SF is removed from placement. If so the SF will
+                # be removed from the load recording. This allows SFs to be handed gracefully.
+                if (self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] == 0) and (
+                        sf not in self.params.sf_placement[current_node_id]):
+                    del self.params.network.nodes[current_node_id]['available_sf'][sf]
 
                 # Recalculation is necessary because other flows could have already arrived or departed at the node
                 used_total_capacity = 0.0
