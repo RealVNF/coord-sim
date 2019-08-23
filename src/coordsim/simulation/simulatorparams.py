@@ -49,13 +49,15 @@ class SimulatorParams:
         self.flow_dr_stdev = config['flow_dr_stdev']
         # Flow size Pareto heavy-tail distribtution shape: float
         self.flow_size_shape = config['flow_size_shape']
-        # if deterministic = True, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape as fixed
-        # deterministic values rather than means of a random distribution
-        self.deterministic = config['deterministic']
+        # if parameter_mode = deterministic, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape
+        # as fixed deterministic values rather than means of a random distribution
+        self.parameter_mode = config['parameter_mode']
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
         # The duration in between simulator state measurements
         self.inter_measurement = config['inter_measurement']
+        # Make complete configuration accessible to allow different parameter modes
+        self.sim_config = config
 
     # string representation for logging
     def __str__(self):

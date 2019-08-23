@@ -29,9 +29,9 @@ class Flow:
         self.sfc = sfc
         # The requested SFC id
         self.sfc_components = sfc_components
-        # The requested data rate in Megabits per second (Mbit/s)
+        # The requested data rate in MiB (Mebibyte = 2^20 Byte) per second (MiB/s)
         self.dr = dr
-        # The size of the flow in Megabit (Mb)
+        # The size of the flow in MiB (Mebibyte = 2^20 Byte)
         self.size = size
         # The current SF that the flow is being processed in.
         self.current_sf = current_sf
@@ -51,6 +51,8 @@ class Flow:
         self.creation_time = creation_time
         # Flow destination
         self.destination_id = destination_id
+        # Flow user data, a dict to hold abitrary data. External algorithms should use this to enrich flow information
+        self.user_data = {}
 
     def processed(self):
         return self.current_position == len(self.sfc_components)

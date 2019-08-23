@@ -84,21 +84,31 @@ class FlowSimulator:
         while True:
             self.total_flow_count += 1
 
-            # set normally distributed flow data rate
-            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
-
-            # if "deterministic = True" use deterministic flow size and inter-arrival times (eg, for debugging)
-            if self.params.deterministic:
-                # Exponentially distributed random inter arrival rate using a user set (or default) mean
-                #
-                # use deterministic, fixed inter-arrival time for now
+            # if "parameter_mode = deterministic" use deterministic flow size and inter-arrival times (eg, for debugging)
+            if self.params.parameter_mode == 'deterministic':
+                flow_dr = self.params.flow_dr_mean
+                # use deterministic, fixed inter-arrival time
                 inter_arr_time = self.params.inter_arr_mean
                 flow_size = self.params.flow_size_shape
             # else use randomly distributed values (default)
-            else:
+            elif self.params.parameter_mode == 'probabilistic_continuous':
+                # set normally distributed flow data rate
+                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+                # Exponentially distributed random inter arrival rate
                 inter_arr_time = random.expovariate(self.params.inter_arr_mean)
                 # heavy-tail flow size
                 flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+            elif self.params.parameter_mode == 'probabilistic_discrete':
+                flow_dr = np.random.choice(self.params.sim_config['flow_dr_values'],
+                                           p=self.params.sim_config['flow_dr_weights'])
+                inter_arr_time = np.random.choice(self.params.sim_config['inter_arrival_values'],
+                                                  p=self.params.sim_config['inter_arrival_weights'])
+
+                flow_duration = np.random.choice(self.params.sim_config['flow_duration_values'],
+                                                 p=self.params.sim_config['flow_duration_weights'])
+
+                flow_size = flow_dr * (flow_duration / 1000)
+
             # Skip flows with negative flow_dr or flow_size values
             if flow_dr <= 0.00 or flow_size <= 0.00:
                 continue

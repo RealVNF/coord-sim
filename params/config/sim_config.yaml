@@ -2,12 +2,14 @@
 # configuration parameters are loaded and used both when using the simulator via the CLI and via the interface
 # all parameters are required, defaults are in comments
 
+# Deterministic configuration
+
 inter_arrival_mean: 10.0           # default: 10.0
 flow_dr_mean: 1.0                  # default: 1.0
 flow_dr_stdev: 0.0                 # default: 0.0
 flow_size_shape: 0.001             # default: 0.001
 # if deterministic = True, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape as fixed
 # deterministic values rather than means of a random distribution
-deterministic: True                # default: False
+parameter_mode: deterministic      # default: deterministic
 run_duration: 100                  # default: 100
 inter_measurement: 10
