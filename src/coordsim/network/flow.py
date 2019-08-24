@@ -54,5 +54,5 @@ class Flow:
         # Flow user data, a dict to hold abitrary data. External algorithms should use this to enrich flow information
         self.user_data = {}
 
-    def processed(self):
+    def is_processed(self):
         return self.current_position == len(self.sfc_components)

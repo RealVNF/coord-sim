@@ -150,6 +150,9 @@ class FlowSimulator:
         sfc = self.params.sfc_list[flow.sfc]
         # Check to see if requested SFC exists
         if sfc is not None:
+            # Allow external algorithm to set flows user_data, this way pass_flow does not need to bothered
+            if 'init_flow' in self.params.interception_callbacks:
+                self.params.interception_callbacks['init_flow'](flow)
             # Iterate over the SFs and process the flow at each SF.
             yield self.env.process(self.pass_flow(flow, sfc))
         else:
