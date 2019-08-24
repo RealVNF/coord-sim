@@ -19,9 +19,9 @@ directed links illustrate how processes interact with each other, by spawning a 
 start() ----+-------->+ generate_flow +--------->+ init_flow +----o---->+ pass_flow +----+---->+ forward_flow_to_neighbor +---->o
             |         +---------------+          +-----------+          +-----------+    |     +--------------------------+     ^
             |                                                                            |                                      |
-            |         +----------------------+                                           |     +--------------+                 |
-            +-------->+ periodic_measurement |                                           +---->+ process_flow +-----------------+
-                      +----------------------+                                           |     +--------------+
+            |         +----------+                                                       |     +--------------+                 |
+            +-------->+ periodic |                                                       +---->+ process_flow +-----------------+
+                      +----------+                                                       |     +--------------+
                                                                                          |
                                                                                          |
                                                                                          |     +-------------+
@@ -48,10 +48,12 @@ class FlowSimulator:
         for node in self.params.ing_nodes:
             node_id = node[0]
             self.env.process(self.generate_flow(node_id))
-        # Start periodic measurement process
-        self.env.process(self.periodic_measurement())
+        # Start periodic processes
+        if 'periodic' in self.params.interception_callbacks:
+            for p in self.params.interception_callbacks['periodic']:
+                self.env.process(self.periodic(p[0], p[1], p[2]))
 
-    def periodic_measurement(self):
+    def periodic(self, callback, interval_duration, log_message):
         """
         SimPy process.
         This process allows external algorithms to capture simulator state in a specified intervals, independent of the
@@ -59,16 +61,14 @@ class FlowSimulator:
 
         The process interaction is visualized as:
 
-             +----------------------+
-        ---->+ periodic_measurement |
-             +----------------------+
+             +----------+
+        ---->+ periodic |
+             +----------+
         """
         while True:
-            log.debug(f'measurement interception. Time {self.env.now}.')
-            # Allow algorithm to collect state for measurement, invoke interception callback
-            if 'periodic_measurement' in self.params.interception_callbacks:
-                self.params.interception_callbacks['periodic_measurement']()
-            yield self.env.timeout(self.params.inter_measurement)
+            log.debug(f'{log_message}. Time {self.env.now}.')
+            callback()
+            yield self.env.timeout(interval_duration)
 
     def generate_flow(self, node_id):
         """
@@ -144,9 +144,9 @@ class FlowSimulator:
              +-----------+          +-----------+
         """
         log.info(
-            "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}ms, "
-            "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
-                                           self.env.now))
+            f'Flow {flow.flow_id} generated. arrived at node {flow.current_node_id} Requesting {flow.sfc},'
+            f' egress node {flow.destination_id} - '
+            f'flow duration: {flow.duration}ms, flow dr: {flow.dr}. Time: {self.env.now}')
         sfc = self.params.sfc_list[flow.sfc]
         # Check to see if requested SFC exists
         if sfc is not None:
@@ -203,7 +203,8 @@ class FlowSimulator:
                 self.env.process(self.depart_flow(flow))
             elif flow.destination_id is None:
                 # Flow head is processed and resides at egress node: depart flow
-                log.info(f'Flow {flow.flow_id} has no egress node, will depart from current node {flow.current_node_id}. Time {self.env.now}.')
+                log.info(f'Flow {flow.flow_id} has no egress node, will depart from'
+                         f' current node {flow.current_node_id}. Time {self.env.now}.')
                 self.env.process(self.depart_flow(flow))
             else:
                 # Forward flow
@@ -221,7 +222,8 @@ class FlowSimulator:
                 if sf in processing_rule:
                     # Flow has permission to be processed for requested service. Check if service function actually exists
                     if sf in self.params.sf_placement[flow.current_node_id]:
-                        log.info(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at node {flow.current_node_id} for processing. Time: {self.env.now}')
+                        log.info(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at '
+                                 f'node {flow.current_node_id} for processing. Time: {self.env.now}')
                         yield self.env.process(self.process_flow(flow, sfc))
                     else:
                         log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}.')
@@ -229,7 +231,8 @@ class FlowSimulator:
                         self.env.exit()
                 else:
                     # Flow has no permission for requested service: fallback to forward flow
-                    log.debug(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id}, but not for SF {flow.current_sf}. Fallback to forward.')
+                    log.debug(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id},'
+                              f' but not for SF {flow.current_sf}. Fallback to forward.')
                     next_node = self.get_next_node(flow, sf)
                     yield self.env.process(self.forward_flow_to_neighbor(flow, next_node))
 
@@ -292,7 +295,8 @@ class FlowSimulator:
         '''
         if neighbor_id not in self.params.network.neighbors(flow.current_node_id):
             # Forwarding target is actually not a neighbor of the flows current node: drop flow
-            log.warning(f'Flow {flow.flow_id}: Cannot forward from node {flow.current_node_id} to node {neighbor_id} over non-existent link. Dropping flow!')
+            log.warning(f'Flow {flow.flow_id}: Cannot forward from node {flow.current_node_id} to'
+                        f' node {neighbor_id} over non-existent link. Dropping flow!')
             self.drop_flow(flow)
             self.env.exit()
         else:
@@ -304,7 +308,8 @@ class FlowSimulator:
                 link_delay = forwarding_link['delay']
                 # Claim link capacities
                 forwarding_link['remaining_cap'] -= flow.dr
-                log.info(f'Flow {flow.flow_id} will leave node {flow.current_node_id} towards node {neighbor_id}. Time {self.env.now}')
+                log.info(f'Flow {flow.flow_id} will leave node {flow.current_node_id} towards node {neighbor_id}.'
+                         f' Time {self.env.now}')
                 yield self.env.timeout(link_delay)
 
                 # Update flows current node
@@ -323,7 +328,8 @@ class FlowSimulator:
                 assert forwarding_link['remaining_cap'] <= forwarding_link['cap'],\
                     "Link remaining capacity cannot be more than link capacity!"
             else:
-                log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
+                log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over'
+                            f' link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
                 self.drop_flow(flow)
                 self.env.exit()
 
@@ -386,7 +392,7 @@ class FlowSimulator:
 
             yield self.env.timeout(flow.duration)
             log.info(
-                f'Flow {flow.flow_id} has departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
+                f'Flow {flow.flow_id} has completely departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
 
             # Remove the active flow from the SF after it departed the SF
             metrics.remove_active_flow(flow, current_node_id, current_sf)

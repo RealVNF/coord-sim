@@ -33,7 +33,8 @@ class StaticTriangleAlgo:
                                          config_path, seed,
                                          resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
-                                                                 'periodic_measurement': self.periodic_measurement})
+                                                                 'periodic': [(self.periodic_measurement, 10,
+                                                                               "measurement interception")]})
 
         log.info("Network Stats after init(): %s", init_state.network_stats)
 
@@ -122,7 +123,7 @@ def main():
         'network': '../../../params/networks/triangle.graphml',
         'service_functions': '../../../params/services/abc.yaml',
         'resource_functions': '../../../params/services/resource_functions',
-        'config': '../../../params/config/sim_config.yaml',
+        'config': '../../../params/config/debug_config.yaml',
         'seed': 9999
     }
 
