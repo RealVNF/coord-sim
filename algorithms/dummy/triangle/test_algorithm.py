@@ -105,13 +105,13 @@ class StaticTriangleAlgo:
                 processing_rules[node_id][flow.flow_id] = ['b', 'c']
 
         # Although the algorithm directly manipultes flowsimulator internal state as placement, forwarding_rules and
-        # processing_rules
+        # processing_rules it needs to call apply to correctly set the state
         self.simulator.apply(ExtendedSimulatorAction(placement, scheduling, forwarding_rules, processing_rules))
 
     def periodic_measurement(self):
         """
         Callback function.
-        Called after a the specified inter_measurement interval. Used to record simulator state
+        Called after a the specified interval. Used to record simulator state
         in regular intervals.
         """
         self.simulator.write_state()
