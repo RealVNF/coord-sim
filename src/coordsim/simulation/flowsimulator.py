@@ -4,7 +4,6 @@ import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.metrics import MetricStore
 log = logging.getLogger(__name__)
-metrics = MetricStore.get_instance()
 
 """
 Flow Simulator class
@@ -125,7 +124,7 @@ class FlowSimulator:
             flow = Flow(str(self.total_flow_count), flow_sfc, flow_sfc_components, flow_dr, flow_size, creation_time,
                         current_node_id=node_id, egress_node_id=flow_egress_node)
             # Update metrics for the generated flow
-            metrics.generated_flow()
+            self.metrics.generated_flow()
             # Generate flows and schedule them at ingress node
             self.env.process(self.init_flow(flow))
             yield self.env.timeout(inter_arr_time)
@@ -322,7 +321,7 @@ class FlowSimulator:
                 flow.current_node_id = neighbor_id
                 # Update metrics
                 flow.path_delay += link_delay
-                metrics.add_path_delay(link_delay)
+                self.metrics.add_path_delay(link_delay)
                 flow.end2end_delay += link_delay
                 log.info(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
                 self.env.process(self.pass_flow(flow, self.params.sfc_list[flow.sfc]))
@@ -375,7 +374,7 @@ class FlowSimulator:
         if demanded_total_capacity <= node_cap:
             log.info(f'Flow {flow.flow_id} started processing at sf {current_sf} at node {current_node_id}. Time: {self.env.now}, Processing delay: {processing_delay}')
             # Metrics: Add active flow to the SF once the flow has begun processing.
-            metrics.add_active_flow(flow, current_node_id, current_sf)
+            self.metrics.add_active_flow(flow, current_node_id, current_sf)
 
             # Add load to sf
             self.params.network.nodes[current_node_id]['available_sf'][current_sf]['load'] += flow.dr
@@ -391,7 +390,7 @@ class FlowSimulator:
             flow.current_position += 1
             # Update metrics for the processing delay
             # Add the delay to the flow's end2end delay
-            metrics.add_processing_delay(processing_delay)
+            self.metrics.add_processing_delay(processing_delay)
             flow.end2end_delay += processing_delay
             # Create new pass_flow process
             self.env.process(self.pass_flow(flow, sfc))
@@ -401,7 +400,7 @@ class FlowSimulator:
                 f'Flow {flow.flow_id} has completely departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
 
             # Remove the active flow from the SF after it departed the SF
-            metrics.remove_active_flow(flow, current_node_id, current_sf)
+            self.metrics.remove_active_flow(flow, current_node_id, current_sf)
 
             # Remove load from sf
             self.params.network.nodes[current_node_id]['available_sf'][current_sf]['load'] -= flow.dr
@@ -441,9 +440,9 @@ class FlowSimulator:
         log.info(f'Flow {flow.flow_id} has completely departed the network from {flow.current_node_id}. Time {self.env.now}')
 
         # Update metrics for the processed flow
-        metrics.processed_flow()
-        metrics.add_end2end_delay(flow.end2end_delay)
-        metrics.add_path_delay_of_processed_flows(flow.path_delay)
+        self.metrics.processed_flow()
+        self.metrics.add_end2end_delay(flow.end2end_delay)
+        self.metrics.add_path_delay_of_processed_flows(flow.path_delay)
 
         self.env.exit()
 
@@ -453,4 +452,4 @@ class FlowSimulator:
         there is no real advantage in this outsourcing, but future version might introduce more actions.
         """
         # Update metrics for the dropped flow
-        metrics.dropped_flow()
+        self.metrics.dropped_flow()

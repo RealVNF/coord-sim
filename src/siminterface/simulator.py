@@ -13,7 +13,7 @@ from coordsim.writer.writer import ResultWriter
 import copy
 import networkx
 logger = logging.getLogger(__name__)
-metrics = MetricStore.get_instance()
+
 
 class ExtendedSimulatorAction(SimulatorAction):
     def __init__(self,
@@ -59,7 +59,7 @@ class ExtendedSimulatorState(SimulatorState):
                                       flow_processing_rules)
 
 
-class Simulator(SimulatorInterface):
+class Simulator:
     """
     This class presents an general interface to the simulator and is designed to handle interactions with external
     algorithms. External algorithms interact with the simulator through init(), run() and apply().
@@ -73,6 +73,7 @@ class Simulator(SimulatorInterface):
         self.test_mode = test_mode
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
+        self.metrics = MetricStore.get_instance()
 
     def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
              interception_callbacks={}) -> ExtendedSimulatorState:
@@ -82,7 +83,7 @@ class Simulator(SimulatorInterface):
         """
 
         # Initialize metrics, record start time
-        metrics.reset()
+        self.metrics.reset()
         self.run_times = int(1)
         self.start_time = time.time()
 
@@ -119,7 +120,7 @@ class Simulator(SimulatorInterface):
 
         # Record end time and running time metrics
         self.end_time = time.time()
-        metrics.running_time(self.start_time, self.end_time)
+        self.metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         # self.writer.write_state_results(self.env, simulator_state)
@@ -135,7 +136,7 @@ class Simulator(SimulatorInterface):
         # Run simulation for specified duration
         self.env.run(until=self.duration)
         self.end_time = time.time()
-        metrics.running_time(self.start_time, self.end_time)
+        self.metrics.running_time(self.start_time, self.end_time)
 
         # Return the end state
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -238,7 +239,7 @@ class Simulator(SimulatorInterface):
         """
         Processes the metrics and parses them in a format specified in the SimulatorState class.
         """
-        stats = metrics.get_metrics()
+        stats = self.metrics.get_metrics()
         self.traffic = stats['current_traffic']
         self.network_stats = {
             'total_flows': stats['generated_flows'],
