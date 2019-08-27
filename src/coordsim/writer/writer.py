@@ -100,7 +100,7 @@ class ResultWriter():
                               stats['in_network_flows'], stats['avg_end_2_end_delay']]
 
             resource_output = []
-            for node in network['nodes']:
+            for key, node in network['node'].items():
                 node_id = node['id']
                 node_cap = node['resource']
                 used_resources = node['used_resources']
