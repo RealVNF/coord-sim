@@ -111,7 +111,7 @@ class StaticTriangleAlgo:
     def periodic_measurement(self):
         """
         Callback function.
-        Called after a the specified interval. Used to record simulator state
+        Called after the specified interval. Used to record simulator state
         in regular intervals.
         """
         self.simulator.write_state()
