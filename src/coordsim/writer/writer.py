@@ -53,7 +53,7 @@ class ResultWriter():
         placement_output_header = ['time', 'node', 'sf']
         resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
         metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
-                                 'avg_end_2_end_delay']
+                                 'avg_end2end_delay']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -97,7 +97,7 @@ class ResultWriter():
             time = env.now
 
             metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
-                              stats['in_network_flows'], stats['avg_end_2_end_delay']]
+                              stats['in_network_flows'], stats['avg_end2end_delay']]
 
             resource_output = []
             for node in network['nodes']:
