@@ -210,13 +210,13 @@ class Simulator(SimulatorInterface):
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
-        self.network_dict = {'nodes': [], 'edges': []}
+        self.network_dict = {'nodes': {}, 'edges': []}
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
             used_node_cap = node[1]['cap'] - node[1]['remaining_cap']
             available_sf = node[1]['available_sf']
-            self.network_dict['nodes'].append(
-                {'id': node[0], 'capacity': node_cap, 'used_capacity': used_node_cap, 'available_sf': available_sf})
+            self.network_dict['nodes'][node[0]] = {'id': node[0], 'capacity': node_cap, 'used_capacity': used_node_cap,
+                                                   'available_sf': available_sf}
         for edge in self.network.edges(data=True):
             edge_src = edge[0]
             edge_dest = edge[1]

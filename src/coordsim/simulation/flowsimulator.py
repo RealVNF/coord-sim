@@ -119,9 +119,9 @@ class FlowSimulator:
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow_destination = np.random.choice(self.params.network.nodes())
+            flow_egress_node = np.random.choice(self.params.network.nodes())
             flow = Flow(str(self.total_flow_count), flow_sfc, flow_sfc_components, flow_dr, flow_size, creation_time,
-                        current_node_id=node_id, destination_id=flow_destination)
+                        current_node_id=node_id, egress_node_id=flow_egress_node)
             # Update metrics for the generated flow
             metrics.generated_flow()
             # Generate flows and schedule them at ingress node
@@ -146,7 +146,7 @@ class FlowSimulator:
         """
         log.info(
             f'Flow {flow.flow_id} generated. arrived at node {flow.current_node_id} Requesting {flow.sfc},'
-            f' egress node {flow.destination_id} - '
+            f' egress node {flow.egress_node_id} - '
             f'flow duration: {flow.duration}ms, flow dr: {flow.dr}. Time: {self.env.now}')
         sfc = self.params.sfc_list[flow.sfc]
         # Check to see if requested SFC exists
@@ -202,10 +202,10 @@ class FlowSimulator:
 
         # Decide how to handle the flow
         if flow_is_processed:
-            if flow.current_node_id == flow.destination_id:
+            if flow.current_node_id == flow.egress_node_id:
                 # Flow head is processed and resides at egress node: depart flow
                 self.env.process(self.depart_flow(flow))
-            elif flow.destination_id is None:
+            elif flow.egress_node_id is None:
                 # Flow head is processed and resides at egress node: depart flow
                 log.info(f'Flow {flow.flow_id} has no egress node, will depart from'
                          f' current node {flow.current_node_id}. Time {self.env.now}.')

@@ -16,7 +16,7 @@ class Flow:
                  dr,
                  size,
                  creation_time,
-                 destination_id=None,
+                 egress_node_id=None,
                  current_sf=None,
                  current_node_id=None,
                  current_position=0,
@@ -38,7 +38,7 @@ class Flow:
         # The node where the flows head currently resides at
         self.current_node_id = current_node_id
         # The specified egress node of the flow. The flow will depart at the egress node. Might be non-existent.
-        self.destination_id = destination_id
+        self.egress_node_id = egress_node_id
         # The duration of the flow calculated in ms.
         self.duration = (float(size) / float(dr)) * 1000  # Converted flow duration to ms
         # Current flow position within the SFC
@@ -49,8 +49,6 @@ class Flow:
         self.end2end_delay = end2end_delay
         # FLow creation time
         self.creation_time = creation_time
-        # Flow destination
-        self.destination_id = destination_id
         # Flow user data, a dict to hold abitrary data. External algorithms should use this to enrich flow information
         self.user_data = {}
 
