@@ -2,8 +2,8 @@ import logging
 import random
 import time
 
-import coordsim.metrics.metrics as metrics
 import coordsim.reader.reader as reader
+from coordsim.metrics import MetricStore
 from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.simulation.simulatorparams import SimulatorParams
 import numpy
@@ -13,7 +13,7 @@ from coordsim.writer.writer import ResultWriter
 import copy
 import networkx
 logger = logging.getLogger(__name__)
-
+metrics = MetricStore.get_instance()
 
 class ExtendedSimulatorAction(SimulatorAction):
     def __init__(self,

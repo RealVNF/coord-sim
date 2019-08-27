@@ -2,9 +2,9 @@ import logging
 import random
 import numpy as np
 from coordsim.network.flow import Flow
-from coordsim.metrics import metrics
+from coordsim.metrics import MetricStore
 log = logging.getLogger(__name__)
-
+metrics = MetricStore.get_instance()
 
 """
 Flow Simulator class
@@ -35,6 +35,8 @@ class FlowSimulator:
         self.env = env
         self.params = params
         self.total_flow_count = 0
+        # Debug to allow debugger access
+        self.metrics = MetricStore.get_instance()
 
     def start(self):
         """
