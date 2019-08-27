@@ -178,6 +178,12 @@ class FlowSimulator:
         current_node_id = flow.current_node_id
         sf = sfc[flow.current_position]
         flow.current_sf = sf
+
+        log.info("Flow {} STARTED PROCESSING at node {} for processing. Time: {}"
+                 .format(flow.flow_id, flow.current_node_id, self.env.now))
+        # Metrics: Add flow request for sf at node regardless of whether it is processed or not.
+        metrics.add_requesting_flow(flow, current_node_id, sf)
+
         if sf in self.params.sf_placement[current_node_id]:
             current_sf = flow.current_sf
             vnf_delay_mean = self.params.sf_list[flow.current_sf]["processing_delay_mean"]

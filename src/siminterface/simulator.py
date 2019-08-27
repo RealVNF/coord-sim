@@ -150,7 +150,7 @@ class Simulator(SimulatorInterface):
         Processes the metrics and parses them in a format specified in the SimulatorState class.
         """
         stats = metrics.get_metrics()
-        self.traffic = stats['current_traffic']
+        self.traffic = stats['run_total_requested_traffic']
         self.network_stats = {
             'total_flows': stats['generated_flows'],
             'successful_flows': stats['processed_flows'],
@@ -159,5 +159,5 @@ class Simulator(SimulatorInterface):
             'avg_end2end_delay': stats['avg_end2end_delay'],
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
             'run_max_end2end_delay': stats['run_max_end2end_delay'],
-            'run_total_traffic': stats['run_total_traffic']
+            'run_total_processed_traffic': stats['run_total_processed_traffic']
         }
