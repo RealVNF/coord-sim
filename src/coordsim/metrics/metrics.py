@@ -45,14 +45,19 @@ def reset():
     metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
 
     # total processed traffic (aggregated data rate) per node per SF within one run
-    metrics['run_total_traffic'] = defaultdict(lambda: defaultdict(float))
+    metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
+    metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
+
+
+def add_requesting_flow(flow, current_node_id, current_sf):
+    metrics['run_total_requested_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
 
 
 # call when new flows starts processing at an SF
 def add_active_flow(flow, current_node_id, current_sf):
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
-    metrics['run_total_traffic'][current_node_id][current_sf] += flow.dr
+    metrics['run_total_processed_traffic'][current_node_id][current_sf] += flow.dr
 
 
 def remove_active_flow(flow, current_node_id, current_sf):
@@ -128,7 +133,7 @@ def calc_avg_path_delay():
 
 
 def calc_avg_end2end_delay():
-    # We devide by number of processed flows to get end2end delays for processed flows only
+    # We divide by number of processed flows to get end2end delays for processed flows only
     if metrics['processed_flows'] > 0:
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
     else:
@@ -162,4 +167,5 @@ def reset_run():
     metrics['run_end2end_delay'] = 0
     metrics['run_processed_flows'] = 0
     metrics['run_max_end2end_delay'] = 9999
-    metrics['run_total_traffic'] = defaultdict(lambda: defaultdict(float))
+    metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
+    metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
