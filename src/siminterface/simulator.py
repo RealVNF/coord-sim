@@ -150,7 +150,7 @@ class Simulator(SimulatorInterface):
         Processes the metrics and parses them in a format specified in the SimulatorState class.
         """
         stats = metrics.get_metrics()
-        self.traffic = stats['run_total_requested_traffic']
+        self.traffic = stats['run_total_requested_traffic_node']
         self.network_stats = {
             'total_flows': stats['generated_flows'],
             'successful_flows': stats['processed_flows'],

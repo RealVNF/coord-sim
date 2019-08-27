@@ -70,7 +70,7 @@ class FlowSimulator:
             flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
                         current_node_id=node_id)
             # Update metrics for the generated flow
-            metrics.generated_flow()
+            metrics.generated_flow(flow, node_id)
             # Generate flows and schedule them at ingress node
             self.env.process(self.init_flow(flow))
             yield self.env.timeout(inter_arr_time)
