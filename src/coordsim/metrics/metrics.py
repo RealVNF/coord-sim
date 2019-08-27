@@ -14,12 +14,14 @@ metrics = {}
 
 # Initialize the metrics module
 def reset():
+    # successful flows
     metrics['generated_flows'] = 0
     metrics['processed_flows'] = 0
     metrics['run_processed_flows'] = 0
     metrics['dropped_flows'] = 0
     metrics['total_active_flows'] = 0
 
+    # delay
     metrics['total_processing_delay'] = 0.0
     metrics['num_processing_delays'] = 0
     metrics['avg_processing_delay'] = 0.0
@@ -40,17 +42,19 @@ def reset():
 
     # Current number of active flows per each node
     metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
-    metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
+    metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
+
+    # total processed traffic (aggregated data rate) per node per SF within one run
+    metrics['run_total_traffic'] = defaultdict(lambda: defaultdict(float))
 
 
+# call when new flows starts processing at an SF
 def add_active_flow(flow, current_node_id, current_sf):
-
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
-
+    metrics['run_total_traffic'][current_node_id][current_sf] += flow.dr
 
 def remove_active_flow(flow, current_node_id, current_sf):
-
     metrics['current_active_flows'][current_node_id][flow.sfc][current_sf] -= 1
     metrics['current_traffic'][current_node_id][flow.sfc][current_sf] -= flow.dr
 
@@ -73,7 +77,8 @@ def generated_flow():
     metrics['total_active_flows'] += 1
 
 
-def processed_flow():
+# call when flow was successfully completed, ie, processed by all required SFs
+def completed_flow():
     metrics['processed_flows'] += 1
     metrics['run_processed_flows'] += 1
     metrics['total_active_flows'] -= 1
@@ -156,3 +161,4 @@ def reset_run():
     metrics['run_end2end_delay'] = 0
     metrics['run_processed_flows'] = 0
     metrics['run_max_end2end_delay'] = 9999
+    metrics['run_total_traffic'] = defaultdict(lambda: defaultdict(float))

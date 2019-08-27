@@ -201,13 +201,12 @@ class FlowSimulator:
             node_cap = self.params.network.nodes[current_node_id]["cap"]
             node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
             assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
-            # Metrics: Add active flow to the SF once the flow has begun processing.
-            metrics.add_active_flow(flow, current_node_id, current_sf)
             if demanded_total_capacity <= node_cap:
-                log.info(
-                    "Flow {} started processing at sf {} at node {}. Time: {}, "
-                    "Processing delay: {}".format(flow.flow_id, current_sf, current_node_id, self.env.now,
-                                                  processing_delay))
+                log.info("Flow {} started processing at sf {} at node {}. Time: {}, Processing delay: {}"
+                         .format(flow.flow_id, current_sf, current_node_id, self.env.now, processing_delay))
+
+                # Metrics: Add active flow to the SF once the flow has begun processing.
+                metrics.add_active_flow(flow, current_node_id, current_sf)
 
                 # Add load to sf
                 self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] += flow.dr
@@ -217,9 +216,8 @@ class FlowSimulator:
                 node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
                 yield self.env.timeout(processing_delay)
-                log.info(
-                    "Flow {} started departing sf {} at node {}."
-                    " Time {}".format(flow.flow_id, current_sf, current_node_id, self.env.now))
+                log.info("Flow {} started departing sf {} at node {}. Time {}"
+                         .format(flow.flow_id, current_sf, current_node_id, self.env.now))
 
                 # Check if flow is currently in last SF, if so, then depart flow.
                 if (flow.current_position == len(sfc) - 1):
@@ -239,8 +237,8 @@ class FlowSimulator:
 
                 # Remove load from sf
                 self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] -= flow.dr
-                assert self.params.network.nodes[current_node_id]['available_sf'][sf][
-                           'load'] >= 0, 'SF load cannot be less than 0!'
+                assert self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] >= 0, \
+                    'SF load cannot be less than 0!'
                 # Check if SF is not processing any more flows AND if SF is removed from placement. If so the SF will
                 # be removed from the load recording. This allows SFs to be handed gracefully.
                 if (self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] == 0) and (
@@ -263,7 +261,6 @@ class FlowSimulator:
                 log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
                 # Update metrics for the dropped flow
                 metrics.dropped_flow()
-                metrics.remove_active_flow(flow, current_node_id, current_sf)
                 self.env.exit()
         else:
             log.info(f"SF {sf} was not found at {current_node_id}. Dropping flow {flow.flow_id}")
@@ -275,7 +272,7 @@ class FlowSimulator:
         Process the flow at the requested SF of the current node.
         """
         # Update metrics for the processed flow
-        metrics.processed_flow()
+        metrics.completed_flow()
         metrics.add_end2end_delay(flow.end2end_delay)
         metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
         log.info("Flow {} was processed and departed the network from {}. Time {}"
