@@ -111,9 +111,6 @@ class Simulator(SimulatorInterface):
         # Start the simulator
         self.simulator.start()
 
-        # Run the environment for one step to get initial stats.
-        self.env.step()
-
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.
         # Also, parse the network stats and prepare it in SimulatorState format.
