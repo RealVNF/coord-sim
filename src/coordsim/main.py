@@ -58,6 +58,9 @@ def main():
     end_time = time.time()
     metrics.running_time(start_time, end_time)
 
+    # dump all metrics
+    log.info(metrics.metrics)
+
 
 # parse CLI args (when using simulator as stand-alone, not triggered through the interface)
 def parse_args():

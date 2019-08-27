@@ -156,7 +156,8 @@ class Simulator(SimulatorInterface):
             'successful_flows': stats['processed_flows'],
             'dropped_flows': stats['dropped_flows'],
             'in_network_flows': stats['total_active_flows'],
-            'avg_end_2_end_delay': stats['avg_end2end_delay'],
+            'avg_end2end_delay': stats['avg_end2end_delay'],
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
-            'run_max_end2end_delay': stats['run_max_end2end_delay']
+            'run_max_end2end_delay': stats['run_max_end2end_delay'],
+            'run_total_traffic': stats['run_total_traffic']
         }
