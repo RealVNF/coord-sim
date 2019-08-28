@@ -34,7 +34,7 @@ def reset():
     metrics['avg_end2end_delay'] = 0.0
     metrics['run_end2end_delay'] = 0.0
     metrics['run_avg_end2end_delay'] = 0.0
-    metrics['run_max_end2end_delay'] = 9999
+    metrics['run_max_end2end_delay'] = 0.0
 
     metrics['avg_total_delay'] = 0.0
 
@@ -122,14 +122,14 @@ def calc_avg_processing_delay():
     if metrics['num_processing_delays'] > 0:
         metrics['avg_processing_delay'] = metrics['total_processing_delay'] / metrics['num_processing_delays']
     else:
-        metrics['avg_processing_delay'] = 9999
+        metrics['avg_processing_delay'] = 0
 
 
 def calc_avg_path_delay():
     if metrics['num_path_delays'] > 0:
         metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
     else:
-        metrics['avg_path_delay'] = 9999
+        metrics['avg_path_delay'] = 0
 
 
 def calc_avg_end2end_delay():
