@@ -12,8 +12,8 @@ flow_size_shape: 0
 # Has to be include for compatibility           
 
 # flow parameter
-inter_arrival_values: [5, 10]
-inter_arrival_weights: [0.5, 0.5]
+inter_arrival_values: [1, 2, 5, 10]
+inter_arrival_weights: [0.25, 0.25, 0.25, 0.25]
 flow_dr_values: [1, 2, 4, 6]
 flow_dr_weights: [0.3, 0.3, 0.3, 0.1]
 flow_duration_values: [1, 2]
@@ -28,5 +28,4 @@ link_delay_values: [3, 5, 15]
 link_delay_weights: [0.4, 0.3, 0.3]
 
 parameter_mode: probabilistic_discrete
-run_duration: 100
-inter_measurement: 10
+run_duration: 10000

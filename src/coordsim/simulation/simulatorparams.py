@@ -54,8 +54,6 @@ class SimulatorParams:
         self.parameter_mode = config['parameter_mode']
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
-        # The duration in between simulator state measurements
-        self.inter_measurement = config['inter_measurement']
         # Make complete configuration accessible to allow different parameter modes
         self.sim_config = config
 
