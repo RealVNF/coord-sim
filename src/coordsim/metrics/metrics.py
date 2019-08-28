@@ -58,6 +58,9 @@ class MetricStore:
         self['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
         self['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
 
+        # Record all flows, to access their trace
+        self['flows'] = []
+
     def add_active_flow(self, flow, current_node_id, current_sf):
         self['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
         self['current_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
@@ -80,9 +83,10 @@ class MetricStore:
         except Exception as e:
             logger.critical(e)
 
-    def generated_flow(self):
+    def generated_flow(self, flow):
         self['generated_flows'] += 1
         self['total_active_flows'] += 1
+        self['flows'].append(flow)
 
     def processed_flow(self):
         self['processed_flows'] += 1
