@@ -8,7 +8,7 @@ from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.simulation.simulatorparams import SimulatorParams
 import numpy
 import simpy
-from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
+from spinterface import SimulatorAction, SimulatorState
 from coordsim.writer.writer import ResultWriter
 import copy
 import networkx
