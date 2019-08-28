@@ -34,8 +34,9 @@ class FlowSimulator:
         self.env = env
         self.params = params
         self.total_flow_count = 0
-        # Debug to allow debugger access
-        self.metrics = MetricStore.get_instance()
+        # Initiate metric instance
+        self.metrics = MetricStore()
+        self.metrics.reset()
 
     def start(self):
         """

@@ -73,7 +73,6 @@ class Simulator:
         self.test_mode = test_mode
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode)
-        self.metrics = MetricStore.get_instance()
 
     def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
              interception_callbacks={}) -> ExtendedSimulatorState:
@@ -83,7 +82,6 @@ class Simulator:
         """
 
         # Initialize metrics, record start time
-        self.metrics.reset()
         self.run_times = int(1)
         self.start_time = time.time()
 
@@ -108,6 +106,9 @@ class Simulator:
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
+
+        # Get the metric instance from the flowsimulator
+        self.metrics = self.simulator.metrics
 
         # Start the simulator
         self.simulator.start()

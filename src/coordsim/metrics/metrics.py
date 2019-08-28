@@ -10,20 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class MetricStore:
-    """
-    Conventional singelton.
-    """
-
-    instance = None
 
     def __init__(self):
         self.metric_dict = {}
-
-    @staticmethod
-    def get_instance():
-        if MetricStore.instance is None:
-            MetricStore.instance = MetricStore()
-        return MetricStore.instance
 
     def __setitem__(self, key, item):
         self.metric_dict[key] = item
