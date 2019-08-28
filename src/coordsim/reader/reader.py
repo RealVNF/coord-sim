@@ -129,12 +129,17 @@ def shortest_paths(networkx_network):
     networkx_network.graph['shortest_paths'] = shortest_paths_with_delays
 
 
-def read_network(file, node_cap=None, link_cap=None):
+def read_network(file, config):
     """
     Read the GraphML file and return list of nodes and edges.
     """
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
+
+    # default capacity
+    default_node_cap = 10
+    default_link_cap = 10
+    default_link_delay = 3
 
     if not file.endswith(".graphml"):
         raise ValueError("{} is not a GraphML file".format(file))
@@ -146,8 +151,11 @@ def read_network(file, node_cap=None, link_cap=None):
         node_id = "pop{}".format(n[0])
         cap = n[1].get("NodeCap", None)
         if cap is None:
-            cap = node_cap
-            log.warning("NodeCap not set in the GraphML file, now using default NodeCap for node: {}".format(n))
+            if 'node_cap_values' in config:
+                cap = np.random.choice(config['node_cap_values'], p=config['node_cap_weights'])
+            else:
+                cap = default_node_cap
+                log.warning(f'NodeCap is neither set in the GraphML file nor in configuration, now using default NodeCap {node_cap} for node: {n}')
         node_type = n[1].get("NodeType", "Normal")
         node_name = n[1].get("label", None)
         if cap is None:
@@ -166,32 +174,39 @@ def read_network(file, node_cap=None, link_cap=None):
         # Check whether LinkDelay value is set, otherwise default to None
         source = "pop{}".format(e[0])
         target = "pop{}".format(e[1])
-        link_delay = e[2].get("LinkDelay", None)
         # As edges are undirectional, only LinkFwdCap determines the available data rate
-        link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
-        if e[2].get("LinkFwdCap") is None:
-            log.warning("Link {} has no capacity defined in graphml file. So, Using the default capacity".format(e))
+        link_fwd_cap = e[2].get("LinkFwdCap", None)
+        if link_fwd_cap is None:
+            if 'link_cap_values' in config:
+                link_fwd_cap = np.random.choice(config['link_cap_values'], p=config['link_cap_weights'])
+            else:
+                link_fwd_cap = default_link_cap
+                log.warning("Link {} has neither defined acapacity in graphml file nor configuration. So, Using the default capacity".format(e))
+
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
-        delay = 3
+        link_delay = e[2].get("LinkDelay", None)
         if link_delay is None:
-            n1 = graphml_network.nodes(data=True)[e[0]]
-            n2 = graphml_network.nodes(data=True)[e[1]]
-            n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
-            n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
-            if n1_lat is None or n1_long is None or n2_lat is None or n2_long is None:
-                log.warning("Link Delay not set in the GraphML file and unable to calc based on Geo Location,"
-                            "Now using default delay for edge: ({},{})".format(source, target))
+            if 'link_delay_values' in config:
+                link_delay = np.random.choice(config['link_delay_values'], p=config['link_delay_weights'])
             else:
-                distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
-                # round delay to int using np.around for consistency with emulator
-                delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
-        else:
-            delay = link_delay
+                n1 = graphml_network.nodes(data=True)[e[0]]
+                n2 = graphml_network.nodes(data=True)[e[1]]
+                n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
+                n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
+                if n1_lat is None or n1_long is None or n2_lat is None or n2_long is None:
+                    log.warning(
+                        f'Link Delay neither set in the GraphML file nor in configuration and unable to calc based'
+                        f' on Geo Location, Now using default delay {default_link_delay} for edge: ({source},{target})')
+                    link_delay = default_link_delay
+                else:
+                    distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
+                    # round delay to int using np.around for consistency with emulator
+                    link_delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
 
         # Adding the undirected edges for each link defined in the network.
         # delay = edge delay , cap = edge capacity
-        networkx_network.add_edge(source, target, delay=delay, cap=link_fwd_cap, remaining_cap=link_fwd_cap)
+        networkx_network.add_edge(source, target, delay=link_delay, cap=link_fwd_cap, remaining_cap=link_fwd_cap)
 
     # setting the weight property for each edge in the NetworkX Graph
     # weight attribute is used to find the shortest paths

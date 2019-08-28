@@ -11,12 +11,21 @@ flow_dr_stdev: 0
 flow_size_shape: 0
 # Has to be include for compatibility           
 
+# flow parameter
 inter_arrival_values: [5, 10]
 inter_arrival_weights: [0.5, 0.5]
 flow_dr_values: [1, 2, 4, 6]
 flow_dr_weights: [0.3, 0.3, 0.3, 0.1]
 flow_duration_values: [1, 2]
 flow_duration_weights: [0.5, 0.5]
+
+# network parameter
+node_cap_values: [10]
+node_cap_weights: [1]
+link_cap_values: [10]
+link_cap_weights: [1]
+link_delay_values: [3, 5, 15]
+link_delay_weights: [0.4, 0.3, 0.3]
 
 parameter_mode: probabilistic_discrete
 run_duration: 100

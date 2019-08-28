@@ -86,10 +86,10 @@ class Simulator:
         self.start_time = time.time()
 
         # Parse network and SFC + SF file
-        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
+        self.config = reader.get_config(config_file)
+        self.network, self.ing_nodes = reader.read_network(network_file, self.config)
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
-        self.config = reader.get_config(config_file)
         self.interception_callbacks = interception_callbacks
 
         # Generate SimPy simulation environment
