@@ -35,7 +35,7 @@ class FlowSimulator:
         self.params = params
         self.total_flow_count = 0
         # Initiate metric instance
-        self.metrics = MetricStore()
+        self.metrics = MetricStore(self.params.network)
         self.metrics.reset()
 
     def start(self):
@@ -442,7 +442,7 @@ class FlowSimulator:
         log.info(f'Flow {flow.flow_id} has completely departed the network from {flow.current_node_id}. Time {self.env.now}')
 
         # Update metrics for the processed flow
-        self.metrics.processed_flow()
+        self.metrics.processed_flow(flow)
         self.metrics.add_end2end_delay(flow.end2end_delay)
         self.metrics.add_path_delay_of_processed_flows(flow.path_delay)
 

@@ -4,6 +4,7 @@ Metrics collection module
 
 """
 import numpy as np
+import networkx as nx
 from collections import defaultdict
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 class MetricStore:
 
-    def __init__(self):
+    def __init__(self, network):
+        self.network = network
         self.metric_dict = {}
 
     def __setitem__(self, key, item):
@@ -36,6 +38,9 @@ class MetricStore:
 
         self['total_path_delay_of_processed_flows'] = 0.0
         self['avg_path_delay_of_processed_flows'] = 0.0
+
+        self['total_ingress_2_egress_path_delay_of_processed_flows'] = 0.0
+        self['avg_ingress_2_egress_path_delay_of_processed_flows'] = 0.0
 
         self['total_end2end_delay'] = 0.0
         self['avg_end2end_delay'] = 0.0
@@ -77,10 +82,14 @@ class MetricStore:
         self['total_active_flows'] += 1
         self['flows'].append(flow)
 
-    def processed_flow(self):
+    def processed_flow(self, flow):
         self['processed_flows'] += 1
         self['total_active_flows'] -= 1
         assert self['total_active_flows'] >= 0, "Cannot have negative active flows"
+        self['total_ingress_2_egress_path_delay_of_processed_flows'] += nx.shortest_path_length(self.network,
+                                                                                                flow.ingress_node_id,
+                                                                                                flow.egress_node_id,
+                                                                                                weight="delay")
 
     def dropped_flow(self):
         self['dropped_flows'] += 1
@@ -122,6 +131,13 @@ class MetricStore:
         else:
             self['avg_path_delay_of_processed_flows'] = 9999
 
+    def calc_avg_ingress_2_egress_path_delay_of_processed_flows(self):
+        if self['processed_flows'] > 0:
+            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = \
+                self['total_ingress_2_egress_path_delay_of_processed_flows'] / self['processed_flows']
+        else:
+            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = 9999
+
     def calc_avg_end2end_delay(self):
         # We devide by number of processed flows to get end2end delays for processed flows only
         if self['processed_flows'] > 0:
@@ -144,4 +160,5 @@ class MetricStore:
         self.calc_avg_end2end_delay()
         self.calc_avg_path_delay()
         self.calc_avg_path_delay_of_processed_flows()
+        self.calc_avg_ingress_2_egress_path_delay_of_processed_flows()
         return self.metric_dict
