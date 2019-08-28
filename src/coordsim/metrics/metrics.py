@@ -43,7 +43,6 @@ class MetricStore:
         self['avg_processing_delay'] = 0.0
 
         self['total_path_delay'] = 0.0
-        self['num_path_delays'] = 0
         self['avg_path_delay'] = 0.0
 
         self['total_path_delay_of_processed_flows'] = 0.0
@@ -51,12 +50,8 @@ class MetricStore:
 
         self['total_end2end_delay'] = 0.0
         self['avg_end2end_delay'] = 0.0
-        self['run_end2end_delay'] = 0.0
-        self['run_avg_end2end_delay'] = 0.0
-        self['run_max_end2end_delay'] = 9999
 
         self['avg_total_delay'] = 0.0
-
         self['running_time'] = 0.0
 
         # Current number of active flows per each node
@@ -91,7 +86,6 @@ class MetricStore:
 
     def processed_flow(self):
         self['processed_flows'] += 1
-        self['run_processed_flows'] += 1
         self['total_active_flows'] -= 1
         assert self['total_active_flows'] >= 0, "Cannot have negative active flows"
 
@@ -112,9 +106,6 @@ class MetricStore:
 
     def add_end2end_delay(self, delay):
         self['total_end2end_delay'] += delay
-        self['run_end2end_delay'] += delay
-        if delay > self['run_max_end2end_delay']:
-            self['run_max_end2end_delay'] = delay
 
     def running_time(self, start_time, end_time):
         self['running_time'] = end_time - start_time
@@ -145,11 +136,6 @@ class MetricStore:
         else:
             self['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
 
-        if self['run_processed_flows'] > 0:
-            self['run_avg_end2end_delay'] = self['run_end2end_delay'] / self['run_processed_flows']
-        else:
-            self['run_avg_end2end_delay'] = 9999  # No run avg end2end delay yet (no processed flows yet)
-
     def calc_avg_total_delay(self):
         avg_processing_delay = self['avg_processing_delay']
         avg_path_delay = self['avg_path_delay']
@@ -166,8 +152,3 @@ class MetricStore:
         self.calc_avg_path_delay()
         self.calc_avg_path_delay_of_processed_flows()
         return self.metric_dict
-
-    def reset_run(self):
-        self['run_end2end_delay'] = 0
-        self['run_processed_flows'] = 0
-        self['run_max_end2end_delay'] = 9999

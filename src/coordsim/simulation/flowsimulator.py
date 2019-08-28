@@ -314,7 +314,7 @@ class FlowSimulator:
                 # Claim link capacities
                 forwarding_link['remaining_cap'] -= flow.dr
                 log.info(f'Flow {flow.flow_id} will leave node {flow.current_node_id} towards node {neighbor_id}.'
-                         f' Time {self.env.now}')
+                         f' Time {self.env.now}, link delay: {link_delay}')
                 yield self.env.timeout(link_delay)
 
                 # Update flows current node
@@ -372,7 +372,8 @@ class FlowSimulator:
         assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
 
         if demanded_total_capacity <= node_cap:
-            log.info(f'Flow {flow.flow_id} started processing at sf {current_sf} at node {current_node_id}. Time: {self.env.now}, Processing delay: {processing_delay}')
+            log.info(f'Flow {flow.flow_id} started processing at sf {current_sf} at node {current_node_id}.'
+                     f' Time: {self.env.now}, Processing delay: {processing_delay}')
             # Metrics: Add active flow to the SF once the flow has begun processing.
             self.metrics.add_active_flow(flow, current_node_id, current_sf)
 

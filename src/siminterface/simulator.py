@@ -192,9 +192,6 @@ class Simulator:
         return extended_simulator_state
 
     def write_state(self):
-        # reset metrics for steps
-        #metrics.reset_run()
-
         extended = self.get_state()
         self.writer.write_state_results(self.env, extended)
 
