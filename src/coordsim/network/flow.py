@@ -37,6 +37,8 @@ class Flow:
         self.current_sf = current_sf
         # The node where the flows head currently resides at
         self.current_node_id = current_node_id
+        # The specified ingress node of the flow. The flow will spawn at the ingress node.
+        self.ingress_node_id = current_node_id
         # The specified egress node of the flow. The flow will depart at the egress node. Might be non-existent.
         self.egress_node_id = egress_node_id
         # The duration of the flow calculated in ms.
