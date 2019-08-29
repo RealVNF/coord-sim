@@ -84,7 +84,7 @@ class Simulator(SimulatorInterface):
             # Keep only SFs which still process
             for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
                 if sf_data['load'] != 0:
-                    available[sf] = self.simulator.params.network.nodes[node_id]['available_sf'][sf]
+                    available[sf] = sf_data
             # Add all SFs which are in the placement
             for sf in placed_sf_list:
                 available[sf] = available.get(sf, {'load': 0.0})
