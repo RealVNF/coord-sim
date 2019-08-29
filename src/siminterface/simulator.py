@@ -80,9 +80,15 @@ class Simulator(SimulatorInterface):
         self.simulator.params.sf_placement = actions.placement
         # Update which sf is available at which node
         for node_id, placed_sf_list in actions.placement.items():
+            available = {}
+            # Keep only SFs which still process
+            for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
+                if sf_data['load'] != 0:
+                    available[sf] = sf_data
+            # Add all SFs which are in the placement
             for sf in placed_sf_list:
-                self.simulator.params.network.nodes[node_id]['available_sf'][sf] = \
-                    self.simulator.params.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
+                available[sf] = available.get(sf, {'load': 0.0})
+            self.simulator.params.network.nodes[node_id]['available_sf'] = available
 
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
