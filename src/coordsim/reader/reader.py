@@ -191,7 +191,7 @@ def read_network(file, config):
             else:
                 distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
                 # round delay to int using np.around for consistency with emulator
-                link_delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
+                link_delay = (distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR  # in milliseconds
         elif config['link_delay_parameter_mode'] == 'probabilistic_continuous':
             raise NotImplementedError
         elif config['link_delay_parameter_mode'] == 'probabilistic_discrete':
