@@ -41,17 +41,6 @@ class SimulatorParams:
         # Callbacks to allow the flowsimulator interact with external functions at certain events
         self.interception_callbacks = interception_callbacks
 
-        # Flow interarrival exponential distribution mean: float
-        self.inter_arr_mean = config['inter_arrival_mean']
-        # Flow data rate normal distribution mean: float
-        self.flow_dr_mean = config['flow_dr_mean']
-        # Flow data rate normal distribution standard deviation: float
-        self.flow_dr_stdev = config['flow_dr_stdev']
-        # Flow size Pareto heavy-tail distribtution shape: float
-        self.flow_size_shape = config['flow_size_shape']
-        # if parameter_mode = deterministic, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape
-        # as fixed deterministic values rather than means of a random distribution
-        self.parameter_mode = config['parameter_mode']
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
         # Make complete configuration accessible to allow different parameter modes
@@ -61,8 +50,4 @@ class SimulatorParams:
     def __str__(self):
         params_str = "Simulator parameters: \n"
         params_str += "seed: {}\n".format(self.seed)
-        params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
-        params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
-        params_str += "flow_dr_stdv: {}\n".format(self.flow_dr_stdev)
-        params_str += "flow_size_shape: {}".format(self.flow_size_shape)
         return params_str

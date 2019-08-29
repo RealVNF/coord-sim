@@ -1,0 +1,25 @@
+# module for configuring the simulator
+# configuration parameters are loaded and used both when using the simulator via the interface
+# all parameters are required, defaults are in comments
+
+# Probabilistic continuous configuration
+
+# Flow parameter
+flow_parameter_mode: probabilistic_continuous
+inter_arrival_lambda: 0.1            # exponential distribution: lambda
+flow_dr_mean: 2.0                  # normal distribution: mean/center of distribution
+flow_dr_stdev: 3.0                 # normal distribution: standard deviation
+flow_size_alpha: 1                 # pareto distribution: alpha
+
+# Network parameter
+# Note: attributes defined in the graphml file have always precedence.
+node_parameter_mode: probabilistic_discrete
+node_cap_values: [10]
+node_cap_weights: [1]
+link_cap_parameter_mode: probabilistic_discrete
+link_cap_values: [10]
+link_cap_weights: [1]
+link_delay_parameter_mode: geo_location
+
+# Simulator execution parameter
+run_duration: 100

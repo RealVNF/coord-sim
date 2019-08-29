@@ -1,0 +1,27 @@
+# module for configuring the simulator
+# configuration parameters are loaded and used both when using the simulator via the interface
+# all parameters are required, defaults are in comments
+
+# Transformed deterministic legacy configuration
+
+# Flow parameter
+flow_parameter_mode: probabilistic_discrete
+inter_arrival_values: [10]
+inter_arrival_weights: [1]
+flow_dr_values: [1]
+flow_dr_weights: [1]
+flow_duration_values: [1]
+flow_duration_weights: [1]
+
+# Network parameter
+# Note: attributes defined in the graphml file have always precedence.
+node_parameter_mode: probabilistic_discrete
+node_cap_values: [10]
+node_cap_weights: [1]
+link_cap_parameter_mode: probabilistic_discrete
+link_cap_values: [10]
+link_cap_weights: [1]
+link_delay_parameter_mode: geo_location
+
+# Simulator execution parameter
+run_duration: 100                  # default: 100

@@ -136,9 +136,7 @@ def read_network(file, config):
     SPEED_OF_LIGHT = 299792458  # meter per second
     PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
 
-    # default capacity
-    default_node_cap = 10
-    default_link_cap = 10
+    # default values
     default_link_delay = 3
 
     if not file.endswith(".graphml"):
@@ -149,60 +147,56 @@ def read_network(file, config):
     #  Setting the nodes of the NetworkX Graph
     for n in graphml_network.nodes(data=True):
         node_id = "pop{}".format(n[0])
-        cap = n[1].get("NodeCap", None)
-        if cap is None:
-            if 'node_cap_values' in config:
-                cap = np.random.choice(config['node_cap_values'], p=config['node_cap_weights'])
-            else:
-                cap = default_node_cap
-                log.warning(f'NodeCap is neither set in the GraphML file nor in configuration, now using default NodeCap {node_cap} for node: {n}')
+
+        if config['node_parameter_mode'] == 'probabilistic_continuous':
+            raise NotImplementedError
+        elif config['node_parameter_mode'] == 'probabilistic_discrete':
+            cap = np.random.choice(config['node_cap_values'], p=config['node_cap_weights'])
+        cap = n[1].get('NodeCap', cap)
+
         node_type = n[1].get("NodeType", "Normal")
         node_name = n[1].get("label", None)
         if cap is None:
             raise ValueError("No NodeCap. set for node{} in file {} (as cmd argument or in graphml)".format(n, file))
         # Adding a Node in the NetworkX Graph
-        # {"id": node_id, "name": node_name, "type": node_type, "cap": cpu})
         # Type of node. For now it is either "Normal" or "Ingress"
-        # Init 'remaining_resources' to the node capacity
+        # Init 'remaining_cap' to the node capacity
         networkx_network.add_node(node_id, name=node_name, type=node_type, cap=cap, available_sf={},
                                   remaining_cap=cap)
 
     # set links
     # calculate link delay based on geo positions of nodes;
-
     for e in graphml_network.edges(data=True):
         # Check whether LinkDelay value is set, otherwise default to None
         source = "pop{}".format(e[0])
         target = "pop{}".format(e[1])
         # As edges are undirectional, only LinkFwdCap determines the available data rate
-        link_fwd_cap = e[2].get("LinkFwdCap", None)
-        if link_fwd_cap is None:
-            if 'link_cap_values' in config:
-                link_fwd_cap = np.random.choice(config['link_cap_values'], p=config['link_cap_weights'])
-            else:
-                link_fwd_cap = default_link_cap
-                log.warning("Link {} has neither defined acapacity in graphml file nor configuration. So, Using the default capacity".format(e))
+        if config['link_cap_parameter_mode'] == 'probabilistic_continuous':
+            raise NotImplementedError
+        elif config['link_cap_parameter_mode'] == 'probabilistic_discrete':
+            link_fwd_cap = np.random.choice(config['link_cap_values'], p=config['link_cap_weights'])
+        link_fwd_cap = e[2].get("LinkFwdCap", link_fwd_cap)
 
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
-        link_delay = e[2].get("LinkDelay", None)
-        if link_delay is None:
-            if 'link_delay_values' in config:
-                link_delay = np.random.choice(config['link_delay_values'], p=config['link_delay_weights'])
+        if config['link_delay_parameter_mode'] == 'geo_location':
+            n1 = graphml_network.nodes(data=True)[e[0]]
+            n2 = graphml_network.nodes(data=True)[e[1]]
+            n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
+            n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
+            if n1_lat is None or n1_long is None or n2_lat is None or n2_long is None:
+                log.warning(f'Unable to calc based on Geo Location,'
+                            f' Now using default delay {default_link_delay} for edge: ({source},{target})')
+                link_delay = default_link_delay
             else:
-                n1 = graphml_network.nodes(data=True)[e[0]]
-                n2 = graphml_network.nodes(data=True)[e[1]]
-                n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
-                n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
-                if n1_lat is None or n1_long is None or n2_lat is None or n2_long is None:
-                    log.warning(
-                        f'Link Delay neither set in the GraphML file nor in configuration and unable to calc based'
-                        f' on Geo Location, Now using default delay {default_link_delay} for edge: ({source},{target})')
-                    link_delay = default_link_delay
-                else:
-                    distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
-                    # round delay to int using np.around for consistency with emulator
-                    link_delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
+                distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
+                # round delay to int using np.around for consistency with emulator
+                link_delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
+        elif config['parameter_mode'] == 'probabilistic_continuous':
+            raise NotImplementedError
+        elif config['parameter_mode'] == 'probabilistic_discrete':
+            link_delay = np.random.choice(config['link_delay_values'], p=config['link_delay_weights'])
+        link_delay = e[2].get("LinkDelay", link_delay)
 
         # Adding the undirected edges for each link defined in the network.
         # delay = edge delay , cap = edge capacity
