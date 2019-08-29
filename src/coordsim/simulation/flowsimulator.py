@@ -161,7 +161,6 @@ class FlowSimulator:
         else:
             log.info(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
             self.drop_flow(flow)
-            self.env.exit()
 
     def pass_flow(self, flow, sfc):
         """
@@ -234,7 +233,6 @@ class FlowSimulator:
                     else:
                         log.warning(f'SF was not found at requested node. Dropping flow {flow.flow_id}.')
                         self.drop_flow(flow)
-                        self.env.exit()
                 else:
                     # Flow has no permission for requested service: fallback to forward flow
                     log.debug(f'Flow {flow.flow_id}: Processing rules exists at {flow.current_node_id},'
@@ -304,7 +302,6 @@ class FlowSimulator:
             log.warning(f'Flow {flow.flow_id}: Cannot forward from node {flow.current_node_id} to'
                         f' node {neighbor_id} over non-existent link. Dropping flow!')
             self.drop_flow(flow)
-            self.env.exit()
         else:
             forwarding_link = self.params.network[flow.current_node_id][neighbor_id]
             assert forwarding_link['remaining_cap'] >= 0, "Remaining link capacity cannot be less than 0 (zero)!"
@@ -337,7 +334,6 @@ class FlowSimulator:
                 log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over'
                             f' link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
                 self.drop_flow(flow)
-                self.env.exit()
 
     def process_flow(self, flow, sfc):
         """
@@ -423,7 +419,6 @@ class FlowSimulator:
         else:
             log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
             self.drop_flow(flow)
-            self.env.exit()
 
     def depart_flow(self, flow):
         """
@@ -445,8 +440,6 @@ class FlowSimulator:
         self.metrics.processed_flow(flow)
         self.metrics.add_end2end_delay(flow.end2end_delay)
         self.metrics.add_path_delay_of_processed_flows(flow.path_delay)
-
-        self.env.exit()
 
     def drop_flow(self, flow):
         """
