@@ -80,6 +80,10 @@ class Simulator:
         Initialize the simulator with all necessary parameters. After this function call the simulation is ready
         to start. The initial state will be returned.
         """
+        # First action shall be to set seeds for pseudorandom number generator
+        self.seed = seed
+        random.seed(self.seed)
+        numpy.random.seed(self.seed)
 
         # Initialize metrics, record start time
         self.run_times = int(1)
@@ -99,10 +103,6 @@ class Simulator:
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed,
                                       interception_callbacks=self.interception_callbacks)
         self.duration = self.params.run_duration
-        # Get and plant random seed
-        self.seed = seed
-        random.seed(self.seed)
-        numpy.random.seed(self.seed)
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
