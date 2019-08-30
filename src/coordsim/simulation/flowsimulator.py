@@ -68,7 +68,7 @@ class FlowSimulator:
              +----------+
         """
         while True:
-            log.debug(f'{log_message}. Time {self.env.now}.')
+            log.debug(f'{log_message} Time {self.env.now}.')
             callback()
             yield self.env.timeout(interval_duration)
 

@@ -71,8 +71,6 @@ class Simulator:
         self.run_times = int(1)
         self.start_time = 0
         self.test_mode = test_mode
-        # Create CSV writer
-        self.writer = ResultWriter(self.test_mode)
 
     def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
              interception_callbacks={}) -> ExtendedSimulatorState:
@@ -95,6 +93,12 @@ class Simulator:
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.interception_callbacks = interception_callbacks
+
+        # Create CSV writer, besides measurements save configuration and parameter
+        self.writer = ResultWriter(self.test_mode,self.config,
+                                   {'network': network_file, 'service functions:': service_functions_file,
+                                    'config': config_file, 'resource functions': resource_functions_path,
+                                    'seed': self.seed})
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()

@@ -1,7 +1,7 @@
 """
 Simulator file writer module
 """
-
+import yaml
 import csv
 import os
 import datetime as dt
@@ -13,30 +13,36 @@ class ResultWriter():
     Result Writer
     Helper class to write results to CSV files.
     """
-    def __init__(self, test_mode: bool):
+    def __init__(self, test_mode: bool, config, simulator_params):
         """
         If the simulator is in test mode, create result folder and CSV files
         """
         self.test_mode = test_mode
         if self.test_mode:
             now = dt.datetime.now()
+            self.result_path = f'results/run_{now.strftime("%Y-%m-%d_%H-%M-%S")}'
             "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
-            self.scheduling_file_name = f"results/scheduling_{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.placement_file_name = f"results/placements-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.resources_file_name = f"results/resources-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.metrics_file_name = f"results/metrics-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+            self.scheduling_file_name = f'{self.result_path}/scheduling_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            self.placement_file_name = f'{self.result_path}/placements_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            self.resources_file_name = f'{self.result_path}/resources_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            self.metrics_file_name = f'{self.result_path}/metrics_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
 
             # Create the results directory if not exists
-            os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
+            os.makedirs(self.result_path, exist_ok=True)
+
+            # Save configuration to reconstruct the parameters
+            with open(f'{self.result_path}/config__{now.strftime("%Y-%m-%d_%H-%M-%S")}.yml', 'w') as outfile:
+                yaml.dump(config, outfile, default_flow_style=False)
+                yaml.dump(simulator_params, outfile, default_flow_style=False)
 
             self.placement_stream = open(self.placement_file_name, 'a+', newline='')
-            self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
+            self.scheduling_stream = open(self.scheduling_file_name, 'a+', newline='')
             self.resources_stream = open(self.resources_file_name, 'a+', newline='')
             self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
 
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
-            self.scheduling_writer = csv.writer(self.scheduleing_stream)
+            self.scheduling_writer = csv.writer(self.scheduling_stream)
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
 
@@ -100,10 +106,10 @@ class ResultWriter():
                               stats['in_network_flows'], stats['avg_end_2_end_delay']]
 
             resource_output = []
-            for key, node in network['node'].items():
+            for key, node in network['nodes'].items():
                 node_id = node['id']
-                node_cap = node['resource']
-                used_resources = node['used_resources']
+                node_cap = node['capacity']
+                used_resources = node['used_capacity']
                 resource_output_row = [time, node_id, node_cap, used_resources]
                 resource_output.append(resource_output_row)
 
@@ -116,7 +122,7 @@ class ResultWriter():
         """
         if self.test_mode:
             self.placement_stream.close()
-            self.scheduleing_stream.close()
+            self.scheduling_stream.close()
             self.resources_stream.close()
             self.metrics_stream.close()
 
