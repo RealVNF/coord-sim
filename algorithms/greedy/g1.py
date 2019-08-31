@@ -30,7 +30,8 @@ class G1Algo:
                                          resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
                                                                  'init_flow': self.init_flow,
-                                                                 'periodic': [(self.periodic, 10, 'State measurement.')]})
+                                                                 'periodic': [(self.periodic, 10, 'State measurement.'),
+                                                                              (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info("Network Stats after init(): %s", init_state.network_stats)
         self.network_copy = self.simulator.get_network_copy()
@@ -143,7 +144,7 @@ class G1Algo:
             forwarding_rules[node_id].pop(flow.flow_id, None)
 
         # Apply state to simulator
-        self.simulator.apply(ExtendedSimulatorAction(placement, scheduling, forwarding_rules, processing_rules))
+        self.simulator.apply(state.derive_action())
 
     def forward_flow(self, flow, state):
         """
@@ -220,8 +221,19 @@ class G1Algo:
         """
         self.simulator.write_state()
 
-    def remove_unused_sf(self):
-        pass
+    def periodic_remove(self):
+        state = self.simulator.get_state()
+        for node in self.simulator.params.network.nodes():
+            self.remove_unused_sf(node, state)
+        self.simulator.apply(state.derive_action())
+
+    def remove_unused_sf(self, node_id, state):
+        # The associated node
+        node = state.network['nodes'][node_id]
+        for sf, sf_data in node['available_sf'].items():
+            if sf_data['load'] == 0:
+                state.placement[node_id].remove(sf)
+                print(f'Remove SF {sf} from node {node_id}. Time {state.simulation_time}')
 
 
 def main():
