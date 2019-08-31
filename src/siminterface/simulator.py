@@ -41,20 +41,27 @@ class ExtendedSimulatorState(SimulatorState):
                  service_functions,
                  traffic,
                  network_stats,
+                 simulation_time,
                  flow_forwarding_rules: dict,
                  flow_processing_rules: dict):
         SimulatorState.__init__(self, network, placement, sfcs, service_functions, traffic, network_stats)
+        self.simulation_time = simulation_time
         self.flow_forwarding_rules = flow_forwarding_rules
         self.flow_processing_rules = flow_processing_rules
 
+    def derive_action(self, scheduling={}):
+        return ExtendedSimulatorAction(self.placement, scheduling, self.flow_forwarding_rules,
+                                       self.flow_processing_rules)
+
     @staticmethod
-    def convert(state: SimulatorState, flow_forwarding_rules={}, flow_processing_rules={}):
+    def convert(state: SimulatorState, simulation_time, flow_forwarding_rules={}, flow_processing_rules={}):
         return ExtendedSimulatorState(state.network,
                                       state.placement,
                                       state.sfcs,
                                       state.service_functions,
                                       state.traffic,
                                       state.network_stats,
+                                      simulation_time,
                                       flow_forwarding_rules,
                                       flow_processing_rules)
 
@@ -117,21 +124,11 @@ class Simulator:
         # Start the simulator
         self.simulator.start()
 
-        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
-        # for changing node remaining capacities.
-        # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
-
         # Record end time and running time metrics
         self.end_time = time.time()
         self.metrics.running_time(self.start_time, self.end_time)
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
-        # self.writer.write_state_results(self.env, simulator_state)
-        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                                  self.params.flow_processing_rules)
-        return extended_simulator_state
+
+        return self.get_state()
 
     def run(self):
         """
@@ -144,11 +141,7 @@ class Simulator:
         self.metrics.running_time(self.start_time, self.end_time)
 
         # Return the end state
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
-        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
-                                                                  self.params.flow_processing_rules)
-        return extended_simulator_state
+        return self.get_state()
 
     def apply(self, actions: ExtendedSimulatorAction):
         """
@@ -188,11 +181,15 @@ class Simulator:
         self.params.flow_processing_rules = actions.flow_processing_rules
 
     def get_state(self) -> ExtendedSimulatorState:
+        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # for changing node remaining capacities.
+        # Also, parse the network stats and prepare it in SimulatorState format.
         self.parse_network()
         self.network_metrics()
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.params.flow_forwarding_rules,
+        extended_simulator_state = ExtendedSimulatorState.convert(simulator_state, self.simulator.env.now,
+                                                                  self.params.flow_forwarding_rules,
                                                                   self.params.flow_processing_rules)
         return extended_simulator_state
 
