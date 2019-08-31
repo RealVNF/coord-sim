@@ -62,10 +62,11 @@ class G1Algo:
             flow['state'] = 'drop'
             flow['path'] = []
 
-
     def pass_flow(self, flow):
         """
         <Callback>
+        This is the main dynamic logic of the algorithm, whenever a flow is passed to node this function is called.
+        The associated node is determined and all actions and information are computed from its perspective.
         """
 
         # Get state information
@@ -75,6 +76,7 @@ class G1Algo:
         scheduling = {}
         forwarding_rules = state.flow_forwarding_rules
         processing_rules = state.flow_processing_rules
+        # The associated node
         node_id = flow.current_node_id
         node = state.network['nodes'][node_id]
 
@@ -114,7 +116,7 @@ class G1Algo:
                     processing_rules[node_id][flow.flow_id] = [flow.current_sf]
                 else:
                     # no => forward
-                    self.routing(flow, state)
+                    self.forward_flow(flow, state)
             else:
                 # no => test placement to calculate demand, no real placement yet
                 state.network['nodes'][flow.current_node_id]['available_sf'][flow.current_sf] = {'load': 0.0}
@@ -128,12 +130,12 @@ class G1Algo:
                     # no => remove test placement
                     del state.network['nodes'][flow.current_node_id]['available_sf'][flow.current_sf]
                     # Forward
-                    self.routing(flow, state)
+                    self.forward_flow(flow, state)
 
         elif flow['state'] == 'departure':
             # Return to destination as soon as possible, no more processing necessary
             if node_id != flow.egress_node_id:
-                self.routing(flow, state)
+                self.forward_flow(flow, state)
 
         elif flow['state'] == 'drop':
             # Something went legitimate wrong => clear remaing rules => let it drop
@@ -143,10 +145,13 @@ class G1Algo:
         # Apply state to simulator
         self.simulator.apply(ExtendedSimulatorAction(placement, scheduling, forwarding_rules, processing_rules))
 
-    def routing(self, flow, state):
+    def forward_flow(self, flow, state):
         """
-        Calculate and set shortest path to the target node defined by target_node_id. If no path is available the flow
-        will switch to drop state.
+        This function will handle the necessary actions to forward a flow from the associated node. A call to this
+        function requires the flow to have a precomputed path. If a flow can be forwarded along th precomputed path
+        the flow_forwarding_rules for the associated node will be set. If a flow cannot be forwarded, due missing link
+        resources, all incident links will be checked and all unsuitable links will be added to the blocked link list
+        of the flow. Subsequent a new path is attempted to calculate.
         """
 
         node_id = flow.current_node_id
@@ -176,6 +181,10 @@ class G1Algo:
                 flow['path'] = []
 
     def set_new_path(self, flow):
+        """
+        Calculate and set shortest path to the target node defined by target_node_id, taking blocked links into account.
+        """
+
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
@@ -191,9 +200,11 @@ class G1Algo:
             assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Edge count mismatch!'
             assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Edge count mismatch!'
 
-
     def calculate_demand(self, flow, state) -> float:
-        # Calculate the demanded capacity when the flow is processed at this node
+        """
+        Calculate the demanded capacity when the flow is processed at this node
+        """
+
         demanded_total_capacity = 0.0
         for sf_i, sf_data in state.network['nodes'][flow.current_node_id]['available_sf'].items():
             if flow.current_sf == sf_i:
