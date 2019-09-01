@@ -7,6 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 from siminterface.simulator import ExtendedSimulatorAction
 from siminterface.simulator import Simulator
+from auxiliary.link import Link
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class G1Algo:
                                          resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
                                                                  'init_flow': self.init_flow,
-                                                                 'periodic': [(self.periodic, 10, 'State measurement.'),
+                                                                 'periodic': [(self.periodic_measurement, 10, 'State measurement.'),
                                                                               (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info("Network Stats after init(): %s", init_state.network_stats)
@@ -169,7 +170,9 @@ class G1Algo:
             # remove all incident links which cannot be crossed
             for incident_edge in self.simulator.params.network.edges(node_id, data=True):
                 if (incident_edge[2]['remaining_cap'] - flow.dr) < 0:
-                    flow['blocked_links'].append(copy.deepcopy(incident_edge))
+                    link = Link(incident_edge[0], incident_edge[1], **incident_edge[2])
+                    if link not in flow['blocked_links']:
+                        flow['blocked_links'].append(link)
             try:
                 # Try to find new path
                 self.set_new_path(flow)
@@ -186,6 +189,9 @@ class G1Algo:
         Calculate and set shortest path to the target node defined by target_node_id, taking blocked links into account.
         """
 
+        assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), \
+            f'Pre edge count mismatch with internal state! Flow {flow.flow_id}'
+        assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Pre edge count mismatch with recorded state!'
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
@@ -197,9 +203,9 @@ class G1Algo:
             raise
         finally:
             for link in flow['blocked_links']:
-                self.network_copy.add_edge(link[0], link[1], delay=link[2]['delay'])
-            assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Edge count mismatch!'
-            assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Edge count mismatch!'
+                self.network_copy.add_edge(link[0], link[1], **link.attributes)
+            assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Post edge count mismatch with internal state!'
+            assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Post Edge count mismatch with recorded state!'
 
     def calculate_demand(self, flow, state) -> float:
         """
@@ -215,13 +221,16 @@ class G1Algo:
                 demanded_total_capacity += state.service_functions[sf_i]['resource_function'](sf_data['load'])
         return demanded_total_capacity
 
-    def periodic(self):
+    def periodic_measurement(self):
         """
         <Callback>
         """
         self.simulator.write_state()
 
     def periodic_remove(self):
+        """
+         <Callback>
+        """
         state = self.simulator.get_state()
         for node in self.simulator.params.network.nodes():
             self.remove_unused_sf(node, state)
@@ -233,14 +242,13 @@ class G1Algo:
         for sf, sf_data in node['available_sf'].items():
             if sf_data['load'] == 0:
                 state.placement[node_id].remove(sf)
-                print(f'Remove SF {sf} from node {node_id}. Time {state.simulation_time}')
 
 
 def main():
     # Simulator params
     args = {
         'network': '../../params/networks/dfn.graphml',
-        'service_functions': '../../params/services/abc.yaml',
+        'service_functions': '../../params/services/3sfcs.yaml',
         'resource_functions': '../../params/services/resource_functions',
         'config': '../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999
