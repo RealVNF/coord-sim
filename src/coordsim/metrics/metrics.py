@@ -33,6 +33,9 @@ class MetricStore:
         self['num_processing_delays'] = 0
         self['avg_processing_delay'] = 0.0
 
+        self['total_sfc_length'] = 0
+        self['avg_sfc_length'] = 0.0
+
         self['total_path_delay'] = 0.0
         self['avg_path_delay'] = 0.0
 
@@ -81,6 +84,7 @@ class MetricStore:
         self['generated_flows'] += 1
         self['total_active_flows'] += 1
         self['flows'].append(flow)
+        self['total_sfc_length'] += len(flow.sfc_components)
 
     def processed_flow(self, flow):
         self['processed_flows'] += 1
@@ -117,6 +121,12 @@ class MetricStore:
             self['avg_processing_delay'] = self['total_processing_delay'] / self['num_processing_delays']
         else:
             self['avg_processing_delay'] = 9999
+
+    def calc_avg_sfc_length(self):
+        if self['generated_flows'] > 0:
+            self['avg_sfc_length'] = self['total_sfc_length'] / self['generated_flows']
+        else:
+            self['avg_sfc_length'] = 9999
 
     def calc_avg_path_delay(self):
         if self['generated_flows'] > 0:
@@ -155,6 +165,7 @@ class MetricStore:
 
     def get_metrics(self):
         self.calc_avg_processing_delay()
+        self.calc_avg_sfc_length()
         self.calc_avg_path_delay()
         self.calc_avg_total_delay()
         self.calc_avg_end2end_delay()

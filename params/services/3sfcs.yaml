@@ -25,4 +25,4 @@ sf_list:
     processing_delay_stdev: 1.0
   c:
     processing_delay_mean: 3.0
-processing_delay_stdev: 1.0
+    processing_delay_stdev: 1.0

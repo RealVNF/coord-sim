@@ -11,7 +11,7 @@ import simpy
 from spinterface import SimulatorAction, SimulatorState
 from coordsim.writer.writer import ResultWriter
 import copy
-import networkx
+import networkx as nx
 logger = logging.getLogger(__name__)
 
 
@@ -197,14 +197,19 @@ class Simulator:
         extended = self.get_state()
         self.writer.write_state_results(self.env, extended)
 
-    def get_network_copy(self) -> networkx.Graph:
+    def get_network_copy(self) -> nx.Graph:
         """
         Returns a deepcopy of the network topology and its current state. The returned network can be used by external
         algorithms for e.g. calculating shortest path based on their restricted knowledge, without altering the internal
         simulator state.
         """
-        copy_network = copy.deepcopy(self.params.network)
-        return copy_network
+        graph = nx.Graph()
+        for n in self.network.nodes(data=True):
+            graph.add_node(n[0], type=n[1]['type'], cap=n[1]['cap'], remaining_cap=n[1]['cap'],
+                           available_sf=copy.deepcopy(n[1]['available_sf']))
+        for e in self.network.edges(data=True):
+            graph.add_edge(e[0], e[1], delay=e[2]['delay'], cap=e[2]['cap'], remaining_cap=e[2]['cap'])
+        return graph
 
     def parse_network(self) -> dict:
         """
@@ -247,6 +252,7 @@ class Simulator:
             'in_network_flows': stats['total_active_flows'],
             'avg_end_2_end_delay': stats['avg_end2end_delay'],
             'avg_processing_delay': stats['avg_processing_delay'],
+            'avg_sfc_length': stats['avg_sfc_length'],
             'avg_path_delay': stats['avg_path_delay'],
             'avg_path_delay_of_processed_flows': stats['avg_path_delay_of_processed_flows'],
             'avg_ingress_2_egress_path_delay_of_processed_flows': stats['avg_ingress_2_egress_path_delay_of_processed_flows']

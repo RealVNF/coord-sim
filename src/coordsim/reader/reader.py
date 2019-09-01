@@ -149,7 +149,7 @@ def read_network(file, config):
         node_id = "pop{}".format(n[0])
 
         if config['node_parameter_mode'] == 'probabilistic_continuous':
-            raise NotImplementedError
+            cap = np.random.normal(config['node_cap_mean'], config['flow_dr_stdev'])
         elif config['node_parameter_mode'] == 'probabilistic_discrete':
             cap = np.random.choice(config['node_cap_values'], p=config['node_cap_weights'])
         cap = n[1].get('NodeCap', cap)
@@ -172,7 +172,7 @@ def read_network(file, config):
         target = "pop{}".format(e[1])
         # As edges are undirectional, only LinkFwdCap determines the available data rate
         if config['link_cap_parameter_mode'] == 'probabilistic_continuous':
-            raise NotImplementedError
+            link_fwd_cap = np.random.normal(config['link_cap_mean'], config['link_cap_stdev'])
         elif config['link_cap_parameter_mode'] == 'probabilistic_discrete':
             link_fwd_cap = np.random.choice(config['link_cap_values'], p=config['link_cap_weights'])
         link_fwd_cap = e[2].get("LinkFwdCap", link_fwd_cap)
@@ -193,7 +193,7 @@ def read_network(file, config):
                 # round delay to int using np.around for consistency with emulator
                 link_delay = (distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR  # in milliseconds
         elif config['link_delay_parameter_mode'] == 'probabilistic_continuous':
-            raise NotImplementedError
+            link_delay = np.random.normal(config['link_delay_mean'], config['link_delay_stdev'])
         elif config['link_delay_parameter_mode'] == 'probabilistic_discrete':
             link_delay = np.random.choice(config['link_delay_values'], p=config['link_delay_weights'])
         link_delay = e[2].get("LinkDelay", link_delay)
@@ -210,9 +210,11 @@ def read_network(file, config):
     shortest_paths(networkx_network)
 
     # Filter ingress nodes
+    prob = config['node_ingress_probability']
+    log.info(f'Ingress node probability {prob}.')
     ing_nodes = []
     for node in networkx_network.nodes.items():
-        if node[1]["type"] == "Ingress":
-            ing_nodes.append(node)
+        if node[1]["type"] == "Ingress" or np.random.choice([True, False], p=[prob, 1-prob]):
+            ing_nodes.append(node[0])
 
     return networkx_network, ing_nodes
