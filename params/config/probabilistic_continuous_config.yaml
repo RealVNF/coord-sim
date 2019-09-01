@@ -7,19 +7,22 @@
 # Flow parameter
 flow_parameter_mode: probabilistic_continuous
 inter_arrival_lambda: 0.1            # exponential distribution: lambda
-flow_dr_mean: 2.0                  # normal distribution: mean/center of distribution
-flow_dr_stdev: 3.0                 # normal distribution: standard deviation
-flow_size_alpha: 1                 # pareto distribution: alpha
+flow_dr_mean: 2.0                    # normal distribution: mean/center of distribution
+flow_dr_stdev: 3.0                   # normal distribution: standard deviation
+flow_size_alpha: 1                   # pareto distribution: alpha
 
 # Network parameter
 # Note: attributes defined in the graphml file have always precedence.
-node_parameter_mode: probabilistic_discrete
-node_cap_values: [10]
-node_cap_weights: [1]
-link_cap_parameter_mode: probabilistic_discrete
-link_cap_values: [10]
-link_cap_weights: [1]
-link_delay_parameter_mode: geo_location
+node_ingress_probability: 0.2
+node_parameter_mode: probabilistic_continuous
+node_cap_mean: 10                    # normal distribution: mean/center of distribution
+node_cap_stdev: 0                    # normal distribution: standard deviation
+link_cap_parameter_mode: probabilistic_continuous
+link_cap_mean: 10                    # normal distribution: mean/center of distribution
+link_cap_stdev: 0                    # normal distribution: standard deviation
+link_delay_parameter_mode: probabilistic_continuous
+link_delay_mean: 3                   # normal distribution: mean/center of distribution
+link_delay_stdev: 0                  # normal distribution: standard deviation
 
 # Simulator execution parameter
 run_duration: 100
