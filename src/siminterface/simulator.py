@@ -253,6 +253,7 @@ class Simulator:
             'avg_end_2_end_delay': stats['avg_end2end_delay'],
             'avg_processing_delay': stats['avg_processing_delay'],
             'avg_sfc_length': stats['avg_sfc_length'],
+            'avg_crossed_link_delay': stats['avg_crossed_link_delay'],
             'avg_path_delay': stats['avg_path_delay'],
             'avg_path_delay_of_processed_flows': stats['avg_path_delay_of_processed_flows'],
             'avg_ingress_2_egress_path_delay_of_processed_flows': stats['avg_ingress_2_egress_path_delay_of_processed_flows']

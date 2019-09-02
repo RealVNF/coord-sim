@@ -13,7 +13,6 @@ sfc_list:
   sfc_3:
     - b
     - a
-    - c
 
 # SF attributes
 sf_list:

@@ -22,6 +22,7 @@ class G1Algo:
 
         # require the manipulation of the network topology, we
         self.network_copy = None
+        # Debug
         self.initial_number_of_edges = 0
 
     def init(self, network_path, service_functions_path, config_path, seed, resource_functions_path=""):
@@ -31,11 +32,13 @@ class G1Algo:
                                          resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
                                                                  'init_flow': self.init_flow,
+                                                                 'post_forwarding': self.post_forwarding,
                                                                  'periodic': [(self.periodic_measurement, 10, 'State measurement.'),
                                                                               (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info("Network Stats after init(): %s", init_state.network_stats)
         self.network_copy = self.simulator.get_network_copy()
+        # Debug
         self.initial_number_of_edges = self.network_copy.number_of_edges()
 
     def run(self):
@@ -46,9 +49,6 @@ class G1Algo:
                                          flow_processing_rules=processing_rules)
         self.simulator.apply(action)
         self.simulator.run()
-        # for f in self.simulator.metrics['flows']:
-        #     print(f'Flow {f.flow_id}, ingress {f.ingress_node_id}, egress {f.egress_node_id},'
-        #           f' path delay {f.path_delay}, i2e path delay {nx.shortest_path_length(self.simulator.params.network, f.ingress_node_id, f.egress_node_id, weight="delay")}')
         log.info("Network Stats after init(): %s", self.simulator.get_state().network_stats)
 
     def init_flow(self, flow):
@@ -72,7 +72,6 @@ class G1Algo:
         """
 
         # Get state information
-        id = flow.flow_id
         state = self.simulator.get_state()
         placement = state.placement
         scheduling = {}
@@ -139,7 +138,7 @@ class G1Algo:
             if node_id != flow.egress_node_id:
                 self.forward_flow(flow, state)
 
-        elif flow['state'] == 'drop':
+        if flow['state'] == 'drop':
             # Something went legitimate wrong => clear remaing rules => let it drop
             processing_rules[node_id].pop(flow.flow_id, None)
             forwarding_rules[node_id].pop(flow.flow_id, None)
@@ -162,7 +161,7 @@ class G1Algo:
         edge = self.simulator.params.network[node_id][next_neighbor_id]
 
         # Can forward?
-        if (edge['remaining_cap'] - flow.dr) >= 0:
+        if (edge['remaining_cap'] >= flow.dr):
             # yes => set forwarding rule
             state.flow_forwarding_rules[node_id][flow.flow_id] = next_neighbor_id
         else:

@@ -296,6 +296,7 @@ class FlowSimulator:
                         f' node {neighbor_id} over non-existent link. Dropping flow!')
             self.drop_flow(flow)
         else:
+            node_id = flow.current_node_id
             forwarding_link = self.params.network[flow.current_node_id][neighbor_id]
             assert forwarding_link['remaining_cap'] >= 0, "Remaining link capacity cannot be less than 0 (zero)!"
             # Check if link has enough capacity
@@ -313,6 +314,7 @@ class FlowSimulator:
                 # Update metrics
                 flow.path_delay += link_delay
                 self.metrics.add_path_delay(link_delay)
+                self.metrics.add_crossed_link_delay(link_delay)
                 flow.end2end_delay += link_delay
                 log.info(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
                 self.env.process(self.pass_flow(flow, self.params.sfc_list[flow.sfc]))
@@ -323,6 +325,9 @@ class FlowSimulator:
                 forwarding_link['remaining_cap'] += flow.dr
                 assert forwarding_link['remaining_cap'] <= forwarding_link['cap'],\
                     "Link remaining capacity cannot be more than link capacity!"
+
+                if 'post_forwarding' in self.params.interception_callbacks:
+                    self.params.interception_callbacks['post_forwarding'](node_id, flow)
             else:
                 log.warning(f'Not enough link capacity for flow {flow.flow_id} to forward over'
                             f' link ({flow.current_node_id}, {neighbor_id}). Dropping flow.')
@@ -434,6 +439,9 @@ class FlowSimulator:
         self.metrics.add_end2end_delay(flow.end2end_delay)
         self.metrics.add_path_delay_of_processed_flows(flow.path_delay)
 
+        if 'depart_flow' in self.params.interception_callbacks:
+            self.params.interception_callbacks['depart_flow'](flow)
+
     def drop_flow(self, flow):
         """
         This function concentrates actions that need to be carried out when dropping a flow. At the moment
@@ -441,3 +449,6 @@ class FlowSimulator:
         """
         # Update metrics for the dropped flow
         self.metrics.dropped_flow()
+
+        if 'drop_flow' in self.params.interception_callbacks:
+            self.params.interception_callbacks['drop_flow'](flow)

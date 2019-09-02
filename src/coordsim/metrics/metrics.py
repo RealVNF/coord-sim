@@ -36,6 +36,10 @@ class MetricStore:
         self['total_sfc_length'] = 0
         self['avg_sfc_length'] = 0.0
 
+        self['total_crossed_link_delay'] = 0.0
+        self['num_crossed_links'] = 0
+        self['avg_crossed_link_delay'] = 0.0
+
         self['total_path_delay'] = 0.0
         self['avg_path_delay'] = 0.0
 
@@ -104,6 +108,10 @@ class MetricStore:
         self['num_processing_delays'] += 1
         self['total_processing_delay'] += delay
 
+    def add_crossed_link_delay(self, delay):
+        self['num_crossed_links'] += 1
+        self['total_crossed_link_delay'] += delay
+
     def add_path_delay(self, delay):
         self['total_path_delay'] += delay
 
@@ -127,6 +135,12 @@ class MetricStore:
             self['avg_sfc_length'] = self['total_sfc_length'] / self['generated_flows']
         else:
             self['avg_sfc_length'] = 9999
+
+    def avg_crossed_link_delay(self):
+        if self['num_crossed_links'] > 0:
+            self['avg_crossed_link_delay'] = self['total_crossed_link_delay'] / self['num_crossed_links']
+        else:
+            self['avg_crossed_link_delay'] = 9999
 
     def calc_avg_path_delay(self):
         if self['generated_flows'] > 0:
@@ -166,6 +180,7 @@ class MetricStore:
     def get_metrics(self):
         self.calc_avg_processing_delay()
         self.calc_avg_sfc_length()
+        self.avg_crossed_link_delay()
         self.calc_avg_path_delay()
         self.calc_avg_total_delay()
         self.calc_avg_end2end_delay()
