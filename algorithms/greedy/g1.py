@@ -228,7 +228,7 @@ class G1Algo:
         """
         #self.simulator.write_state()
         state = self.simulator.get_state()
-        log.warning(f'Network Stats after time: {state.simulation_time}\{state.network_stats}')
+        log.warning(f'Network Stats after time: {state.simulation_time} \{state.network_stats}')
 
     def periodic_remove(self):
         """
@@ -269,7 +269,8 @@ def main():
     os.makedirs(f'logs/{os.path.basename(args["network"])}', exist_ok=True)
     logging.basicConfig(filename=f'logs/{os.path.basename(args["network"])}/{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
                         level=logging.INFO)
-    logging.getLogger('coordsim').setLevel(logging.WARNING)
+    logging.getLogger('coordsim').setLevel(logging.ERROR)
+    logging.getLogger('coordsim.reader').setLevel(logging.INFO)
     simulator = Simulator(test_mode=True)
 
     # Setup algorithm
