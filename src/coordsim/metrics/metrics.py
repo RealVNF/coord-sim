@@ -29,9 +29,9 @@ class MetricStore:
         self['dropped_flows'] = 0
         self['total_active_flows'] = 0
 
-        self['total_processing_delay'] = 0.0
-        self['num_processing_delays'] = 0
-        self['avg_processing_delay'] = 0.0
+        self['total_sf_processing_delay'] = 0.0
+        self['num_sf_processing_delays'] = 0
+        self['avg_sf_processing_delay'] = 0.0
 
         self['total_sfc_length'] = 0
         self['avg_sfc_length'] = 0.0
@@ -49,8 +49,10 @@ class MetricStore:
         self['total_ingress_2_egress_path_delay_of_processed_flows'] = 0.0
         self['avg_ingress_2_egress_path_delay_of_processed_flows'] = 0.0
 
-        self['total_end2end_delay'] = 0.0
-        self['avg_end2end_delay'] = 0.0
+        self['total_end2end_delay_of_dropped_flows'] = 0.0
+        self['avg_end2end_delay_of_dropped_flows'] = 0.0
+        self['total_end2end_delay_of_processed_flows'] = 0.0
+        self['avg_end2end_delay_of_processed_flows'] = 0.0
 
         self['avg_total_delay'] = 0.0
         self['running_time'] = 0.0
@@ -104,9 +106,9 @@ class MetricStore:
         self['total_active_flows'] -= 1
         assert self['total_active_flows'] >= 0, "Cannot have negative active flows"
 
-    def add_processing_delay(self, delay):
-        self['num_processing_delays'] += 1
-        self['total_processing_delay'] += delay
+    def add_sf_(self, delay):
+        self['num_sf_processing_delays'] += 1
+        self['total_sf_processing_delay'] += delay
 
     def add_crossed_link_delay(self, delay):
         self['num_crossed_links'] += 1
@@ -118,72 +120,85 @@ class MetricStore:
     def add_path_delay_of_processed_flows(self, delay):
         self['total_path_delay_of_processed_flows'] += delay
 
-    def add_end2end_delay(self, delay):
-        self['total_end2end_delay'] += delay
+    def add_end2end_delay_of_dropped_flows(self, delay):
+        self['total_end2end_delay_of_dropped_flows'] += delay
+
+    def add_end2end_delay_of_processed_flows(self, delay):
+        self['total_end2end_delay_of_processed_flows'] += delay
 
     def running_time(self, start_time, end_time):
         self['running_time'] = end_time - start_time
 
-    def calc_avg_processing_delay(self):
-        if self['num_processing_delays'] > 0:
-            self['avg_processing_delay'] = self['total_processing_delay'] / self['num_processing_delays']
+    def calc_avg_sf_processing_delay(self):
+        if self['num_sf_processing_delays'] > 0:
+            self['avg_sf_processing_delay'] = self['total_sf_processing_delay'] / self['num_sf_processing_delays']
         else:
-            self['avg_processing_delay'] = 9999
+            self['avg_sf_processing_delay'] = np.Inf
 
     def calc_avg_sfc_length(self):
         if self['generated_flows'] > 0:
             self['avg_sfc_length'] = self['total_sfc_length'] / self['generated_flows']
         else:
-            self['avg_sfc_length'] = 9999
+            self['avg_sfc_length'] = np.Inf
 
     def avg_crossed_link_delay(self):
         if self['num_crossed_links'] > 0:
             self['avg_crossed_link_delay'] = self['total_crossed_link_delay'] / self['num_crossed_links']
         else:
-            self['avg_crossed_link_delay'] = 9999
+            self['avg_crossed_link_delay'] = np.Inf
 
     def calc_avg_path_delay(self):
         if self['generated_flows'] > 0:
             self['avg_path_delay'] = self['total_path_delay'] / self['generated_flows']
         else:
-            self['avg_path_delay'] = 9999
+            self['avg_path_delay'] = np.Inf
 
     def calc_avg_path_delay_of_processed_flows(self):
         if self['processed_flows'] > 0:
             self['avg_path_delay_of_processed_flows'] = self['total_path_delay_of_processed_flows'] / self[
                 'processed_flows']
         else:
-            self['avg_path_delay_of_processed_flows'] = 9999
+            self['avg_path_delay_of_processed_flows'] = np.Inf
 
     def calc_avg_ingress_2_egress_path_delay_of_processed_flows(self):
         if self['processed_flows'] > 0:
             self['avg_ingress_2_egress_path_delay_of_processed_flows'] = \
                 self['total_ingress_2_egress_path_delay_of_processed_flows'] / self['processed_flows']
         else:
-            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = 9999
+            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = np.Inf
 
-    def calc_avg_end2end_delay(self):
+    def calc_avg_end2end_delay_of_dropped_flows(self):
+        # We devide by number of processed flows to get end2end delays for processed flows only
+        if self['dropped_flows'] > 0:
+            self['avg_end2end_delay_of_dropped_flows'] = self['total_end2end_delay_of_dropped_flows'] \
+                                                         / self['dropped_flows']
+        else:
+            self['avg_end2end_delay_of_dropped_flows'] = np.Inf  # No avg end2end delay yet (no dropped flows yet)
+
+    def calc_avg_end2end_delay_of_processed_flows(self):
         # We devide by number of processed flows to get end2end delays for processed flows only
         if self['processed_flows'] > 0:
-            self['avg_end2end_delay'] = self['total_end2end_delay'] / self['processed_flows']
+            self['avg_end2end_delay_of_processed_flows'] = self['total_end2end_delay_of_processed_flows'] \
+                                                           / self['processed_flows']
         else:
-            self['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
+            self['avg_end2end_delay_of_processed_flows'] = np.Inf  # No avg end2end delay yet (no processed flows yet)
 
     def calc_avg_total_delay(self):
-        avg_processing_delay = self['avg_processing_delay']
+        avg_sf_processing_delay = self['avg_sf_processing_delay']
         avg_path_delay = self['avg_path_delay']
-        self['avg_total_delay'] = np.mean([avg_path_delay, avg_processing_delay])
+        self['avg_total_delay'] = np.mean([avg_path_delay, avg_sf_processing_delay])
 
     def get_active_flows(self):
         return self['current_active_flows']
 
     def get_metrics(self):
-        self.calc_avg_processing_delay()
+        self.calc_avg_sf_processing_delay()
         self.calc_avg_sfc_length()
         self.avg_crossed_link_delay()
         self.calc_avg_path_delay()
         self.calc_avg_total_delay()
-        self.calc_avg_end2end_delay()
+        self.calc_avg_end2end_delay_of_dropped_flows()
+        self.calc_avg_end2end_delay_of_processed_flows()
         self.calc_avg_path_delay()
         self.calc_avg_path_delay_of_processed_flows()
         self.calc_avg_ingress_2_egress_path_delay_of_processed_flows()

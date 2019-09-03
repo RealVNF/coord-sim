@@ -21,7 +21,8 @@ class Flow:
                  current_node_id=None,
                  current_position=0,
                  end2end_delay=0.0,
-                 path_delay=0.0):
+                 path_delay=0.0,
+                 processing_delay=0.0):
 
         # Flow ID: Unique ID string
         self.flow_id = flow_id
@@ -47,6 +48,8 @@ class Flow:
         self.current_position = current_position
         # Path delay of the flow. Sum of all link delays the flow has experienced so far. Used for metrics
         self.path_delay = path_delay
+        # Processing delay of the flow. Sum of all processing delays the flow has experienced so far. Used for metrics
+        self.processing_delay = processing_delay
         # End to end delay of the flow, used for metrics
         self.end2end_delay = end2end_delay
         # FLow creation time

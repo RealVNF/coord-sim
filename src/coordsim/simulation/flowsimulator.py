@@ -386,7 +386,8 @@ class FlowSimulator:
             flow.current_position += 1
             # Update metrics for the processing delay
             # Add the delay to the flow's end2end delay
-            self.metrics.add_processing_delay(processing_delay)
+            self.metrics.add_sf_processing_delay(processing_delay)
+            flow.processing_delay += processing_delay
             flow.end2end_delay += processing_delay
             # Create new pass_flow process
             self.env.process(self.pass_flow(flow, sfc))
@@ -436,7 +437,7 @@ class FlowSimulator:
 
         # Update metrics for the processed flow
         self.metrics.processed_flow(flow)
-        self.metrics.add_end2end_delay(flow.end2end_delay)
+        self.metrics.add_end2end_delay_of_processed_flows(flow.end2end_delay)
         self.metrics.add_path_delay_of_processed_flows(flow.path_delay)
 
         if 'depart_flow' in self.params.interception_callbacks:
@@ -449,6 +450,7 @@ class FlowSimulator:
         """
         # Update metrics for the dropped flow
         self.metrics.dropped_flow()
+        self.metrics.add_end2end_delay_of_dropped_flows(flow.end2end_delay)
 
         if 'drop_flow' in self.params.interception_callbacks:
             self.params.interception_callbacks['drop_flow'](flow)
