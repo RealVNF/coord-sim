@@ -216,5 +216,6 @@ def read_network(file, config):
     for node in networkx_network.nodes.items():
         if node[1]["type"] == "Ingress" or np.random.choice([True, False], p=[prob, 1-prob]):
             ing_nodes.append(node[0])
+    log.info(nx.info(networkx_network))
 
     return networkx_network, ing_nodes

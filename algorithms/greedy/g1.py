@@ -33,7 +33,7 @@ class G1Algo:
                                          interception_callbacks={'pass_flow': self.pass_flow,
                                                                  'init_flow': self.init_flow,
                                                                  'post_forwarding': self.post_forwarding,
-                                                                 'periodic': [(self.periodic_measurement, 10, 'State measurement.'),
+                                                                 'periodic': [(self.periodic_measurement, 100, 'State measurement.'),
                                                                               (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info("Network Stats after init(): %s", init_state.network_stats)
@@ -48,8 +48,10 @@ class G1Algo:
         action = ExtendedSimulatorAction(placement=placement, scheduling={}, flow_forwarding_rules=forwarding_rules,
                                          flow_processing_rules=processing_rules)
         self.simulator.apply(action)
+        log.info(f'Start simulation at: {datetime.now().strftime("%H-%M-%S")}')
         self.simulator.run()
-        log.info("Network Stats after init(): %s", self.simulator.get_state().network_stats)
+        log.info(f'End simulation at: {datetime.now().strftime("%H-%M-%S")}')
+        log.info("Network Stats after run(): %s", self.simulator.get_state().network_stats)
 
     def init_flow(self, flow):
         """
@@ -224,7 +226,9 @@ class G1Algo:
         """
         <Callback>
         """
-        self.simulator.write_state()
+        #self.simulator.write_state()
+        state = self.simulator.get_state()
+        log.warning(f'Network Stats after time: {state.simulation_time}\{state.network_stats}')
 
     def periodic_remove(self):
         """
@@ -242,11 +246,17 @@ class G1Algo:
             if sf_data['load'] == 0:
                 state.placement[node_id].remove(sf)
 
+    def post_forwarding(self, node_id, flow):
+        """
+        <Callback>
+        """
+        # Direct access for speed gain
+        self.simulator.params.flow_forwarding_rules[node_id].pop(flow.flow_id, None)
 
 def main():
     # Simulator params
     args = {
-        'network': '../../params/networks/dfn.graphml',
+        'network': '../../params/networks/gts_ce_149.graphml',
         'service_functions': '../../params/services/3sfcs.yaml',
         'resource_functions': '../../params/services/resource_functions',
         'config': '../../params/config/probabilistic_discrete_config.yaml',
@@ -259,7 +269,7 @@ def main():
     os.makedirs(f'logs/{os.path.basename(args["network"])}', exist_ok=True)
     logging.basicConfig(filename=f'logs/{os.path.basename(args["network"])}/{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
                         level=logging.INFO)
-    logging.getLogger('coordsim').setLevel(logging.INFO)
+    logging.getLogger('coordsim').setLevel(logging.WARNING)
     simulator = Simulator(test_mode=True)
 
     # Setup algorithm
