@@ -79,7 +79,7 @@ class Simulator:
         self.start_time = 0
         self.test_mode = test_mode
 
-    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path="",
+    def init(self, network_file, service_functions_file, config_file, seed, output_id, resource_functions_path="",
              interception_callbacks={}) -> ExtendedSimulatorState:
         """
         Initialize the simulator with all necessary parameters. After this function call the simulation is ready
@@ -105,7 +105,7 @@ class Simulator:
         self.writer = ResultWriter(self.test_mode,self.config,
                                    {'network': network_file, 'service functions:': service_functions_file,
                                     'config': config_file, 'resource functions': resource_functions_path,
-                                    'seed': self.seed})
+                                    'seed': self.seed, 'output_id': output_id})
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
@@ -195,8 +195,9 @@ class Simulator:
         return extended_simulator_state
 
     def write_state(self):
-        extended = self.get_state()
-        self.writer.write_state_results(self.env, extended)
+        state = self.get_state()
+        self.writer.write_state_results(self.env, state)
+        return state
 
     def get_network_copy(self) -> nx.Graph:
         """

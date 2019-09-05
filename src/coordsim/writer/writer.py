@@ -20,7 +20,9 @@ class ResultWriter():
         self.test_mode = test_mode
         if self.test_mode:
             now = dt.datetime.now()
-            self.result_path = f'results/{os.path.basename(simulator_params["network"])}/run_{now.strftime("%Y-%m-%d_%H-%M-%S")}'
+            self.result_path = f'{simulator_params["output_id"]}/results/' \
+                f'{os.path.basename(simulator_params["network"])}/' \
+                f'run_{now.strftime("%Y-%m-%d_%H-%M-%S")}'
             "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
             self.scheduling_file_name = f'{self.result_path}/scheduling_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
             self.placement_file_name = f'{self.result_path}/placements_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'

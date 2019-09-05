@@ -24,16 +24,16 @@ class G1Algo:
         # Debug
         self.initial_number_of_edges = 0
 
-    def init(self, network_path, service_functions_path, config_path, seed, resource_functions_path=""):
-        init_state = self.simulator.init(network_path,
-                                         service_functions_path,
-                                         config_path, seed,
-                                         resource_functions_path=resource_functions_path,
-                                         interception_callbacks={'pass_flow': self.pass_flow,
-                                                                 'init_flow': self.init_flow,
-                                                                 'post_forwarding': self.post_forwarding,
-                                                                 'periodic': [(self.periodic_measurement, 100, 'State measurement.'),
-                                                                              (self.periodic_remove, 10, 'Remove SF interception.')]})
+    def init(self, network_path, service_functions_path, config_path, seed, output_id,  resource_functions_path=""):
+        init_state = \
+            self.simulator.init(network_path, service_functions_path, config_path, seed, output_id,
+                                resource_functions_path=resource_functions_path,
+                                interception_callbacks=
+                                {'pass_flow': self.pass_flow,
+                                 'init_flow': self.init_flow,
+                                 'post_forwarding': self.post_forwarding,
+                                 'periodic': [(self.periodic_measurement, 100, 'State measurement.'),
+                                              (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info(f'Network Stats after init(): {init_state.network_stats}')
         self.network_copy = self.simulator.get_network_copy()
@@ -235,8 +235,8 @@ class G1Algo:
          <Callback>
         """
         state = self.simulator.get_state()
-        for node in self.simulator.params.network.nodes():
-            self.remove_unused_sf(node, state)
+        for node_id in self.simulator.params.network.nodes():
+            self.remove_unused_sf(node_id, state)
         self.simulator.apply(state.derive_action())
 
     def remove_unused_sf(self, node_id, state):
@@ -260,14 +260,17 @@ def main():
         'service_functions': '../../params/services/3sfcs.yaml',
         'resource_functions': '../../params/services/resource_functions',
         'config': '../../params/config/probabilistic_discrete_config.yaml',
-        'seed': 9999
+        'seed': 9999,
+        'output_id': 'g1-out'
     }
 
     # Setup logging
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     os.makedirs('logs', exist_ok=True)
-    os.makedirs(f'logs/{os.path.basename(args["network"])}', exist_ok=True)
-    logging.basicConfig(filename=f'logs/{os.path.basename(args["network"])}/{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
+    os.makedirs(f'{args["output_id"]}/logs/{os.path.basename(args["network"])}', exist_ok=True)
+    logging.basicConfig(filename=
+                        f'{args["output_id"]}/logs/{os.path.basename(args["network"])}/'
+                        f'{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
                         level=logging.INFO)
     logging.getLogger('coordsim').setLevel(logging.ERROR)
     logging.getLogger('coordsim.reader').setLevel(logging.INFO)
@@ -279,6 +282,7 @@ def main():
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
               args['seed'],
+              args['output_id'],
               resource_functions_path=os.path.abspath(args['resource_functions']))
     # Execute orchestrated simulation
     algo.run()
