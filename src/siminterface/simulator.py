@@ -121,6 +121,12 @@ class Simulator:
         # Get the metric instance from the flowsimulator
         self.metrics = self.simulator.metrics
 
+        return self.get_state()
+
+    def run(self):
+        """
+        Start the simulation and run it for the specified duration.
+        """
         # Start the simulator
         self.simulator.start()
 
@@ -128,12 +134,7 @@ class Simulator:
         self.end_time = time.time()
         self.metrics.running_time(self.start_time, self.end_time)
 
-        return self.get_state()
 
-    def run(self):
-        """
-        Start the simulation and run it for the specified duration.
-        """
         logger.debug(f'Running simulator until time {self.duration}')
         # Run simulation for specified duration
         self.env.run(until=self.duration)

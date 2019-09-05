@@ -146,6 +146,7 @@ class FlowSimulator:
         sfc = self.params.sfc_list[flow.sfc]
         # Check to see if requested SFC exists
         if sfc is not None:
+            flow.current_sf = sfc[flow.current_position]
             # Allow external algorithm to set flows user_data, this way pass_flow does not need to bothered
             if 'init_flow' in self.params.interception_callbacks:
                 self.params.interception_callbacks['init_flow'](flow)
@@ -449,7 +450,7 @@ class FlowSimulator:
         there is no real advantage in this outsourcing, but future version might introduce more actions.
         """
         # Update metrics for the dropped flow
-        self.metrics.dropped_flow()
+        self.metrics.dropped_flow(flow)
         self.metrics.add_end2end_delay_of_dropped_flows(flow.end2end_delay)
 
         if 'drop_flow' in self.params.interception_callbacks:

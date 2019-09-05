@@ -1,6 +1,5 @@
 import logging
 import os
-import copy
 import networkx as nx
 import numpy as np
 from datetime import datetime
@@ -36,7 +35,7 @@ class G1Algo:
                                                                  'periodic': [(self.periodic_measurement, 100, 'State measurement.'),
                                                                               (self.periodic_remove, 10, 'Remove SF interception.')]})
 
-        log.info("Network Stats after init(): %s", init_state.network_stats)
+        log.info(f'Network Stats after init(): {init_state.network_stats}')
         self.network_copy = self.simulator.get_network_copy()
         # Debug
         self.initial_number_of_edges = self.network_copy.number_of_edges()
@@ -51,7 +50,7 @@ class G1Algo:
         log.info(f'Start simulation at: {datetime.now().strftime("%H-%M-%S")}')
         self.simulator.run()
         log.info(f'End simulation at: {datetime.now().strftime("%H-%M-%S")}')
-        log.info("Network Stats after run(): %s", self.simulator.get_state().network_stats)
+        log.info(f'Network Stats after run(): {self.simulator.get_state().network_stats}')
 
     def init_flow(self, flow):
         """
@@ -85,6 +84,7 @@ class G1Algo:
 
         # Is flow processed?
         if flow.is_processed():
+        if flow.is_processed() and flow['state'] != 'departure':
             # yes => switch to departure, forward to egress node
             flow['state'] = 'departure'
             flow['target_node_id'] = flow.egress_node_id

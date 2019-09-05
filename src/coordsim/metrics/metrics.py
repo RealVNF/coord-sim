@@ -61,6 +61,8 @@ class MetricStore:
         self['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
         self['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
 
+        self['graveyard'] = defaultdict(int)
+
         # Record all flows, to access their trace
         self['flows'] = []
 
@@ -89,7 +91,7 @@ class MetricStore:
     def generated_flow(self, flow):
         self['generated_flows'] += 1
         self['total_active_flows'] += 1
-        self['flows'].append(flow)
+        #self['flows'].append(flow)
         self['total_sfc_length'] += len(flow.sfc_components)
 
     def processed_flow(self, flow):
@@ -101,10 +103,11 @@ class MetricStore:
                                                                                                 flow.egress_node_id,
                                                                                                 weight="delay")
 
-    def dropped_flow(self):
+    def dropped_flow(self, flow):
         self['dropped_flows'] += 1
         self['total_active_flows'] -= 1
         assert self['total_active_flows'] >= 0, "Cannot have negative active flows"
+        self['graveyard'][flow.current_node_id] += 1
 
     def add_sf_processing_delay(self, delay):
         self['num_sf_processing_delays'] += 1
