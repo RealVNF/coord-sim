@@ -137,12 +137,12 @@ def calc_avg_end2end_delay():
     if metrics['processed_flows'] > 0:
         metrics['avg_end2end_delay'] = metrics['total_end2end_delay'] / metrics['processed_flows']
     else:
-        metrics['avg_end2end_delay'] = 9999  # No avg end2end delay yet (no processed flows yet)
+        metrics['avg_end2end_delay'] = 0  # No avg end2end delay yet (no processed flows yet)
 
     if metrics['run_processed_flows'] > 0:
         metrics['run_avg_end2end_delay'] = metrics['run_end2end_delay'] / metrics['run_processed_flows']
     else:
-        metrics['run_avg_end2end_delay'] = 9999  # No run avg end2end delay yet (no processed flows yet)
+        metrics['run_avg_end2end_delay'] = 0  # No run avg end2end delay yet (no processed flows yet)
 
 
 def calc_avg_total_delay():
