@@ -46,18 +46,19 @@ class FlowSimulator:
             # set normally distributed flow data rate
             flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
 
-            # if "deterministic = True" use deterministic flow size and inter-arrival times (eg, for debugging)
-            if self.params.deterministic:
-                # Exponentially distributed random inter arrival rate using a user set (or default) mean
-                #
-                # use deterministic, fixed inter-arrival time for now
+            # set deterministic or random flow arrival times and flow sizes according to config
+            if self.params.deterministic_arrival:
                 inter_arr_time = self.params.inter_arr_mean
-                flow_size = self.params.flow_size_shape
-            # else use randomly distributed values (default)
             else:
-                inter_arr_time = random.expovariate(self.params.inter_arr_mean)
+                # Poisson arrival -> exponential distributed inter-arrival time
+                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean)
+
+            if self.params.deterministic_size:
+                flow_size = self.params.flow_size_shape
+            else:
                 # heavy-tail flow size
                 flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+
             # Skip flows with negative flow_dr or flow_size values
             if flow_dr <= 0.00 or flow_size <= 0.00:
                 continue
