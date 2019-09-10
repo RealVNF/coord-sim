@@ -63,7 +63,7 @@ def get_sf(sf_file, resource_functions_path):
     with open(sf_file) as yaml_stream:
         sf_data = yaml.load(yaml_stream, Loader=yaml.FullLoader)
 
-    # Configureable default mean and stdev defaults
+    # Configurable default mean and stddev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
     def default_resource_function(x): return x
@@ -86,8 +86,7 @@ def get_sf(sf_file, resource_functions_path):
         else:
             sf_list[sf_name]["resource_function_id"] = 'default'
             sf_list[sf_name]["resource_function"] = default_resource_function
-            log.info(
-                f'No resource function specified for SF {sf_name}. Default resource function will be used instead.')
+            log.info(f'No resource function specified for SF {sf_name}. Default resource function will be used.')
     return sf_list
 
 

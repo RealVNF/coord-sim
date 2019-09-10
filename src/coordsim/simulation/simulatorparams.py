@@ -41,7 +41,20 @@ class SimulatorParams:
         self.flow_size_shape = config['flow_size_shape']
         # if deterministic = True, the simulator reinterprets and uses inter_arrival_mean and flow_size_shape as fixed
         # deterministic values rather than means of a random distribution
-        self.deterministic = config['deterministic']
+        self.deterministic_arrival = None
+        self.deterministic_size = None
+        if 'deterministic' in config:
+            self.deterministic_arrival = config['deterministic']
+            self.deterministic_size = config['deterministic']
+        # deterministic_arrival/size override 'deterministic'
+        if 'deterministic_arrival' in config:
+            self.deterministic_arrival = config['deterministic_arrival']
+        if 'deterministic_size' in config:
+            self.deterministic_size = config['deterministic_size']
+        if self.deterministic_arrival is None or self.deterministic_size is None:
+            raise ValueError("'deterministic_arrival' or 'deterministic_size' are not set in simulator config.")
+
+        # also allow to set determinism for inter-arrival times and flow size separately
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
 
@@ -50,7 +63,9 @@ class SimulatorParams:
         params_str = "Simulator parameters: \n"
         params_str += "seed: {}\n".format(self.seed)
         params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
+        params_str += f"deterministic_arrival: {self.deterministic_arrival}\n"
         params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
         params_str += "flow_dr_stdv: {}\n".format(self.flow_dr_stdev)
-        params_str += "flow_size_shape: {}".format(self.flow_size_shape)
+        params_str += "flow_size_shape: {}\n".format(self.flow_size_shape)
+        params_str += f"deterministic_size: {self.deterministic_size}\n"
         return params_str
