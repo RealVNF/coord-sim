@@ -372,6 +372,8 @@ class FlowSimulator:
                      f' Time: {self.env.now}, Processing delay: {processing_delay}')
             # Metrics: Add active flow to the SF once the flow has begun processing.
             self.metrics.add_active_flow(flow, current_node_id, current_sf)
+            # Record request time
+            self.params.network.nodes[current_node_id]['available_sf'][current_sf]['last_requested'] = self.env.now
 
             # Add load to sf
             self.params.network.nodes[current_node_id]['available_sf'][current_sf]['load'] += flow.dr

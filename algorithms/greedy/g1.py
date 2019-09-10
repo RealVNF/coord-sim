@@ -7,6 +7,7 @@ from collections import defaultdict
 from siminterface.simulator import ExtendedSimulatorAction
 from siminterface.simulator import Simulator
 from auxiliary.link import Link
+from auxiliary.placement import Placement
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +22,8 @@ class G1Algo:
 
         # require the manipulation of the network topology, we
         self.network_copy = None
+        # Timeout determines after which period a unused vnf is removed from a node
+        self.vnf_timeout = 10
         # Debug
         self.initial_number_of_edges = 0
 
@@ -83,7 +86,6 @@ class G1Algo:
         node = state.network['nodes'][node_id]
 
         # Is flow processed?
-        if flow.is_processed():
         if flow.is_processed() and flow['state'] != 'departure':
             # yes => switch to departure, forward to egress node
             flow['state'] = 'departure'
@@ -109,31 +111,21 @@ class G1Algo:
         if flow['state'] == 'greedy':
             # One the way to the target, needs processing
             # Placement
-            # SF already placed?
-            if flow.current_sf in placement[node_id]:
-                # yes
-                demand = self.calculate_demand(flow, state)
-                # Can add?
-                if node['capacity'] >= demand:
-                    # yes =>  set processing rule
-                    processing_rules[node_id][flow.flow_id] = [flow.current_sf]
-                else:
-                    # no => forward
-                    self.forward_flow(flow, state)
-            else:
-                # no => test placement to calculate demand, no real placement yet
-                state.network['nodes'][flow.current_node_id]['available_sf'][flow.current_sf] = {'load': 0.0}
-                demand = self.calculate_demand(flow, state)
-                # Can add?
-                if node['capacity'] >= demand:
-                    # yes => place SF and set processing rule
+            # Can flow be processed at current node
+            demand_p, need_placement = Placement.calculate_demand(flow, flow.current_sf, node['available_sf'],
+                                                           self.simulator.params.sf_list)
+            assert need_placement == (flow.current_sf not in placement[node_id]), 'False placement'
+
+            if node['capacity'] >= demand_p:
+                # yes =>  set processing rule
+                processing_rules[node_id][flow.flow_id] = [flow.current_sf]
+                # SF already placed?
+                if need_placement:
+                    # no => add VNF/SF to placement
                     placement[node_id].append(flow.current_sf)
-                    processing_rules[node_id][flow.flow_id] = [flow.current_sf]
-                else:
-                    # no => remove test placement
-                    del state.network['nodes'][flow.current_node_id]['available_sf'][flow.current_sf]
-                    # Forward
-                    self.forward_flow(flow, state)
+            else:
+                # no => forward
+                self.forward_flow(flow, state)
 
         elif flow['state'] == 'departure':
             # Return to destination as soon as possible, no more processing necessary
@@ -228,23 +220,18 @@ class G1Algo:
         """
         #self.simulator.write_state()
         state = self.simulator.get_state()
-        log.warning(f'Network Stats after time: {state.simulation_time} \{state.network_stats}')
+        log.warning(f'Network Stats after time: {state.simulation_time} / {state.network_stats}')
 
     def periodic_remove(self):
         """
          <Callback>
         """
         state = self.simulator.get_state()
-        for node_id in self.simulator.params.network.nodes():
-            self.remove_unused_sf(node_id, state)
+        for node_id, node_data in state.network['nodes'].items():
+            for sf, sf_data in node_data['available_sf'].items():
+                if (sf_data['load'] == 0) and ((state.simulation_time - sf_data['last_requested']) > self.vnf_timeout):
+                    state.placement[node_id].remove(sf)
         self.simulator.apply(state.derive_action())
-
-    def remove_unused_sf(self, node_id, state):
-        # The associated node
-        node = state.network['nodes'][node_id]
-        for sf, sf_data in node['available_sf'].items():
-            if sf_data['load'] == 0:
-                state.placement[node_id].remove(sf)
 
     def post_forwarding(self, node_id, flow):
         """

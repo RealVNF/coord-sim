@@ -170,7 +170,8 @@ class Simulator:
         for node_id, placed_sf_list in actions.placement.items():
             available_sf = {}
             for sf in placed_sf_list:
-                available_sf[sf] = self.simulator.params.network.nodes[node_id]['available_sf'].get(sf, {'load': 0.0})
+                previous_available = self.simulator.params.network.nodes[node_id]['available_sf']
+                available_sf[sf] = previous_available.get(sf, {'load': 0.0, 'last_requested': self.simulator.env.now})
             self.simulator.params.network.nodes[node_id]['available_sf'] = available_sf
 
         # Get the new schedule from the SimulatorAction
