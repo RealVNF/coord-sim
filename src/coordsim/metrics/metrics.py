@@ -47,6 +47,9 @@ def reset():
     # total processed traffic (aggregated data rate) per node per SF within one run
     metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
     metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
+
+    # total generated traffic. traffic generate on ingress nodes is recorded
+    #   this value could also be extracted from network and sim config file.
     metrics['run_total_requested_traffic_node'] = defaultdict(np.float32)
 
 
