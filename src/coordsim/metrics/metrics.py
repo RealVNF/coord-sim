@@ -47,6 +47,7 @@ def reset():
     # total processed traffic (aggregated data rate) per node per SF within one run
     metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
     metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
+    metrics['run_total_requested_traffic_node'] = defaultdict(np.float32)
 
 
 def add_requesting_flow(flow, current_node_id, current_sf):
@@ -78,9 +79,10 @@ def remove_active_flow(flow, current_node_id, current_sf):
         logger.critical(e)
 
 
-def generated_flow():
+def generated_flow(flow, current_node):
     metrics['generated_flows'] += 1
     metrics['total_active_flows'] += 1
+    metrics['run_total_requested_traffic_node'][current_node] += flow.dr
 
 
 # call when flow was successfully completed, ie, processed by all required SFs
@@ -169,3 +171,4 @@ def reset_run():
     metrics['run_max_end2end_delay'] = 9999
     metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
     metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float32)))
+    metrics['run_total_requested_traffic_node'] = defaultdict(np.float32)
