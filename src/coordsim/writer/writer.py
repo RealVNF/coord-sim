@@ -13,18 +13,16 @@ class ResultWriter():
     Result Writer
     Helper class to write results to CSV files.
     """
-    def __init__(self, test_mode: bool):
+    def __init__(self, test_mode: bool, test_dir):
         """
         If the simulator is in test mode, create result folder and CSV files
         """
         self.test_mode = test_mode
         if self.test_mode:
-            now = dt.datetime.now()
-            "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
-            self.scheduling_file_name = f"results/scheduling_{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.placement_file_name = f"results/placements-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.resources_file_name = f"results/resources-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
-            self.metrics_file_name = f"results/metrics-{now.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+            self.scheduling_file_name = f"{test_dir}/scheduling.csv"
+            self.placement_file_name = f"{test_dir}/placements.csv"
+            self.resources_file_name = f"{test_dir}/resources.csv"
+            self.metrics_file_name = f"{test_dir}/metrics.csv"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
