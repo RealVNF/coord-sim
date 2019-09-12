@@ -14,12 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self, test_mode=False):
+    def __init__(self, test_mode=False, test_dir=None):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.test_mode = test_mode
+        self.test_dir = test_dir
         # Create CSV writer
-        self.writer = ResultWriter(self.test_mode)
+        self.writer = ResultWriter(self.test_mode, self.test_dir)
 
     def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path=""):
 

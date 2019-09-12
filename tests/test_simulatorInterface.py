@@ -28,7 +28,8 @@ class TestSimulatorInterface(TestCase):
         """
         # TODO: replace SimulatorInterface with implementation
         self.simulator = SIMULATOR_CLS(TEST_MODE)
-        self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, 1234, resource_functions_path=RESOURCE_FUNCTION_PATH)
+        self.simulator.init(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, 1234,
+                            resource_functions_path=RESOURCE_FUNCTION_PATH)
 
     def test_apply(self):
         # test if placement and schedule can be applied
