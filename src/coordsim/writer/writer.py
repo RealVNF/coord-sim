@@ -4,7 +4,6 @@ Simulator file writer module
 
 import csv
 import os
-import datetime as dt
 from spinterface import SimulatorAction, SimulatorState
 
 
