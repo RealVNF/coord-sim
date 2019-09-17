@@ -10,6 +10,7 @@ import numpy
 import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
+from coordsim.trace_processor.trace_processor import TraceProcessor
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +23,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
 
-    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path=""):
+    def init(self, network_file, service_functions_file, config_file, seed, trace=None, resource_functions_path=""):
 
         # Initialize metrics, record start time
         metrics.reset()
@@ -40,6 +41,12 @@ class Simulator(SimulatorInterface):
 
         # Instantiate the parameter object for the simulator.
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
+
+        # Trace handling
+        if trace:
+            trace = reader.get_trace(trace)
+            TraceProcessor(self.params, self.env, trace)
+
         self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
