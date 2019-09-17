@@ -7,6 +7,7 @@ from coordsim.reader import reader
 from coordsim.metrics import metrics
 from coordsim.simulation.simulatorparams import SimulatorParams
 import coordsim.network.dummy_data as dummy_data
+from coordsim.trace_processor.trace_processor import TraceProcessor
 import logging
 import time
 
@@ -31,19 +32,25 @@ def main():
     network, ing_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
 
     # Getting current SFC list, and the SF list of each SFC, and config
-    sfc_list = reader.get_sfc(args.sf)
-    sf_list = reader.get_sf(args.sf, args.sfr)
-    config = reader.get_config(args.config)
 
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI
     sf_placement = dummy_data.triangle_placement
     schedule = dummy_data.triangle_schedule
 
+    # Getting current SFC list, and the SF list of each SFC, and config
+    sfc_list = reader.get_sfc(args.sf)
+    sf_list = reader.get_sf(args.sf, args.sfr)
+    config = reader.get_config(args.config)
+
     # Create the simulator parameters object with the provided args
     params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, args.seed, sf_placement=sf_placement,
                              schedule=schedule)
     log.info(params)
+
+    if args.trace:
+        trace = reader.get_trace(args.trace)
+        TraceProcessor(params, env, trace)
 
     # Create a FlowSimulator object, pass the SimPy environment and params objects
     simulator = FlowSimulator(env, params)
@@ -74,6 +81,8 @@ def parse_args():
     parser.add_argument('-n', '--network', required=True, dest='network',
                         help="The GraphML network file that specifies the nodes and edges of the network.")
     parser.add_argument('-c', '--config', required=True, dest='config', help="Path to the simulator config file.")
+    parser.add_argument('-t', '--trace', required=False, dest='trace', default=None,
+                        help="Provide a CSV trace file to configure the traffic the simulator is generating.")
     parser.add_argument('-s', '--seed', required=False, default=random.randint(0, 9999), dest='seed', type=int,
                         help="Random seed")
     return parser.parse_args()

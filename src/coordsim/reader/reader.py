@@ -6,6 +6,7 @@ import yaml
 import math
 from collections import defaultdict
 import importlib
+import csv
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +18,18 @@ Network parsing module.
 - Reads and parses network files into NetworkX.
 - Reads and parses network yaml files and gets placement and SFC and SFs.
 """
+
+
+def get_trace(trace_file):
+    """
+    Parse the trace file that the simulator will use to generate traffic.
+    """
+    with open(trace_file) as f:
+        trace_rows = csv.DictReader(f)
+        traces = []
+        for row in trace_rows:
+            traces.append(dict(row))
+    return traces
 
 
 def get_config(config_file):
