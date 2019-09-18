@@ -62,6 +62,8 @@ class G1Algo:
         flow['state'] = 'greedy'
         flow['target_node_id'] = flow.egress_node_id
         flow['blocked_links'] = []
+        flow['intermediate_targets'] = 0
+        flow['evasive_routes'] = 0
         try:
             self.set_new_path(flow)
         except nx.NetworkXNoPath:
@@ -78,7 +80,6 @@ class G1Algo:
         # Get state information
         state = self.simulator.get_state()
         placement = state.placement
-        scheduling = {}
         forwarding_rules = state.flow_forwarding_rules
         processing_rules = state.flow_processing_rules
         # The associated node
@@ -103,6 +104,7 @@ class G1Algo:
             flow['blocked_links'] = []
             try:
                 self.set_new_path(flow)
+                flow['intermediate_targets'] += 1
             except nx.NetworkXNoPath:
                 flow['state'] = 'drop'
                 flow['path'] = []
@@ -173,9 +175,11 @@ class G1Algo:
                 next_neighbor_id = flow['path'].pop(0)
                 # Set forwarding rule
                 state.flow_forwarding_rules[node_id][flow.flow_id] = next_neighbor_id
+                flow['evasive_routes'] += 1
             except nx.NetworkXNoPath:
                 flow['state'] = 'drop'
                 flow['path'] = []
+                flow['death_cause'] = 'Forward: all incident links are exhausted'
 
     def set_new_path(self, flow):
         """
@@ -220,7 +224,9 @@ class G1Algo:
         """
         #self.simulator.write_state()
         state = self.simulator.get_state()
-        log.warning(f'Network Stats after time: {state.simulation_time} / {state.network_stats}')
+
+        log.warning(f'Network Stats after time: {state.simulation_time} / 'f'{state.network_stats} / '
+                    f'{state.network["metrics"]}')
 
     def periodic_remove(self):
         """
@@ -243,7 +249,7 @@ class G1Algo:
 def main():
     # Simulator params
     args = {
-        'network': '../../params/networks/gts_ce_149.graphml',
+        'network': '../../params/networks/dfn_58.graphml',
         'service_functions': '../../params/services/3sfcs.yaml',
         'resource_functions': '../../params/services/resource_functions',
         'config': '../../params/config/probabilistic_discrete_config.yaml',
@@ -253,7 +259,6 @@ def main():
 
     # Setup logging
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    os.makedirs('logs', exist_ok=True)
     os.makedirs(f'{args["output_id"]}/logs/{os.path.basename(args["network"])}', exist_ok=True)
     logging.basicConfig(filename=
                         f'{args["output_id"]}/logs/{os.path.basename(args["network"])}/'
