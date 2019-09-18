@@ -218,7 +218,10 @@ class Simulator:
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
-        self.network_dict = {'nodes': {}, 'node_list': [], 'edges': []}
+        self.network_dict = {'nodes': {}, 'node_list': [], 'edges': [],
+                             'metrics': {'avg_network_node_load': 0, 'avg_network_edge_load': 0}}
+        network_node_load = 0
+        network_node_cap = 0
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
             used_node_cap = node[1]['cap'] - node[1]['remaining_cap']
@@ -226,6 +229,11 @@ class Simulator:
             self.network_dict['nodes'][node[0]] = {'id': node[0], 'capacity': node_cap, 'used_capacity': used_node_cap,
                                                    'available_sf': available_sf}
             self.network_dict['node_list'].append(node[0])
+            network_node_cap += node_cap
+            network_node_load += used_node_cap
+
+        network_egde_cap = 0
+        network_egde_load = 0
         for edge in self.network.edges(data=True):
             edge_src = edge[0]
             edge_dest = edge[1]
@@ -241,6 +249,11 @@ class Simulator:
                 'data_rate': edge_dr,
                 'used_data_rate': edge_used_dr
             })
+            network_egde_cap += edge_dr
+            network_egde_load += edge_used_dr
+
+        self.network_dict['metrics']['avg_network_node_load'] = network_node_load / network_node_cap
+        self.network_dict['metrics']['avg_network_edge_load'] = network_egde_load / network_egde_cap
 
     def network_metrics(self):
         """

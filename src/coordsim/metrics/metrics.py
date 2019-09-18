@@ -194,6 +194,7 @@ class MetricStore:
     def get_active_flows(self):
         return self['current_active_flows']
 
+
     def get_metrics(self):
         self.calc_avg_sf_processing_delay()
         self.calc_avg_sfc_length()
