@@ -43,8 +43,6 @@ class G1Algo:
 
         log.info(f'Network Stats after init(): {init_state.network_stats}')
         self.network_copy = self.simulator.get_network_copy()
-        # Debug
-        self.initial_number_of_edges = self.network_copy.number_of_edges()
 
     def run(self):
         placement = defaultdict(list)
@@ -88,6 +86,7 @@ class G1Algo:
         # The associated node
         node_id = flow.current_node_id
         node = state.network['nodes'][node_id]
+        # Managment
         new_target = False
 
         # Is flow processed?

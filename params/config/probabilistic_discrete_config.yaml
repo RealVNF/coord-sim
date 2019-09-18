@@ -27,4 +27,4 @@ link_delay_values: [3, 5, 15]
 link_delay_weights: [0.4, 0.3, 0.3]
 
 # Simulator execution parameter
-run_duration: 10000
+run_duration: 1000
