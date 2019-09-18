@@ -2,13 +2,14 @@ import numpy as np
 from collections import defaultdict
 
 
-class CustomMetric:
+class CustomMetrics:
     """
     Custom metrics for the GPASP algorithm
     """
     def __init__(self):
         # The dict holding simulator metrics
         self.metric_dict = {}
+        self.reset()
 
     def __setitem__(self, key, item):
         self.metric_dict[key] = item
@@ -17,6 +18,9 @@ class CustomMetric:
         return self.metric_dict[key]
 
     def reset(self):
+        self['processed_flows'] = 0
+        self['dropped_flows'] = 0
+
         self['total_intermediate_targets_of_processed_flows'] = 0
         self['avg_intermediate_targets_of_processed_flows'] = 0.0
         self['total_intermediate_targets_of_dropped_flows'] = 0
@@ -28,10 +32,12 @@ class CustomMetric:
         self['avg_evasive_routes_of_dropped_flows'] = 0.0
 
     def processed_flow(self, flow):
+        self['processed_flows'] += 1
         self['total_intermediate_targets_of_processed_flows'] += flow['intermediate_targets']
         self['total_evasive_routes_of_processed_flows'] += flow['evasive_routes']
 
     def dropped_flow(self, flow):
+        self['dropped_flows'] += 1
         self['total_intermediate_targets_of_dropped_flows'] += flow['intermediate_targets']
         self['total_evasive_routes_of_dropped_flows'] += flow['evasive_routes']
 

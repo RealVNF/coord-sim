@@ -105,7 +105,7 @@ class ResultWriter():
             time = env.now
 
             metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
-                              stats['in_network_flows'], stats['avg_end_2_end_delay']]
+                              stats['in_network_flows'], stats['avg_end2end_delay_of_dropped_flows']]
 
             resource_output = []
             for key, node in network['nodes'].items():
