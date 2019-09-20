@@ -73,15 +73,14 @@ class Simulator(SimulatorInterface):
         metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        # self.writer.write_state_results(self.env, simulator_state)
+        logger.debug(f"t={self.env.now}: {simulator_state}")
+
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
 
         self.writer.write_action_result(self.env, actions)
-        # increase performance when debug logging is disabled
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"SimulatorAction: %s", repr(actions))
+        logger.debug(f"t={self.env.now}: {actions}")
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
@@ -131,6 +130,8 @@ class Simulator(SimulatorInterface):
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.env, simulator_state)
+        logger.debug(f"t={self.env.now}: {simulator_state}")
+
         return simulator_state
 
     def parse_network(self) -> dict:
