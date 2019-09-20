@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 def main():
     args = parse_args()
-    metrics.reset()
+    metrics.reset_metrics()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
 

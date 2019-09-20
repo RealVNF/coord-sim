@@ -25,7 +25,7 @@ class TestFlowSimulator(TestCase):
         Setup test environment
         """
         logging.basicConfig(level=logging.ERROR)
-        metrics.reset()
+        metrics.reset_metrics()
 
         self.env = simpy.Environment()
         # Configure simulator parameters
