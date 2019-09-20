@@ -26,7 +26,7 @@ class Simulator(SimulatorInterface):
     def init(self, network_file, service_functions_file, config_file, seed, trace=None, resource_functions_path=""):
 
         # Initialize metrics, record start time
-        metrics.reset()
+        metrics.reset_metrics()
         self.run_times = int(1)
         self.start_time = time.time()
 
@@ -102,7 +102,7 @@ class Simulator(SimulatorInterface):
         self.simulator.params.schedule = actions.scheduling
 
         # reset metrics for steps
-        metrics.reset_run()
+        metrics.reset_run_metrics()
 
         # Run the simulation again with the new params for the set duration.
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()

@@ -112,7 +112,12 @@ class FlowSimulator:
         instead of pass_flow(). The position of the flow within the SFC is determined using current_position
         attribute of the flow object.
         """
+
+        # set current sf of flow
         sf = sfc[flow.current_position]
+        flow.current_sf = sf
+        metrics.add_requesting_flow(flow)
+
         next_node = self.get_next_node(flow, sf)
         yield self.env.process(self.forward_flow(flow, next_node))
 
@@ -182,8 +187,6 @@ class FlowSimulator:
 
         log.info("Flow {} STARTED PROCESSING at node {} for processing. Time: {}"
                  .format(flow.flow_id, flow.current_node_id, self.env.now))
-        # Metrics: Add flow request for sf at node regardless of whether it is processed or not.
-        metrics.add_requesting_flow(flow, current_node_id, sf)
 
         if sf in self.params.sf_placement[current_node_id]:
             current_sf = flow.current_sf
