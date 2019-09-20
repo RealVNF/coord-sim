@@ -50,17 +50,17 @@ def reset_run_metrics():
     metrics['run_max_end2end_delay'] = 0.0
     metrics['run_processed_flows'] = 0
 
-    # total processed traffic (aggregated data rate) per node per SF within one run
-    metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
+    # total requested traffic: increased whenever a flow is requesting processing before scheduling or processing
     metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
-
     # total generated traffic. traffic generate on ingress nodes is recorded
     #   this value could also be extracted from network and sim config file.
     metrics['run_total_requested_traffic_node'] = defaultdict(float)
+    # total processed traffic (aggregated data rate) per node per SF within one run
+    metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
 
 
-def add_requesting_flow(flow, current_node_id, current_sf):
-    metrics['run_total_requested_traffic'][current_node_id][flow.sfc][current_sf] += flow.dr
+def add_requesting_flow(flow):
+    metrics['run_total_requested_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
 
 
 # call when new flows starts processing at an SF
