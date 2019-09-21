@@ -1,10 +1,8 @@
 import logging
 import os
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime
-import math
 import networkx as nx
-import matplotlib.pyplot as plt
 import numpy as np
 from auxiliary.link import Link
 from auxiliary.path import Path
@@ -13,6 +11,10 @@ from siminterface.simulator import ExtendedSimulatorAction
 from siminterface.simulator import Simulator
 
 log = logging.getLogger(__name__)
+
+
+class NoCandidateException(Exception):
+    pass
 
 
 class TPKAlgo:
@@ -35,12 +37,12 @@ class TPKAlgo:
         log.info(f'Network Stats after init(): {init_state.network_stats}')
 
         self.network_copy = self.simulator.get_network_copy()
-        #nx.draw(self.network_copy)
-        #plt.show()
+        # nx.draw(self.network_copy)
+        # plt.show()
         self.network_diameter = nx.diameter(self.network_copy)
 
-        self.apsp = nx.johnson(self.network_copy, weight='delay')
-        self.apsp_length = Path.shortest_path_weighted_length(self.network_copy, self.apsp, 'delay')
+        self.asps = dict(nx.all_pairs_dijkstra_path(self.network_copy, weight='delay'))
+        self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy, weight='delay'))
 
         self.node_mortality = defaultdict(int)
 
@@ -49,7 +51,7 @@ class TPKAlgo:
 
     def run(self):
         placement = defaultdict(list)
-        processing_rules = defaultdict(lambda : defaultdict(list))
+        processing_rules = defaultdict(lambda: defaultdict(list))
         forwarding_rules = defaultdict(dict)
         action = ExtendedSimulatorAction(placement=placement, scheduling={}, flow_forwarding_rules=forwarding_rules,
                                          flow_processing_rules=processing_rules)
@@ -75,7 +77,7 @@ class TPKAlgo:
         try:
             self.plan_placement(flow)
             self.try_set_new_path(flow)
-        except:
+        except NoCandidateException:
             flow['state'] = 'drop'
             flow['path'] = []
             print('No candidate')
@@ -138,7 +140,8 @@ class TPKAlgo:
             try:
                 self.plan_placement(flow)
                 if flow['target_node_id'] == exec_node_id:
-                    demand, need_placement = Placement.calculate_demand(flow, flow.current_sf, exec_node['available_sf'],
+                    demand, need_placement = Placement.calculate_demand(flow, flow.current_sf,
+                                                                        exec_node['available_sf'],
                                                                         state.service_functions)
                     if exec_node['capacity'] > demand:
                         if need_placement:
@@ -152,10 +155,10 @@ class TPKAlgo:
                         flow['blocked_links'] = []
                         self.set_new_path(flow)
                         self.forward_flow(flow, state)
-                    except:
+                    except nx.NetworkXNoPath:
                         flow['state'] = 'drop'
                         flow['path'] = []
-            except:
+            except NoCandidateException:
                 flow['state'] = 'drop'
                 flow['path'] = []
                 print('No candidate')
@@ -177,32 +180,38 @@ class TPKAlgo:
         try:
             score_table = self.score(flow)
             # Determine target node
-            target = score_table.pop(0)[0]
+            target = score_table[0][0]
             flow['target_node_id'] = target
             flow['state'] = 'transit'
-        except:
+        except NoCandidateException:
             raise
-
 
     def score(self, flow):
         state = self.simulator.get_state()
         exec_node_id = flow.current_node_id
         candidates = []
+        rejected = []
 
         for n in state.network['node_list']:
             # Can place?
             available_sf = self.simulator.params.network.node[n]['available_sf']
             demand, place = Placement.calculate_demand(flow, flow.current_sf, available_sf, state.service_functions)
 
+            path_a_length = self.apsp_length[exec_node_id][n]
+            path_b_length = self.apsp_length[n][flow.egress_node_id]
+            n_cap = state.network['nodes'][n]['capacity']
+            n_load = state.network['nodes'][n]['used_capacity']
+
+
             if state.network['nodes'][n]['capacity'] > demand:
-                path_a_length = self.apsp_length[exec_node_id][n]
-                path_b_length = self.apsp_length[n][flow.egress_node_id]
-                n_cap = state.network['nodes'][n]['capacity']
-                n_load = state.network['nodes'][n]['used_capacity']
-                candidates.append([n, path_a_length, path_a_length+path_b_length, n_cap - n_load, self.node_mortality[n]])
+                candidates.append(
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n]])
+            else:
+                rejected.append(
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n]])
 
         if len(candidates) == 0:
-            raise Exception('No suitable candidate found')
+            raise NoCandidateException()
 
         minimum_a = min(candidates, key=lambda x: x[1])[1]
         minimum_ab = min(candidates, key=lambda x: x[2])[2]

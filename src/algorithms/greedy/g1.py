@@ -14,6 +14,9 @@ log = logging.getLogger(__name__)
 
 
 class G1Algo:
+    """
+    GPASP base algorithm
+    """
     def __init__(self, simulator: Simulator):
         # Besides interaction we need the simulator reference to query all needed information. Not all information can
         # conveniently put into the simulator state, nevertheless it is justified that the algorithm can access these.
@@ -149,8 +152,6 @@ class G1Algo:
             processing_rules[node_id].pop(flow.flow_id, None)
             forwarding_rules[node_id].pop(flow.flow_id, None)
 
-        # Change previous node
-        flow['previous_node'] = node_id
         # Apply state to simulator
         self.simulator.apply(state.derive_action())
 
@@ -200,7 +201,7 @@ class G1Algo:
 
         assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), \
             f'Pre edge count mismatch with internal state! Flow {flow.flow_id}'
-        assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Pre edge count mismatch with recorded state!'
+        #assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Pre edge count mismatch with recorded state!'
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
@@ -214,7 +215,7 @@ class G1Algo:
             for link in flow['blocked_links']:
                 self.network_copy.add_edge(link[0], link[1], **link.attributes)
             assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Post edge count mismatch with internal state!'
-            assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Post Edge count mismatch with recorded state!'
+            #assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Post Edge count mismatch with recorded state!'
 
     def calculate_demand(self, flow, state) -> float:
         """

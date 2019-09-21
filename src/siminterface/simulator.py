@@ -182,6 +182,13 @@ class Simulator:
         # Set processing rules
         self.params.flow_processing_rules = actions.flow_processing_rules
 
+    def timeout_callback(self, callback, duration, log_message):
+        """
+        This function is the interface to enable external algorithms to schedule timeouts, after which a specified
+        callback function is executed.
+        """
+        self.simulator.timeout(callback, duration, log_message)
+
     def get_state(self) -> ExtendedSimulatorState:
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.

@@ -72,6 +72,17 @@ class FlowSimulator:
             callback()
             yield self.env.timeout(interval_duration)
 
+    def timeout(self, callback, duration, log_message):
+        """
+        This function enables external algorithms to schedule timeouts, after which a specified callback function is
+        executed.
+        """
+        def t():
+            yield self.env.timeout(duration)
+            callback()
+            log.debug(f'{log_message} Time {self.env.now}.')
+        self.env.process(t())
+
     def generate_flow(self, node_id):
         """
         SimPy process.
