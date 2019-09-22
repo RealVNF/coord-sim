@@ -1,11 +1,12 @@
 import logging
 import os
+import json
+import operator
 from collections import defaultdict
 from datetime import datetime
 import networkx as nx
 import numpy as np
 from auxiliary.link import Link
-from auxiliary.path import Path
 from auxiliary.placement import Placement
 from siminterface.simulator import ExtendedSimulatorAction
 from siminterface.simulator import Simulator
@@ -27,8 +28,11 @@ class TPKAlgo:
 
         # require the manipulation of the network topology, we
         self.network_copy = None
+        # Timeout determines after which period a unused vnf is removed from a node
+        self.vnf_timeout = 10
 
-    def init(self, network_path, service_functions_path, config_path, seed, output_id, resource_functions_path=""):
+    def init(self, network_path, connectivity_path, service_functions_path, config_path, seed, output_id,
+             resource_functions_path=""):
         init_state = self.simulator.init(network_path, service_functions_path, config_path, seed, output_id,
                                          resource_functions_path=resource_functions_path,
                                          interception_callbacks={'pass_flow': self.pass_flow,
@@ -46,7 +50,16 @@ class TPKAlgo:
 
         self.node_mortality = defaultdict(int)
 
-        periodic = [(self.periodic_measurement, 100, 'Measurement')]
+        node_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_node_con.json')
+        edge_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_edge_con.json')
+        self.node_connectivity = json.loads(node_connectivity_json_file.read())
+        self.edge_connectivity = json.loads(edge_connectivity_json_file.read())
+        #self.degree_centrality = nx.degree_centrality(self.network_copy)
+        #self.closeness_centrality = nx.closeness_centrality(self.network_copy, distance='delay')
+        #self.betweenness_centrality = nx.betweenness_centrality(self.network_copy, weight='delay')
+
+        periodic = [(self.periodic_measurement, 100, 'Measurement'),
+                    (self.periodic_remove, 10, 'Remove SF interception.')]
         self.simulator.params.interception_callbacks['periodic'] = periodic
 
     def run(self):
@@ -192,6 +205,11 @@ class TPKAlgo:
         candidates = []
         rejected = []
 
+        minimum_edge_con = min(self.edge_connectivity[exec_node_id].items(), key=operator.itemgetter(1))[1]
+        maximum_edge_con = max(self.edge_connectivity[exec_node_id].items(), key=operator.itemgetter(1))[1]
+        #minimum_node_con = min(self.node_connectivity[exec_node_id].items(), key=operator.itemgetter(1))[1]
+        #maximum_node_con = max(self.node_connectivity[exec_node_id].items(), key=operator.itemgetter(1))[1]
+
         for n in state.network['node_list']:
             # Can place?
             available_sf = self.simulator.params.network.node[n]['available_sf']
@@ -201,14 +219,17 @@ class TPKAlgo:
             path_b_length = self.apsp_length[n][flow.egress_node_id]
             n_cap = state.network['nodes'][n]['capacity']
             n_load = state.network['nodes'][n]['used_capacity']
-
+            if exec_node_id != n:
+                edge_con = self.edge_connectivity[exec_node_id][n]
+            else:
+                edge_con = maximum_edge_con
 
             if state.network['nodes'][n]['capacity'] > demand:
                 candidates.append(
-                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n]])
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con])
             else:
                 rejected.append(
-                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n]])
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con])
 
         if len(candidates) == 0:
             raise NoCandidateException()
@@ -225,12 +246,15 @@ class TPKAlgo:
         d_ab = maximum_ab - minimum_ab + 0.0001
         d_free = maximum_free - minimum_free + 0.0001
         d_mortality = maximum_mortality - minimum_mortality + 0.0001
+        d_edge_con = maximum_edge_con - minimum_edge_con + 0.0001
+        #d_node_con = maximum_node_con - minimum_node_con + 0.0001
 
         for i in range(len(candidates)):
             candidates[i][1] = (maximum_a - candidates[i][1]) / d_a
             candidates[i][2] = (maximum_ab - candidates[i][2]) / d_ab
             candidates[i][3] = (candidates[i][3] - minimum_free) / d_free
             candidates[i][4] = (maximum_mortality - candidates[i][4]) / d_mortality
+            candidates[i][5] = candidates[i][5] / d_edge_con
 
         score_table = []
         for i in range(len(candidates)):
@@ -238,7 +262,8 @@ class TPKAlgo:
                                 1.5 * candidates[i][1] +
                                 1 * candidates[i][2] +
                                 1 * candidates[i][3] +
-                                1.5 * candidates[i][4]))
+                                1.5 * candidates[i][4] +
+                                1.5 * candidates[i][5]))
 
         candidates.sort(key=lambda x: x[1])
         score_table.sort(key=lambda x: x[1], reverse=True)
@@ -307,6 +332,17 @@ class TPKAlgo:
                 flow['state'] = 'drop'
                 flow['path'] = []
 
+    def periodic_remove(self):
+        """
+         <Callback>
+        """
+        state = self.simulator.get_state()
+        for node_id, node_data in state.network['nodes'].items():
+            for sf, sf_data in node_data['available_sf'].items():
+                if (sf_data['load'] == 0) and ((state.simulation_time - sf_data['last_requested']) > self.vnf_timeout):
+                    state.placement[node_id].remove(sf)
+        self.simulator.apply(state.derive_action())
+
     def periodic_measurement(self):
         """
         <Callback>
@@ -321,6 +357,7 @@ def main():
     # Simulator params
     args = {
         'network': '../../../../params/networks/dfn_58.graphml',
+        'network_connectivity': '../../../../params/networks/connectivity',
         'service_functions': '../../../../params/services/3sfcs.yaml',
         'resource_functions': '../../../../params/services/resource_functions',
         'config': '../../../../params/config/probabilistic_discrete_config.yaml',
@@ -343,6 +380,7 @@ def main():
     # Setup algorithm
     algo = TPKAlgo(simulator)
     algo.init(os.path.abspath(args['network']),
+              os.path.abspath(args['network_connectivity']),
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
               args['seed'],
