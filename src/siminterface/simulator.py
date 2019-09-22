@@ -43,9 +43,9 @@ class Simulator(SimulatorInterface):
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
 
         # Trace handling
-        if 'trace_file_name' in self.config:
-            trace_file_name = os.getcwd()+f"/{self.config['trace_file_name']}"
-            trace = reader.get_trace(trace_file_name)
+        if 'trace_path' in self.config:
+            trace_path = os.getcwd()+f"/{self.config['trace_path']}"
+            trace = reader.get_trace(trace_path)
             TraceProcessor(self.params, self.env, trace)
 
         self.duration = self.params.run_duration
