@@ -13,3 +13,6 @@ deterministic_size: True           # default: True
 # can be overridden by deterministic_arrival and deterministic_size
 #deterministic: True                # default: False
 run_duration: 100                  # default: 100
+
+# Optional: Trace file trace relative to the CWD. Please place trace in the working directory
+trace_path: params/traces/simple_trace.csv

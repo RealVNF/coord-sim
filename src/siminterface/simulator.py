@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-
+import os
 import coordsim.metrics.metrics as metrics
 import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
@@ -23,7 +23,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
 
-    def init(self, network_file, service_functions_file, config_file, seed, trace=None, resource_functions_path=""):
+    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path=""):
 
         # Initialize metrics, record start time
         metrics.reset_metrics()
@@ -43,8 +43,9 @@ class Simulator(SimulatorInterface):
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
 
         # Trace handling
-        if trace:
-            trace = reader.get_trace(trace)
+        if 'trace_file_name' in self.config:
+            trace_file_name = os.getcwd()+f"/{self.config['trace_file_name']}"
+            trace = reader.get_trace(trace_file_name)
             TraceProcessor(self.params, self.env, trace)
 
         self.duration = self.params.run_duration
