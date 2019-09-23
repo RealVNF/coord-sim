@@ -10,6 +10,7 @@ import coordsim.network.dummy_data as dummy_data
 from coordsim.trace_processor.trace_processor import TraceProcessor
 import logging
 import time
+import os
 
 
 log = logging.getLogger(__name__)
@@ -48,10 +49,11 @@ def main():
                              schedule=schedule)
     log.info(params)
 
-    if args.trace:
-        trace = reader.get_trace(args.trace)
+    if 'trace_path' in config:
+        trace_path = os.path.join(os.getcwd(), config['trace_path'])
+        trace = reader.get_trace(trace_path)
         TraceProcessor(params, env, trace)
-
+        log.info("Using trace "+config['trace_path'])
     # Create a FlowSimulator object, pass the SimPy environment and params objects
     simulator = FlowSimulator(env, params)
 
