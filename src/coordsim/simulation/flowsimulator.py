@@ -120,12 +120,12 @@ class FlowSimulator:
                 continue
 
             # Assign a random SFC to the flow
-            flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
+            flow_sfc = random.choice([sfc for sfc in self.params.sfc_list.keys()])
             flow_sfc_components = self.params.sfc_list[flow_sfc]
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
             # Generate flow based on given params
-            flow_egress_node = np.random.choice(self.params.network.nodes())
+            flow_egress_node = random.choice(self.params.eg_nodes)
             flow = Flow(str(self.total_flow_count), flow_sfc, flow_sfc_components, flow_dr, flow_size, creation_time,
                         current_node_id=node_id, egress_node_id=flow_egress_node)
             # Update metrics for the generated flow

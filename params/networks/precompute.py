@@ -3,8 +3,8 @@ import json
 import os
 
 def main():
-    soon = ['colt_153.graphml', 'gts_ce_149.graphml', 'intellifiber_73.graphml', 'triangle.graphml']
-    networks = ['dfn_58.graphml'] + soon
+    done = ['dfn_58.graphml', 'colt_153.graphml', 'gts_ce_149.graphml', 'intellifiber_73.graphml', 'triangle.graphml']
+    networks = ['abilene_11.graphml']
 
     for net_file in networks:
         node_connectivity = {}

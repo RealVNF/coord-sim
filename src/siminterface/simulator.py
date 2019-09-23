@@ -96,7 +96,7 @@ class Simulator:
 
         # Parse network and SFC + SF file
         self.config = reader.get_config(config_file)
-        self.network, self.ing_nodes = reader.read_network(network_file, self.config)
+        self.network, self.ing_nodes, self.eg_nodes = reader.read_network(network_file, self.config)
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.interception_callbacks = interception_callbacks
@@ -111,7 +111,7 @@ class Simulator:
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed,
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list, self.config, seed,
                                       interception_callbacks=self.interception_callbacks)
         self.duration = self.params.run_duration
 

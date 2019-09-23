@@ -16,6 +16,7 @@ flow_duration_weights: [1]
 # Network parameter
 # Note: attributes defined in the graphml file have always precedence.
 node_ingress_probability: 0
+node_egress_probability: 1
 node_parameter_mode: probabilistic_discrete
 node_cap_values: [10]
 node_cap_weights: [1]

@@ -210,12 +210,16 @@ def read_network(file, config):
     shortest_paths(networkx_network)
 
     # Filter ingress nodes
-    prob = config['node_ingress_probability']
-    log.info(f'Ingress node probability {prob}.')
+    p_ingress = config['node_ingress_probability']
+    p_egress = config['node_egress_probability']
+    log.info(f'Ingress node probability {p_ingress}.')
     ing_nodes = []
+    eg_nodes = []
     for node in networkx_network.nodes.items():
-        if node[1]["type"] == "Ingress" or np.random.choice([True, False], p=[prob, 1-prob]):
+        if node[1]["type"] == "Ingress" or np.random.choice([True, False], p=[p_ingress, 1-p_ingress]):
             ing_nodes.append(node[0])
+        if  node[1]["type"] == "Egress" or np.random.choice([True, False], p=[p_egress, 1-p_egress]):
+            eg_nodes.append(node[0])
     log.info(nx.info(networkx_network))
 
-    return networkx_network, ing_nodes
+    return networkx_network, ing_nodes, eg_nodes

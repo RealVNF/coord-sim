@@ -9,7 +9,7 @@ other parameters for the simulator.
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={},
+    def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={},
                  flow_forwarding_rules={}, flow_processing_rules={}, interception_callbacks={}):
         # Seed for the random generator: int
         self.seed = seed
@@ -17,6 +17,8 @@ class SimulatorParams:
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
         self.ing_nodes = ing_nodes
+        # Possible egress nodes of the network (nodes at which flows may leave the network): list
+        self.eg_nodes = eg_nodes
         # List of available SFCs and their child SFs: defaultdict(None)
         self.sfc_list = sfc_list
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)

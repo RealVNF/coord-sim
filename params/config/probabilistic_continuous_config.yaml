@@ -14,6 +14,7 @@ flow_size_alpha: 1                   # pareto distribution: alpha
 # Network parameter
 # Note: attributes defined in the graphml file have always precedence.
 node_ingress_probability: 0.2
+node_egress_probability: 1
 node_parameter_mode: probabilistic_continuous
 node_cap_mean: 10                    # normal distribution: mean/center of distribution
 node_cap_stdev: 0                    # normal distribution: standard deviation
