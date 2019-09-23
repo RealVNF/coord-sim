@@ -19,6 +19,9 @@ class TraceProcessor():
     def change_inter_arrival_time(self):
         """
         Changes the inter arrival mean during simulation
+        The initial time is read from the the config file, so if the inter_arrival_time set in the trace CSV
+        file does not start from 0, then the simulator will use the value set in sim_config
+
         """
         self.timeout = float(self.trace[self.trace_index]['time']) - self.env.now
         inter_arrival_mean = float(self.trace[self.trace_index]['inter_arrival_mean'])

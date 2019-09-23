@@ -44,7 +44,7 @@ class Simulator(SimulatorInterface):
 
         # Trace handling
         if 'trace_path' in self.config:
-            trace_path = os.getcwd()+f"/{self.config['trace_path']}"
+            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
             trace = reader.get_trace(trace_path)
             TraceProcessor(self.params, self.env, trace)
 

@@ -14,5 +14,5 @@ deterministic_size: True           # default: True
 #deterministic: True                # default: False
 run_duration: 100                  # default: 100
 
-# Optional: Trace file trace relative to the CWD. Please place trace in the working directory
+# Optional: Trace file trace relative to the CWD.
 trace_path: params/traces/default_trace.csv

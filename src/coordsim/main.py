@@ -50,8 +50,8 @@ def main():
     log.info(params)
 
     if 'trace_path' in config:
-        trace_file_name = os.getcwd()+f"/{config['trace_path']}"
-        trace = reader.get_trace(trace_file_name)
+        trace_path = os.path.join(os.getcwd(), config['trace_path'])
+        trace = reader.get_trace(trace_path)
         TraceProcessor(params, env, trace)
         log.info("Using trace "+config['trace_path'])
     # Create a FlowSimulator object, pass the SimPy environment and params objects
