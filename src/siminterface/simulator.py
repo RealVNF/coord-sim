@@ -168,6 +168,7 @@ class Simulator(SimulatorInterface):
         stats = metrics.get_metrics()
         self.traffic = stats['run_total_requested_traffic']
         self.network_stats = {
+            'processed_traffic': stats['run_total_processed_traffic'],
             'total_flows': stats['generated_flows'],
             'successful_flows': stats['processed_flows'],
             'dropped_flows': stats['dropped_flows'],
