@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 
 
 class NoCandidateException(Exception):
+    """
+    Signal that no suitable routing/placement candidate could be determined
+    """
     pass
 
 
@@ -25,18 +28,21 @@ class TPKAlgo:
         self.simulator = simulator
         # To evaluate if some operations are feasible we need to modify the network topology, that must not happen on
         # the shared network instance
-
-        # require the manipulation of the network topology, we
         self.network_copy = None
-        # Timeout determines after which period a unused vnf is removed from a node
+        # Timeout determines, after which period a unused vnf is removed from a node
         self.vnf_timeout = 10
 
     def init(self, network_path, connectivity_path, service_functions_path, config_path, seed, output_id,
              resource_functions_path=""):
         init_state = self.simulator.init(network_path, service_functions_path, config_path, seed, output_id,
                                          resource_functions_path=resource_functions_path,
-                                         interception_callbacks={'pass_flow': self.pass_flow,
-                                                                 'init_flow': self.init_flow})
+                                         interception_callbacks=
+                                         {'pass_flow': self.pass_flow,
+                                          'init_flow': self.init_flow,
+                                          'depart_flow': self.depart_flow,
+                                          'drop_flow': self.drop_flow,
+                                          'periodic': [(self.periodic_measurement, 100, 'Measurement'),
+                                                       (self.periodic_remove, 10, 'Remove SF interception.')]})
 
         log.info(f'Network Stats after init(): {init_state.network_stats}')
 
@@ -48,8 +54,12 @@ class TPKAlgo:
         self.asps = dict(nx.all_pairs_dijkstra_path(self.network_copy, weight='delay'))
         self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy, weight='delay'))
 
+        # Record how often a flow was passed to a node, used to calculate score
         self.node_mortality = defaultdict(int)
+        # Record current general load, used to calculate score
+        self.occupancy_list = defaultdict(list)
 
+        # Load connectivity measurement
         node_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_node_con.json')
         edge_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_edge_con.json')
         self.node_connectivity = json.loads(node_connectivity_json_file.read())
@@ -58,9 +68,10 @@ class TPKAlgo:
         #self.closeness_centrality = nx.closeness_centrality(self.network_copy, distance='delay')
         #self.betweenness_centrality = nx.betweenness_centrality(self.network_copy, weight='delay')
 
-        periodic = [(self.periodic_measurement, 100, 'Measurement'),
-                    (self.periodic_remove, 10, 'Remove SF interception.')]
-        self.simulator.params.interception_callbacks['periodic'] = periodic
+        # Set periodic callbacks directly before the flowsimulator can
+        #periodic = [(self.periodic_measurement, 100, 'Measurement'),
+        #            (self.periodic_remove, 10, 'Remove SF interception.')]
+        #self.simulator.params.interception_callbacks['periodic'] = periodic
 
     def run(self):
         placement = defaultdict(list)
@@ -78,15 +89,8 @@ class TPKAlgo:
         """
         <Callback>
         """
-
         flow['state'] = 'transit'
         flow['blocked_links'] = []
-
-        state = self.simulator.get_state()
-        # The associated node
-        exec_node_id = flow.current_node_id
-        #exec_node = state.network['nodes'][exec_node_id]
-
         try:
             self.plan_placement(flow)
             self.try_set_new_path(flow)
@@ -97,10 +101,10 @@ class TPKAlgo:
 
     def pass_flow(self, flow):
         """
-                <Callback>
-                This is the main dynamic logic of the algorithm, whenever a flow is passed to node this function is called.
-                The associated node is determined and all actions and information are computed from its perspective.
-                """
+        <Callback>
+        This is the main dynamic logic of the algorithm, whenever a flow is passed to node this function is called.
+        The associated node is determined and all actions and information are computed from its perspective.
+        """
 
         # Get state information
         state = self.simulator.get_state()
@@ -110,6 +114,9 @@ class TPKAlgo:
         # The associated node
         exec_node_id = flow.current_node_id
         exec_node = state.network['nodes'][exec_node_id]
+
+        if (flow.flow_id, flow.dr) not in self.occupancy_list[exec_node_id]:
+            self.occupancy_list[exec_node_id].append((flow.flow_id, flow.dr))
 
         if flow.is_processed() and flow['state'] != 'departure':
             # yes => switch to departure, forward to egress node
@@ -226,35 +233,42 @@ class TPKAlgo:
 
             if state.network['nodes'][n]['capacity'] > demand:
                 candidates.append(
-                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con])
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con,
+                     self.occupancy(n)])
             else:
                 rejected.append(
-                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con])
+                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con,
+                     self.occupancy(n)])
 
         if len(candidates) == 0:
             raise NoCandidateException()
 
+        delta = 0.0001
         minimum_a = min(candidates, key=lambda x: x[1])[1]
-        minimum_ab = min(candidates, key=lambda x: x[2])[2]
         maximum_a = max(candidates, key=lambda x: x[1])[1]
+        minimum_ab = min(candidates, key=lambda x: x[2])[2]
         maximum_ab = max(candidates, key=lambda x: x[2])[2]
         minimum_free = min(candidates, key=lambda x: x[3])[3]
         maximum_free = max(candidates, key=lambda x: x[3])[3]
         minimum_mortality = min(candidates, key=lambda x: x[4])[4]
         maximum_mortality = max(candidates, key=lambda x: x[4])[4]
-        d_a = maximum_a - minimum_a + 0.0001
-        d_ab = maximum_ab - minimum_ab + 0.0001
-        d_free = maximum_free - minimum_free + 0.0001
-        d_mortality = maximum_mortality - minimum_mortality + 0.0001
-        d_edge_con = maximum_edge_con - minimum_edge_con + 0.0001
+        minimum_occupancy = max(candidates, key=lambda x: x[6])[6]
+        maximum_occupancy = max(candidates, key=lambda x: x[6])[6]
+        d_a = maximum_a + delta
+        d_ab = maximum_ab + delta
+        d_free = maximum_free + delta
+        d_mortality = maximum_mortality + delta
+        d_occupancy = maximum_occupancy + delta
+        d_edge_con = maximum_edge_con + delta
         #d_node_con = maximum_node_con - minimum_node_con + 0.0001
 
         for i in range(len(candidates)):
             candidates[i][1] = (maximum_a - candidates[i][1]) / d_a
             candidates[i][2] = (maximum_ab - candidates[i][2]) / d_ab
-            candidates[i][3] = (candidates[i][3] - minimum_free) / d_free
-            candidates[i][4] = (maximum_mortality - candidates[i][4]) / d_mortality
+            candidates[i][3] = (candidates[i][3]) / d_free
+            candidates[i][4] = (maximum_mortality - candidates[i][4] + delta) / d_mortality
             candidates[i][5] = candidates[i][5] / d_edge_con
+            candidates[i][6] = (maximum_occupancy - candidates[i][6] + delta) / d_occupancy
 
         score_table = []
         for i in range(len(candidates)):
@@ -263,12 +277,16 @@ class TPKAlgo:
                                 1 * candidates[i][2] +
                                 1 * candidates[i][3] +
                                 1.5 * candidates[i][4] +
-                                1.5 * candidates[i][5]))
+                                1 * candidates[i][5] +
+                                1.5 * candidates[i][6]))
 
         candidates.sort(key=lambda x: x[1])
         score_table.sort(key=lambda x: x[1], reverse=True)
 
         return score_table
+
+    def occupancy(self, node_id):
+        return sum(float(dr) for id, dr in self.occupancy_list[node_id])
 
     def try_set_new_path(self, flow):
         try:
@@ -303,7 +321,6 @@ class TPKAlgo:
         resources, all incident links will be checked and all unsuitable links will be added to the blocked link list
         of the flow. Subsequent a new path is attempted to calculate.
         """
-
         node_id = flow.current_node_id
         assert len(flow['path']) > 0
         next_neighbor_id = flow['path'].pop(0)
@@ -331,6 +348,24 @@ class TPKAlgo:
             except nx.NetworkXNoPath:
                 flow['state'] = 'drop'
                 flow['path'] = []
+
+    def post_forwarding(self, node_id, flow):
+        """
+        Callback
+        """
+        self.occupancy_list[node_id].remove((flow.flow_id, flow.dr))
+
+    def depart_flow(self, flow):
+        """
+        Callback
+        """
+        self.occupancy_list[flow.current_node_id].remove((flow.flow_id, flow.dr))
+
+    def drop_flow(self, flow):
+        """
+        Callback
+        """
+        self.occupancy_list[flow.current_node_id].remove((flow.flow_id, flow.dr))
 
     def periodic_remove(self):
         """

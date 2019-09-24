@@ -31,15 +31,20 @@ class CustomMetrics:
         self['total_evasive_routes_of_dropped_flows'] = 0
         self['avg_evasive_routes_of_dropped_flows'] = 0.0
 
+        # Record how often a flow was passed to a node
+        self['node_visit'] = defaultdict(int)
+        # Record how many flows have been dropped at a node
+        self['node_mortality'] = defaultdict(int)
+
     def processed_flow(self, flow):
         self['processed_flows'] += 1
-        self['total_intermediate_targets_of_processed_flows'] += flow['intermediate_targets']
-        self['total_evasive_routes_of_processed_flows'] += flow['evasive_routes']
+        self['total_intermediate_targets_of_processed_flows'] += flow['metrics']['intermediate_targets']
+        self['total_evasive_routes_of_processed_flows'] += flow['metrics']['evasive_routes']
 
     def dropped_flow(self, flow):
         self['dropped_flows'] += 1
-        self['total_intermediate_targets_of_dropped_flows'] += flow['intermediate_targets']
-        self['total_evasive_routes_of_dropped_flows'] += flow['evasive_routes']
+        self['total_intermediate_targets_of_dropped_flows'] += flow['metrics']['intermediate_targets']
+        self['total_evasive_routes_of_dropped_flows'] += flow['metrics']['evasive_routes']
 
     def calc_avg_intermediate_targets(self):
         if self['processed_flows'] > 0:

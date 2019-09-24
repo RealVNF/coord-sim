@@ -46,8 +46,8 @@ class FlowSimulator:
         # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
         nodes_list = [n[0] for n in self.params.network.nodes.items()]
         log.info("Using nodes list {}\n".format(nodes_list))
-        log.info("Total of {} ingress nodes available".format(len(self.params.ing_nodes)))
         log.info("Using ingress nodes list {}\n".format(self.params.ing_nodes))
+        log.info("Using egress nodes list {}\n".format(self.params.eg_nodes))
         for node_id in self.params.ing_nodes:
             self.env.process(self.generate_flow(node_id))
         # Start periodic processes

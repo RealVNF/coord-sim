@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import networkx as nx
 import numpy as np
 from datetime import datetime
@@ -23,10 +24,8 @@ class G1Algo:
         self.simulator = simulator
         # To evaluate if some operations are feasible we need to modify the network topology, that must not happen on
         # the shared network instance
-
-        # require the manipulation of the network topology, we
         self.network_copy = None
-        # Timeout determines after which period a unused vnf is removed from a node
+        # Timeout determines, after which period a unused vnf is removed from a node
         self.vnf_timeout = 10
         # Custom metrics
         self.metrics = CustomMetrics()
@@ -62,12 +61,14 @@ class G1Algo:
     def init_flow(self, flow):
         """
         <Callback>
+        Called whenever a flow is initialized.
         """
         flow['state'] = 'greedy'
         flow['target_node_id'] = flow.egress_node_id
         flow['blocked_links'] = []
-        flow['intermediate_targets'] = 0
-        flow['evasive_routes'] = 0
+        flow['metrics'] = {}
+        flow['metrics']['intermediate_targets'] = 0
+        flow['metrics']['evasive_routes'] = 0
         try:
             self.set_new_path(flow)
         except nx.NetworkXNoPath:
@@ -89,8 +90,10 @@ class G1Algo:
         # The associated node
         node_id = flow.current_node_id
         node = state.network['nodes'][node_id]
-        # Managment
+        # Algorithm management
         new_target = False
+        # Metric managment
+        self.metrics['node_visit'][node_id] += 1
 
         # Is flow processed?
         if flow.is_processed():
@@ -106,12 +109,11 @@ class G1Algo:
                     flow['state'] = 'drop'
                     flow['path'] = []
         else:
-            # no
+            # no, not fully processed
             if node_id == flow['target_node_id']:
-                # is flow at targte node =>
-                # if flow arrived at egress node => set new random target distinct from the current node
+                # has flow arrived at targte node => set new random target distinct from the current node
                 while flow['target_node_id'] == node_id:
-                    flow['target_node_id'] = np.random.choice(state.network['node_list'])
+                    flow['target_node_id'] = random.choice(state.network['node_list'])
                 flow['blocked_links'] = []
                 try:
                     self.set_new_path(flow)
@@ -123,8 +125,7 @@ class G1Algo:
         # Determine Flow state
         if flow['state'] == 'greedy':
             # One the way to the target, needs processing
-            # Placement
-            # Can flow be processed at current node
+            # Can flow be processed at current node?
             demand_p, need_placement = Placement.calculate_demand(flow, flow.current_sf, node['available_sf'],
                                                            self.simulator.params.sf_list)
             assert need_placement == (flow.current_sf not in placement[node_id]), 'False placement'
@@ -140,7 +141,7 @@ class G1Algo:
                 # no => forward
                 self.forward_flow(flow, state)
                 if flow['state'] != 'drop' and new_target:
-                    flow['intermediate_targets'] += 1
+                    flow['metrics']['intermediate_targets'] += 1
 
         elif flow['state'] == 'departure':
             # Return to destination as soon as possible, no more processing necessary
@@ -148,7 +149,8 @@ class G1Algo:
                 self.forward_flow(flow, state)
 
         if flow['state'] == 'drop':
-            # Something went legitimate wrong => clear remaing rules => let it drop
+            # Something went legitimate wrong => clear remaining rules => let it drop
+            self.metrics['node_mortality'][node_id] += 1
             processing_rules[node_id].pop(flow.flow_id, None)
             forwarding_rules[node_id].pop(flow.flow_id, None)
 
@@ -163,7 +165,6 @@ class G1Algo:
         resources, all incident links will be checked and all unsuitable links will be added to the blocked link list
         of the flow. Subsequent a new path is attempted to calculate.
         """
-
         node_id = flow.current_node_id
         assert len(flow['path']) > 0
         next_neighbor_id = flow['path'].pop(0)
@@ -188,7 +189,7 @@ class G1Algo:
                 next_neighbor_id = flow['path'].pop(0)
                 # Set forwarding rule
                 state.flow_forwarding_rules[node_id][flow.flow_id] = next_neighbor_id
-                flow['evasive_routes'] += 1
+                flow['metrics']['evasive_routes'] += 1
             except nx.NetworkXNoPath:
                 flow['state'] = 'drop'
                 flow['path'] = []
@@ -198,10 +199,8 @@ class G1Algo:
         """
         Calculate and set shortest path to the target node defined by target_node_id, taking blocked links into account.
         """
-
         assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), \
             f'Pre edge count mismatch with internal state! Flow {flow.flow_id}'
-        #assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Pre edge count mismatch with recorded state!'
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
@@ -215,13 +214,11 @@ class G1Algo:
             for link in flow['blocked_links']:
                 self.network_copy.add_edge(link[0], link[1], **link.attributes)
             assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Post edge count mismatch with internal state!'
-            #assert self.network_copy.number_of_edges() == self.initial_number_of_edges, 'Post Edge count mismatch with recorded state!'
 
     def calculate_demand(self, flow, state) -> float:
         """
         Calculate the demanded capacity when the flow is processed at this node
         """
-
         demanded_total_capacity = 0.0
         for sf_i, sf_data in state.network['nodes'][flow.current_node_id]['available_sf'].items():
             if flow.current_sf == sf_i:
@@ -234,6 +231,7 @@ class G1Algo:
     def periodic_measurement(self):
         """
         <Callback>
+        Called periodically to capture the simulator state.
         """
         #self.simulator.write_state()
         state = self.simulator.get_state()
@@ -244,6 +242,7 @@ class G1Algo:
     def periodic_remove(self):
         """
          <Callback>
+         Called periodically to check if vnfs have to be removed.
         """
         state = self.simulator.get_state()
         for node_id, node_data in state.network['nodes'].items():
@@ -255,14 +254,23 @@ class G1Algo:
     def post_forwarding(self, node_id, flow):
         """
         <Callback>
+        Called to remove no longer used forwarding rules, keep it overseeable.
         """
         # Direct access for speed gain
         self.simulator.params.flow_forwarding_rules[node_id].pop(flow.flow_id, None)
 
     def depart_flow(self, flow):
+        """
+        <Callback>
+        Called to record custom metrics.
+        """
         self.metrics.processed_flow(flow)
 
     def drop_flow(self, flow):
+        """
+        <Callback>
+        Called to record custom metrics.
+        """
         self.metrics.dropped_flow(flow)
 
 

@@ -213,6 +213,7 @@ def read_network(file, config):
     p_ingress = config['node_ingress_probability']
     p_egress = config['node_egress_probability']
     log.info(f'Ingress node probability {p_ingress}.')
+    log.info(f'Egress node probability {p_egress}.')
     ing_nodes = []
     eg_nodes = []
     for node in networkx_network.nodes.items():
@@ -220,6 +221,8 @@ def read_network(file, config):
             ing_nodes.append(node[0])
         if  node[1]["type"] == "Egress" or np.random.choice([True, False], p=[p_egress, 1-p_egress]):
             eg_nodes.append(node[0])
+    log.info("Total of {} ingress nodes available".format(len(ing_nodes)))
+    log.info("Total of {} egress nodes available".format(len(eg_nodes)))
     log.info(nx.info(networkx_network))
 
     return networkx_network, ing_nodes, eg_nodes
