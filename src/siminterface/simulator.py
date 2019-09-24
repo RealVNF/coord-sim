@@ -139,11 +139,14 @@ class Simulator(SimulatorInterface):
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
+        max_node_usage_list = metrics.get_metrics()['run_max_node_usage']
         self.network_dict = {'nodes': [], 'edges': []}
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
-            used_node_cap = node[1]['cap'] - node[1]['remaining_cap']
-            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap, 'used_resources': used_node_cap})
+            run_max_node_usage = max_node_usage_list[node[0]]
+            # 'used_resources' here is the max usage for the run.
+            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap,
+                                               'used_resources': run_max_node_usage})
         for edge in self.network.edges(data=True):
             edge_src = edge[0]
             edge_dest = edge[1]
