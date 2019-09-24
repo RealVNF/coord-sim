@@ -164,7 +164,7 @@ class FlowSimulator:
             # Iterate over the SFs and process the flow at each SF.
             yield self.env.process(self.pass_flow(flow, sfc))
         else:
-            log.info(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
+            log.warning(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
             self.drop_flow(flow)
 
     def pass_flow(self, flow, sfc):
@@ -213,7 +213,7 @@ class FlowSimulator:
                 self.env.process(self.depart_flow(flow))
             elif flow.egress_node_id is None:
                 # Flow head is processed and resides at egress node: depart flow
-                log.info(f'Flow {flow.flow_id} has no egress node, will depart from'
+                log.warning(f'Flow {flow.flow_id} has no egress node, will depart from'
                          f' current node {flow.current_node_id}. Time {self.env.now}.')
                 self.env.process(self.depart_flow(flow))
             else:
@@ -232,7 +232,7 @@ class FlowSimulator:
                 if sf in processing_rule:
                     # Flow has permission to be processed for requested service. Check if service function actually exists
                     if sf in self.params.sf_placement[flow.current_node_id]:
-                        log.info(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at '
+                        log.debug(f'Flow {flow.flow_id} STARTED ARRIVING at SF {flow.current_sf} at '
                                  f'node {flow.current_node_id} for processing. Time: {self.env.now}')
                         yield self.env.process(self.process_flow(flow, sfc))
                     else:
@@ -328,11 +328,11 @@ class FlowSimulator:
                 self.metrics.add_path_delay(link_delay)
                 self.metrics.add_crossed_link_delay(link_delay)
                 flow.end2end_delay += link_delay
-                log.info(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
+                log.debug(f'Flow {flow.flow_id} STARTED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
                 self.env.process(self.pass_flow(flow, self.params.sfc_list[flow.sfc]))
 
                 yield self.env.timeout(flow.duration)
-                log.info(f'Flow {flow.flow_id} FINISHED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
+                log.debug(f'Flow {flow.flow_id} FINISHED ARRIVING at node {neighbor_id} by forwarding. Time: {self.env.now}')
                 # Free link capacities
                 forwarding_link['remaining_cap'] += flow.dr
                 assert forwarding_link['remaining_cap'] <= forwarding_link['cap'],\
@@ -394,7 +394,7 @@ class FlowSimulator:
             node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
             yield self.env.timeout(processing_delay)
-            log.info(
+            log.debug(
                 f'Flow {flow.flow_id} started departing sf {current_sf} at node {current_node_id}. Time {self.env.now}')
             # Increment the position of the flow within SFC
             flow.current_position += 1
@@ -407,7 +407,7 @@ class FlowSimulator:
             self.env.process(self.pass_flow(flow, sfc))
 
             yield self.env.timeout(flow.duration)
-            log.info(
+            log.debug(
                 f'Flow {flow.flow_id} has completely departed SF {current_sf} at node {current_node_id} for processing. Time: {self.env.now}')
 
             # Remove the active flow from the SF after it departed the SF
@@ -430,7 +430,7 @@ class FlowSimulator:
             # nodes dont put back more capacity than the node's capacity.
             assert node_remaining_cap <= node_cap, "Node remaining capacity cannot be more than node capacity!"
         else:
-            log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
+            log.warning(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
             self.drop_flow(flow)
 
     def depart_flow(self, flow):
@@ -445,9 +445,9 @@ class FlowSimulator:
               +-------------+
         """
 
-        log.info(f'Flow {flow.flow_id} was processed and starts departing the network from {flow.current_node_id}. Time {self.env.now}')
+        log.info(f'Flow {flow.flow_id} was processed and starts leaving the network from {flow.current_node_id}. Time {self.env.now}')
         yield self.env.timeout(flow.duration)
-        log.info(f'Flow {flow.flow_id} has completely departed the network from {flow.current_node_id}. Time {self.env.now}')
+        log.debug(f'Flow {flow.flow_id} has completely departed the network from {flow.current_node_id}. Time {self.env.now}')
 
         # Update metrics for the processed flow
         self.metrics.processed_flow(flow)
