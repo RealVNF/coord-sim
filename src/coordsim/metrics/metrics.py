@@ -28,6 +28,7 @@ def reset_metrics():
 
     metrics['total_path_delay'] = 0.0
     metrics['num_path_delays'] = 0
+    # avg path delay per used path, not per entire service chain
     metrics['avg_path_delay'] = 0.0
 
     metrics['total_end2end_delay'] = 0.0
@@ -48,6 +49,11 @@ def reset_run_metrics():
     metrics['run_end2end_delay'] = 0
     metrics['run_avg_end2end_delay'] = 0.0
     metrics['run_max_end2end_delay'] = 0.0
+    metrics['run_total_path_delay'] = 0
+    # path delay averaged over all generated flows in the run
+    metrics['run_avg_path_delay'] = 0
+    metrics['run_generated_flows'] = 0
+    metrics['run_in_network_flows'] = 0
     metrics['run_processed_flows'] = 0
     metrics['run_max_node_usage'] = defaultdict(float)
 
@@ -99,6 +105,7 @@ def remove_active_flow(flow, current_node_id, current_sf):
 
 def generated_flow(flow, current_node):
     metrics['generated_flows'] += 1
+    metrics['run_generated_flows'] += 1
     metrics['total_active_flows'] += 1
     metrics['run_total_requested_traffic_node'][current_node] += flow.dr
 
@@ -125,6 +132,11 @@ def add_processing_delay(delay):
 def add_path_delay(delay):
     metrics['num_path_delays'] += 1
     metrics['total_path_delay'] += delay
+
+    # calc path delay per run; average over num generated flows in run
+    metrics['run_total_path_delay'] += delay
+    if metrics['run_processed_flows'] > 0:
+        metrics['run_avg_path_delay'] = metrics['run_total_path_delay'] / metrics['run_generated_flows']
 
 
 def add_end2end_delay(delay):

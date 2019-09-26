@@ -179,5 +179,6 @@ class Simulator(SimulatorInterface):
             'avg_end2end_delay': stats['avg_end2end_delay'],
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
             'run_max_end2end_delay': stats['run_max_end2end_delay'],
+            'run_avg_path_delay': stats['run_avg_path_delay'],
             'run_total_processed_traffic': stats['run_total_processed_traffic']
         }
