@@ -278,7 +278,7 @@ def main():
     # Simulator params
     args = {
         'network': '../../../params/networks/dfn_58.graphml',
-        'service_functions': '../../../params/services/3sfcs.yaml',
+        'service_functions': '../../../params/services/abc.yaml',
         'resource_functions': '../../../params/services/resource_functions',
         'config': '../../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999,

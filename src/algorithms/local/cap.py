@@ -22,6 +22,7 @@ class CAPAlgo:
         # conveniently put into the simulator state, nevertheless it is justified that the algorithm can access these.
         self.simulator = simulator
         self.network_copy = None
+        self.beacon = []
 
     def init(self, network_path, service_functions_path, config_path, seed, output_id, resource_functions_path=""):
         init_state = self.simulator.init(network_path, service_functions_path, config_path, seed, output_id,
@@ -118,6 +119,9 @@ class CAPAlgo:
             processing_rules[exec_node_id].pop(flow.flow_id, None)
             forwarding_rules[exec_node_id].pop(flow.flow_id, None)
             self.node_mortality[exec_node_id] += 1
+            if exec_node_id not in self.beacon:
+                self.beacon.append(exec_node_id)
+                self.simulator.timeout_callback(self.remove_beacon_event(exec_node_id), 2, 'Remove beacon')
 
         self.simulator.apply(state.derive_action())
 
@@ -130,7 +134,7 @@ class CAPAlgo:
         for n in self.network_copy.neighbors(exec_node_id):
             edge = self.simulator.params.network[exec_node_id][n]
 
-            if flow.dr < edge['remaining_cap']:
+            if flow.dr < edge['remaining_cap'] and n not in self.beacon:
                 d_q = (self.Q(exec_node_id) - self.Q(n)) / self.Q(exec_node_id)
                 d_g = self.apsp_length[exec_node_id][flow['target_node_id']] - self.apsp_length[n][flow['target_node_id']]
                 d_r = edge['cap'] / self.d_r
@@ -161,6 +165,12 @@ class CAPAlgo:
 
     def Q(self, node_id):
         return sum(float(dr) for id, dr in self.qlist[node_id])
+
+    def remove_beacon_event(self, node):
+        def f():
+            self.beacon.remove(node)
+            return
+        return f
 
     def post_forwarding(self, node_id, flow):
         self.qlist[node_id].remove((flow.flow_id, flow.dr))

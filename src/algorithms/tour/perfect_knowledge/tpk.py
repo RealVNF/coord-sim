@@ -51,8 +51,8 @@ class TPKAlgo:
         # plt.show()
         self.network_diameter = nx.diameter(self.network_copy)
 
-        self.asps = dict(nx.all_pairs_dijkstra_path(self.network_copy, weight='delay'))
-        self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy, weight='delay'))
+        self.asps = dict(nx.all_pairs_dijkstra_path(self.network_copy))
+        self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy))
 
         # Record how often a flow was passed to a node, used to calculate score
         self.node_mortality = defaultdict(int)
@@ -222,6 +222,11 @@ class TPKAlgo:
             available_sf = self.simulator.params.network.node[n]['available_sf']
             demand, place = Placement.calculate_demand(flow, flow.current_sf, available_sf, state.service_functions)
 
+            path_a = self.asps[exec_node_id][n]
+            path_a_occupancy = 0
+            for n in path_a:
+                path_a_occupancy += self.occupancy(n)
+
             path_a_length = self.apsp_length[exec_node_id][n]
             path_b_length = self.apsp_length[n][flow.egress_node_id]
             n_cap = state.network['nodes'][n]['capacity']
@@ -230,15 +235,16 @@ class TPKAlgo:
                 edge_con = self.edge_connectivity[exec_node_id][n]
             else:
                 edge_con = maximum_edge_con
+            occupancy = self.occupancy(n)
 
             if state.network['nodes'][n]['capacity'] > demand:
                 candidates.append(
-                    [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con,
-                     self.occupancy(n)])
+                    [n, path_a_length, (path_a_length + path_b_length), (n_cap - n_load), self.node_mortality[n], edge_con,
+                     occupancy, path_a, path_a_occupancy])
             else:
                 rejected.append(
                     [n, path_a_length, path_a_length + path_b_length, n_cap - n_load, self.node_mortality[n], edge_con,
-                     self.occupancy(n)])
+                     occupancy, path_a, path_a_occupancy])
 
         if len(candidates) == 0:
             raise NoCandidateException()
@@ -273,12 +279,12 @@ class TPKAlgo:
         score_table = []
         for i in range(len(candidates)):
             score_table.append((candidates[i][0],
-                                1.5 * candidates[i][1] +
+                                1 * candidates[i][1] +
                                 1 * candidates[i][2] +
                                 1 * candidates[i][3] +
-                                1.5 * candidates[i][4] +
+                                1 * candidates[i][4] +
                                 1 * candidates[i][5] +
-                                1.5 * candidates[i][6]))
+                                1 * candidates[i][6]))
 
         candidates.sort(key=lambda x: x[1])
         score_table.sort(key=lambda x: x[1], reverse=True)
@@ -302,8 +308,7 @@ class TPKAlgo:
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
-            shortest_path = nx.shortest_path(self.network_copy, flow.current_node_id, flow['target_node_id'],
-                                             weight='delay')
+            shortest_path = nx.shortest_path(self.network_copy, flow.current_node_id, flow['target_node_id'])
             # Remove first node, as it is corresponds to the current node
             shortest_path.pop(0)
             flow['path'] = shortest_path
@@ -393,7 +398,7 @@ def main():
     args = {
         'network': '../../../../params/networks/dfn_58.graphml',
         'network_connectivity': '../../../../params/networks/connectivity',
-        'service_functions': '../../../../params/services/3sfcs.yaml',
+        'service_functions': '../../../../params/services/abc.yaml',
         'resource_functions': '../../../../params/services/resource_functions',
         'config': '../../../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999,

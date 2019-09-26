@@ -1,13 +1,12 @@
-import logging
-import os
 import json
-import operator
+import logging
+import math
+import os
+import random
 from collections import defaultdict
 from datetime import datetime
 import networkx as nx
 import numpy as np
-import math
-import random
 from auxiliary.link import Link
 from auxiliary.placement import Placement
 from siminterface.simulator import ExtendedSimulatorAction
@@ -48,12 +47,8 @@ class TPK3Algo:
         log.info(f'Network Stats after init(): {init_state.network_stats}')
 
         self.network_copy = self.simulator.get_network_copy()
-        sum_of_degrees = sum(map(lambda x:x[1], self.network_copy.degree()))
+        sum_of_degrees = sum(map(lambda x: x[1], self.network_copy.degree()))
         self.avg_ceil_degree = int(math.ceil(sum_of_degrees / len(self.network_copy)))
-        # nx.draw(self.network_copy)
-        # plt.show()
-        self.network_diameter = nx.diameter(self.network_copy)
-        self.max_link_cap = max(map(lambda x: x['data_rate'], init_state.network['edges']))
 
         # All pairs shortest path calculations
         self.apsp = dict(nx.all_pairs_dijkstra_path(self.network_copy))
@@ -131,7 +126,7 @@ class TPK3Algo:
                     if need_placement:
                         placement[exec_node_id].append(flow.current_sf)
                     processing_rules[exec_node_id][flow.flow_id] = [flow.current_sf]
-                    #flow['state'] = 'processing'
+                    # flow['state'] = 'processing'
                 else:
                     try:
                         self.plan_placement(flow)
@@ -145,8 +140,8 @@ class TPK3Algo:
                         flow['path'] = []
             else:
                 try:
-                    #self.plan_placement(flow)
-                    #self.set_new_path(flow)
+                    # self.plan_placement(flow)
+                    # self.set_new_path(flow)
                     self.forward_flow(flow, state)
                 except:
                     flow['state'] = 'drop'
@@ -168,14 +163,13 @@ class TPK3Algo:
     def plan_placement(self, flow):
         try:
             score_table = self.score(flow)
-            score_table = score_table[:self.avg_ceil_degree]
+            #score_table = score_table[:self.avg_ceil_degree]
+            score_table = score_table[:1]
             # Determine target node
             sum_score = sum(map(lambda x: x[1], score_table))
-            p = list(map(lambda x: x[1]/sum_score, score_table))
+            p = list(map(lambda x: x[1] / sum_score, score_table))
             target = np.random.choice(list(map(lambda x: x[0], score_table)), p=p)
-            #target = score_table[0][0]
-            #if self.apsp_length[flow.current_node_id][target] >= 2:
-            #    print(self.apsp_length[flow.current_node_id][target])
+            # target = score_table[0][0]
             flow['target_node_id'] = target
             flow['state'] = 'transit'
         except NoCandidateException:
@@ -248,7 +242,7 @@ class TPK3Algo:
             candidates_path[i][4] = maximum_path_occupancy - candidates_path[i][4]
 
         # [0,1] scaling
-        #print('')
+        # print('')
         # Nodes
         for i in range(len(candidates_nodes)):
             candidates_nodes[i][2] = candidates_nodes[i][2] / range_closeness
@@ -300,10 +294,12 @@ class TPK3Algo:
 
         can_be_processed = 1 if self.simulator.params.network.nodes[node_id]['cap'] > demand else 0
         closeness = self.apsp_length[flow.current_node_id][node_id]
-        compound_path_length = (self.apsp_length[flow.current_node_id][node_id] + self.apsp_length[node_id][flow.egress_node_id])
+        compound_path_length = (
+                    self.apsp_length[flow.current_node_id][node_id] + self.apsp_length[node_id][flow.egress_node_id])
         remaining_cap = self.simulator.params.network.nodes[node_id]['remaining_cap']
         node_mortality = self.node_mortality[node_id]
-        return [node_id, can_be_processed, closeness, compound_path_length, remaining_cap, node_mortality, self.occupancy(node_id)]
+        return [node_id, can_be_processed, closeness, compound_path_length, remaining_cap, node_mortality,
+                self.occupancy(node_id)]
 
     def path_stats(self, node_a_id, node_b_id, flow):
         """
@@ -321,16 +317,12 @@ class TPK3Algo:
         path_occupancy = sum(map(self.occupancy, shortest_path))
         for i in range(len(shortest_path) - 1):
             i_1 = shortest_path[i]
-            i_2 = shortest_path[i+1]
+            i_2 = shortest_path[i + 1]
             cap = self.simulator.params.network[i_1][i_2]['cap']
             remaining_cap = self.simulator.params.network[i_1][i_2]['remaining_cap']
             sum_remaining_cap += remaining_cap
             sum_unavailable_links += 1 if (remaining_cap < flow.dr) else 0
 
-        if node_a_id == node_b_id:
-            avg_remaining_cap = self.max_link_cap
-        else:
-            avg_remaining_cap = (sum_remaining_cap / path_length)
         return [(node_a_id, node_b_id), path_length, sum_remaining_cap, sum_unavailable_links, path_occupancy]
 
     def try_set_new_path(self, flow):
@@ -375,7 +367,6 @@ class TPK3Algo:
             # yes => set forwarding rule
             state.flow_forwarding_rules[node_id][flow.flow_id] = next_neighbor_id
         else:
-            print('Alarm')
             # no => adapt path
             # remove all incident links which cannot be crossed
             for incident_edge in self.simulator.params.network.edges(node_id, data=True):
@@ -393,6 +384,7 @@ class TPK3Algo:
             except nx.NetworkXNoPath:
                 flow['state'] = 'drop'
                 flow['path'] = []
+            flow['blocked_links'] = []
 
     def post_forwarding(self, node_id, flow):
         """
@@ -427,7 +419,7 @@ class TPK3Algo:
         """
         <Callback>
         """
-        #self.simulator.write_state()
+        # self.simulator.write_state()
         state = self.simulator.get_state()
         log.warning(f'Network Stats after time: {state.simulation_time} /{state.network_stats} / '
                     f'{state.network["metrics"]}')
