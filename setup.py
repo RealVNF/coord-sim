@@ -30,7 +30,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=requirements + test_requirements,
-    test_requirements=test_requirements,
+    tests_require=test_requirements,
     zip_safe=False,
     entry_points={
         'console_scripts': [

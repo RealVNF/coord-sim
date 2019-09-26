@@ -139,11 +139,11 @@ class Simulator(SimulatorInterface):
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
-        max_node_usage_list = metrics.get_metrics()['run_max_node_usage']
+        max_node_usage = metrics.get_metrics()['run_max_node_usage']
         self.network_dict = {'nodes': [], 'edges': []}
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
-            run_max_node_usage = max_node_usage_list[node[0]]
+            run_max_node_usage = max_node_usage[node[0]]
             # 'used_resources' here is the max usage for the run.
             self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap,
                                                'used_resources': run_max_node_usage})
@@ -171,6 +171,7 @@ class Simulator(SimulatorInterface):
         stats = metrics.get_metrics()
         self.traffic = stats['run_total_requested_traffic']
         self.network_stats = {
+            'processed_traffic': stats['run_total_processed_traffic'],
             'total_flows': stats['generated_flows'],
             'successful_flows': stats['processed_flows'],
             'dropped_flows': stats['dropped_flows'],
@@ -178,5 +179,6 @@ class Simulator(SimulatorInterface):
             'avg_end2end_delay': stats['avg_end2end_delay'],
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
             'run_max_end2end_delay': stats['run_max_end2end_delay'],
+            'run_avg_path_delay': stats['run_avg_path_delay'],
             'run_total_processed_traffic': stats['run_total_processed_traffic']
         }
