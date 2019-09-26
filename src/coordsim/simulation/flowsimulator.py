@@ -222,6 +222,8 @@ class FlowSimulator:
                 self.params.network.nodes[current_node_id]['available_sf'][sf]['load'] += flow.dr
                 # Set remaining node capacity
                 self.params.network.nodes[current_node_id]['remaining_cap'] = node_cap - demanded_total_capacity
+                # Set max node usage
+                metrics.calc_max_node_usage(current_node_id, demanded_total_capacity)
                 # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
                 node_remaining_cap = self.params.network.nodes[current_node_id]["remaining_cap"]
 
