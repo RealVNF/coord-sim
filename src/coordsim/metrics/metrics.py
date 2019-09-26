@@ -51,6 +51,7 @@ def reset_run_metrics():
     metrics['run_max_end2end_delay'] = 0.0
     metrics['run_total_path_delay'] = 0
     # path delay averaged over all generated flows in the run
+    # not 100% accurate due to flows still in the network from previous runs
     metrics['run_avg_path_delay'] = 0
     metrics['run_generated_flows'] = 0
     metrics['run_in_network_flows'] = 0
