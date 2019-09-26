@@ -49,6 +49,7 @@ def reset_run_metrics():
     metrics['run_avg_end2end_delay'] = 0.0
     metrics['run_max_end2end_delay'] = 0.0
     metrics['run_processed_flows'] = 0
+    metrics['run_max_node_usage'] = defaultdict(float)
 
     # total requested traffic: increased whenever a flow is requesting processing before scheduling or processing
     metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
@@ -57,6 +58,14 @@ def reset_run_metrics():
     metrics['run_total_requested_traffic_node'] = defaultdict(float)
     # total processed traffic (aggregated data rate) per node per SF within one run
     metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
+
+
+def calc_max_node_usage(node_id, current_usage):
+    """
+    Calculate the run's max node usage
+    """
+    if current_usage > metrics['run_max_node_usage'][node_id]:
+        metrics['run_max_node_usage'][node_id] = current_usage
 
 
 def add_requesting_flow(flow):
