@@ -28,7 +28,6 @@ def reset_metrics():
 
     metrics['total_path_delay'] = 0.0
     metrics['num_path_delays'] = 0
-    metrics['run_num_path_delays'] = 0
     # avg path delay per used path, not per entire service chain
     metrics['avg_path_delay'] = 0.0
 
@@ -138,7 +137,8 @@ def add_path_delay(delay):
     # calc path delay per run; average over num generated flows in run
     metrics['run_num_path_delays'] += 1
     metrics['run_total_path_delay'] += delay
-
+    if metrics['run_generated_flows'] > 0:
+        metrics['run_avg_path_delay'] = metrics['run_total_path_delay'] / metrics['run_generated_flows']
 
 def add_end2end_delay(delay):
     metrics['total_end2end_delay'] += delay
@@ -163,9 +163,6 @@ def calc_avg_path_delay():
         metrics['avg_path_delay'] = metrics['total_path_delay'] / metrics['num_path_delays']
     else:
         metrics['avg_path_delay'] = 0
-
-    if metrics['run_num_path_delays'] > 0:
-        metrics['run_avg_path_delay'] = metrics['run_total_path_delay'] / metrics['run_generated_flows']
 
 
 def calc_avg_end2end_delay():
