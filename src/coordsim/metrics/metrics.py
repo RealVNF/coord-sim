@@ -136,7 +136,7 @@ def add_path_delay(delay):
 
     # calc path delay per run; average over num generated flows in run
     metrics['run_total_path_delay'] += delay
-    if metrics['run_processed_flows'] > 0:
+    if metrics['run_generated_flows'] > 0:
         metrics['run_avg_path_delay'] = metrics['run_total_path_delay'] / metrics['run_generated_flows']
 
 
