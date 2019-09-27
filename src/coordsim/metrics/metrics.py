@@ -140,6 +140,7 @@ def add_path_delay(delay):
     if metrics['run_generated_flows'] > 0:
         metrics['run_avg_path_delay'] = metrics['run_total_path_delay'] / metrics['run_generated_flows']
 
+
 def add_end2end_delay(delay):
     metrics['total_end2end_delay'] += delay
     metrics['run_end2end_delay'] += delay
