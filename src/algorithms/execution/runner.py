@@ -16,11 +16,13 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    param = sys.argv[1]
-    print(param)
-    with open(f't.yml', 'w') as outfile:
-        yaml.dump({'name': 'a'}, outfile)
+    scenario = sys.argv[1]
+    run = sys.argv[2]
+    network = sys.argv[3]
+    ingress = sys.argv[4]
+    algo = sys.argv[5]
 
+    print(f'{scenario}-{run}-{os.path.basename(network)}-{ingress}-{algo}')
 
 if __name__ == "__main__":
     main()
