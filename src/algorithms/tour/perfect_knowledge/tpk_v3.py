@@ -121,7 +121,7 @@ class TPK3Algo:
             demand, need_placement = Placement.calculate_demand(flow, flow.current_sf, exec_node['available_sf'],
                                                                 state.service_functions)
             if flow['target_node_id'] == exec_node_id:
-                if exec_node['capacity'] > demand:
+                if exec_node['capacity'] >= demand:
                     # process flow
                     if need_placement:
                         placement[exec_node_id].append(flow.current_sf)
@@ -164,12 +164,12 @@ class TPK3Algo:
         try:
             score_table = self.score(flow)
             #score_table = score_table[:self.avg_ceil_degree]
-            score_table = score_table[:1]
+            #score_table = score_table[:1]
             # Determine target node
-            sum_score = sum(map(lambda x: x[1], score_table))
-            p = list(map(lambda x: x[1] / sum_score, score_table))
-            target = np.random.choice(list(map(lambda x: x[0], score_table)), p=p)
-            # target = score_table[0][0]
+            #sum_score = sum(map(lambda x: x[1], score_table))
+            #p = list(map(lambda x: x[1] / sum_score, score_table))
+            #target = np.random.choice(list(map(lambda x: x[0], score_table)), p=p)
+            target = score_table[0][0]
             flow['target_node_id'] = target
             flow['state'] = 'transit'
         except NoCandidateException:
@@ -180,10 +180,14 @@ class TPK3Algo:
         exec_node_id = flow.current_node_id
         candidates_nodes = []
         candidates_path = []
+        rejected_nodes = []
+        rejected_path = []
 
         for n in state.network['node_list']:
-            candidates_nodes.append(self.node_stats(n, flow))
-            candidates_path.append(self.path_stats(flow.current_node_id, n, flow))
+            node_stats = self.node_stats(n, flow)
+            path_stats = self.path_stats(flow.current_node_id, n, flow)
+            candidates_nodes.append(node_stats)
+            candidates_path.append(path_stats)
 
         # Determine max min
         # Nodes
