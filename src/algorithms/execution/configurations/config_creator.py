@@ -12,7 +12,7 @@ def get_config(config_file):
 
 
 def write_config(file_name, config):
-    with open(f'{file_name}.yml', 'w') as outfile:
+    with open(f'{file_name}.yaml', 'w') as outfile:
         yaml.dump(config, outfile)
 
 
