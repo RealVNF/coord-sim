@@ -20,31 +20,38 @@ class ResultWriter():
         self.test_mode = test_mode
         if self.test_mode:
             now = dt.datetime.now()
-            self.result_path = f'{simulator_params["output_id"]}/results/' \
-                f'{os.path.basename(simulator_params["network"])}/' \
-                f'run_{now.strftime("%Y-%m-%d_%H-%M-%S")}'
-            "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
-            self.scheduling_file_name = f'{self.result_path}/scheduling_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
-            self.placement_file_name = f'{self.result_path}/placements_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
-            self.resources_file_name = f'{self.result_path}/resources_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
-            self.metrics_file_name = f'{self.result_path}/metrics_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+
+            self.result_path = simulator_params['output_path']
+            self.placement_file_name = f'{self.result_path}/placement.csv'
+            self.resources_file_name = f'{self.result_path}/resources.csv'
+            self.metrics_file_name = f'{self.result_path}/metrics.csv'
+
+            # self.result_path = f'{simulator_params["output_id"]}/results/' \
+            #     f'{os.path.basename(simulator_params["network"])}/' \
+            #     f'run_{now.strftime("%Y-%m-%d_%H-%M-%S")}'
+            # "placements_YYYY-MM-DD_hh-mm-ss_<seed>.csv"
+            # self.scheduling_file_name = f'{self.result_path}/scheduling_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            # self.placement_file_name = f'{self.result_path}/placements_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            # self.resources_file_name = f'{self.result_path}/resources_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+            # self.metrics_file_name = f'{self.result_path}/metrics_{now.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
 
             # Create the results directory if not exists
             os.makedirs(self.result_path, exist_ok=True)
 
             # Save configuration to reconstruct the parameters
-            with open(f'{self.result_path}/config__{now.strftime("%Y-%m-%d_%H-%M-%S")}.yml', 'w') as outfile:
-                yaml.dump(config, outfile, default_flow_style=False)
-                yaml.dump(simulator_params, outfile, default_flow_style=False)
+            #with open(f'{self.result_path}/config_{now.strftime("%Y-%m-%d_%H-%M-%S")}.yml', 'w') as outfile:
+            #with open(f'{self.result_path}/config_{now.strftime("%Y-%m-%d_%H-%M-%S")}.yml', 'w') as outfile:
+            #    yaml.dump(config, outfile, default_flow_style=False)
+            #    yaml.dump(simulator_params, outfile, default_flow_style=False)
 
-            self.placement_stream = open(self.placement_file_name, 'a+', newline='')
-            self.scheduling_stream = open(self.scheduling_file_name, 'a+', newline='')
-            self.resources_stream = open(self.resources_file_name, 'a+', newline='')
-            self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
+            self.placement_stream = open(self.placement_file_name, 'w', newline='')
+            # self.scheduling_stream = open(self.scheduling_file_name, 'a+', newline='')
+            self.resources_stream = open(self.resources_file_name, 'w', newline='')
+            self.metrics_stream = open(self.metrics_file_name, 'w', newline='')
 
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
-            self.scheduling_writer = csv.writer(self.scheduling_stream)
+            # self.scheduling_writer = csv.writer(self.scheduling_stream)
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
 
@@ -57,7 +64,7 @@ class ResultWriter():
         """
 
         # Create CSV headers
-        scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
+        # scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
         placement_output_header = ['time', 'node', 'sf']
         resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
         metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
@@ -65,7 +72,7 @@ class ResultWriter():
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
-        self.scheduling_writer.writerow(scheduling_output_header)
+        # self.scheduling_writer.writerow(scheduling_output_header)
         self.resources_writer.writerow(resources_output_header)
         self.metrics_writer.writerow(metrics_output_header)
 
@@ -93,13 +100,14 @@ class ResultWriter():
                             scheduling_output.append(scheduling_output_row)
 
             self.placement_writer.writerows(placement_output)
-            self.scheduling_writer.writerows(scheduling_output)
+            # self.scheduling_writer.writerows(scheduling_output)
 
     def write_state_results(self, env, state: SimulatorState):
         """
         Write node resource consumption to CSV file
         """
         if self.test_mode:
+            placement = state.placement
             network = state.network
             stats = state.network_stats
             time = env.now
@@ -115,6 +123,13 @@ class ResultWriter():
                 resource_output_row = [time, node_id, node_cap, used_resources]
                 resource_output.append(resource_output_row)
 
+            placement_output = []
+            for node_id, sfs in placement.items():
+                for sf in sfs:
+                    placement_output_row = [time, node_id, sf]
+                    placement_output.append(placement_output_row)
+
+            self.placement_writer.writerows(placement_output)
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
 
@@ -124,7 +139,7 @@ class ResultWriter():
         """
         if self.test_mode:
             self.placement_stream.close()
-            self.scheduling_stream.close()
+            # self.scheduling_stream.close()
             self.resources_stream.close()
             self.metrics_stream.close()
 

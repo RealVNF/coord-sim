@@ -79,13 +79,15 @@ class Simulator:
         self.start_time = 0
         self.test_mode = test_mode
 
-    def init(self, network_file, service_functions_file, config_file, seed, output_id, resource_functions_path="",
-             interception_callbacks={}) -> ExtendedSimulatorState:
+    def init(self, network_file, service_functions_file, config_file, seed, output_path,
+             resource_functions_path="", interception_callbacks={}) -> ExtendedSimulatorState:
         """
         Initialize the simulator with all necessary parameters. After this function call the simulation is ready
         to start. The initial state will be returned.
         """
         # First action shall be to set seeds for pseudorandom number generator
+        if interception_callbacks is None:
+            interception_callbacks = {}
         self.seed = seed
         random.seed(self.seed)
         numpy.random.seed(self.seed)
@@ -102,10 +104,10 @@ class Simulator:
         self.interception_callbacks = interception_callbacks
 
         # Create CSV writer, besides measurements save configuration and parameter
-        self.writer = ResultWriter(self.test_mode,self.config,
+        self.writer = ResultWriter(self.test_mode, self.config,
                                    {'network': network_file, 'service functions:': service_functions_file,
                                     'config': config_file, 'resource functions': resource_functions_path,
-                                    'seed': self.seed, 'output_id': output_id})
+                                    'seed': self.seed, 'output_path': output_path})
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
@@ -204,6 +206,8 @@ class Simulator:
 
     def write_state(self):
         state = self.get_state()
+        self.metrics.add_node_load(state.network['metrics']['network_node_load'])
+        self.metrics.add_link_load(state.network['metrics']['network_edge_load'])
         self.writer.write_state_results(self.env, state)
         return state
 
@@ -226,7 +230,7 @@ class Simulator:
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
         self.network_dict = {'nodes': {}, 'node_list': [], 'edges': [],
-                             'metrics': {'avg_network_node_load': 0, 'avg_network_edge_load': 0}}
+                             'metrics': {'network_node_load': 0.0, 'network_edge_load': 0.0}}
         network_node_load = 0
         network_node_cap = 0
         for node in self.params.network.nodes(data=True):
@@ -259,8 +263,8 @@ class Simulator:
             network_egde_cap += edge_dr
             network_egde_load += edge_used_dr
 
-        self.network_dict['metrics']['avg_network_node_load'] = network_node_load / network_node_cap
-        self.network_dict['metrics']['avg_network_edge_load'] = network_egde_load / network_egde_cap
+        self.network_dict['metrics']['network_node_load'] = network_node_load / network_node_cap
+        self.network_dict['metrics']['network_edge_load'] = network_egde_load / network_egde_cap
 
     def network_metrics(self):
         """

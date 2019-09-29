@@ -61,6 +61,13 @@ class MetricStore:
         self['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.int)))
         self['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(np.float64)))
 
+        self['total_node_load'] = 0.0
+        self['avg_node_load'] = 0.0
+        self['node_load_measurments'] = 0
+        self['total_link_load'] = 0.0
+        self['avg_link_load'] = 0.0
+        self['link_load_measurments'] = 0
+
         self['graveyard'] = defaultdict(int)
 
         # Record all flows, to access their trace
@@ -132,6 +139,14 @@ class MetricStore:
     def running_time(self, start_time, end_time):
         self['running_time'] = end_time - start_time
 
+    def add_node_load(self, load):
+        self['total_node_load'] += load
+        self['node_load_measurments'] += 1
+
+    def add_link_load(self, load):
+        self['total_link_load'] += load
+        self['link_load_measurments'] += 1
+
     def calc_avg_sf_processing_delay(self):
         if self['num_sf_processing_delays'] > 0:
             self['avg_sf_processing_delay'] = self['total_sf_processing_delay'] / self['num_sf_processing_delays']
@@ -191,6 +206,18 @@ class MetricStore:
         avg_path_delay = self['avg_path_delay']
         self['avg_total_delay'] = np.mean([avg_path_delay, avg_sf_processing_delay])
 
+    def calc_avg_node_load(self):
+        if self['node_load_measurments'] > 0:
+            self['avg_node_load'] = self['total_node_load'] / self['node_load_measurments']
+        else:
+            self['avg_node_load'] = np.Inf
+
+    def calc_avg_link_load(self):
+        if self['link_load_measurments'] > 0:
+            self['avg_link_load'] = self['total_link_load'] / self['link_load_measurments']
+        else:
+            self['avg_link_load'] = np.Inf
+
     def get_active_flows(self):
         return self['current_active_flows']
 
@@ -206,4 +233,7 @@ class MetricStore:
         self.calc_avg_path_delay()
         self.calc_avg_path_delay_of_processed_flows()
         self.calc_avg_ingress_2_egress_path_delay_of_processed_flows()
+
+        self.calc_avg_node_load()
+        self.calc_avg_link_load()
         return self.metric_dict

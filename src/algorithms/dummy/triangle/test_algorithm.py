@@ -119,20 +119,21 @@ class StaticTriangleAlgo:
 
 def main():
     # Simulator params
+    network = 'triangle.graphml'
     args = {
-        'network': '../../../../params/networks/triangle.graphml',
+        'network': f'../../../../params/networks/{network}',
         'service_functions': '../../../../params/services/abc.yaml',
         'resource_functions': '../../../../params/services/resource_functions',
         'config': '../../../../params/config/legacy_config.yaml',
         'seed': 9999,
-        'output_id': 'test-out'
+        'output_path': f'test-out/{network}'
     }
 
     # Setup logging
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    os.makedirs(f'{args["output_id"]}/logs/{os.path.basename(args["network"])}', exist_ok=True)
+    os.makedirs(f'{args["output_path"]}/logs', exist_ok=True)
     logging.basicConfig(filename=
-                        f'{args["output_id"]}/logs/{os.path.basename(args["network"])}/'
+                        f'{args["output_path"]}/logs/'
                         f'{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
                         level=logging.INFO)
     logging.getLogger('coordsim').setLevel(logging.INFO)
@@ -144,7 +145,7 @@ def main():
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
               args['seed'],
-              args['output_id'],
+              args['output_path'],
               resource_functions_path=os.path.abspath(args['resource_functions']))
     # Execute orchestrated simulation
     algo.run()

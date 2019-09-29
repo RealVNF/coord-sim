@@ -30,9 +30,9 @@ class G1Algo:
         # Custom metrics
         self.metrics = CustomMetrics()
 
-    def init(self, network_path, service_functions_path, config_path, seed, output_id, resource_functions_path=""):
+    def init(self, network_path, service_functions_path, config_path, seed, output_path, resource_functions_path=""):
         init_state = \
-            self.simulator.init(network_path, service_functions_path, config_path, seed, output_id,
+            self.simulator.init(network_path, service_functions_path, config_path, seed, output_path,
                                 resource_functions_path=resource_functions_path,
                                 interception_callbacks=
                                 {'pass_flow': self.pass_flow,
@@ -56,6 +56,7 @@ class G1Algo:
         log.info(f'Start simulation at: {datetime.now().strftime("%H-%M-%S")}')
         self.simulator.run()
         log.info(f'End simulation at: {datetime.now().strftime("%H-%M-%S")}')
+        self.simulator.write_state()
         log.info(f'Network Stats after run(): {self.simulator.get_state().network_stats}')
 
     def init_flow(self, flow):
@@ -233,8 +234,8 @@ class G1Algo:
         <Callback>
         Called periodically to capture the simulator state.
         """
-        #self.simulator.write_state()
-        state = self.simulator.get_state()
+        state = self.simulator.write_state()
+        # state = self.simulator.get_state()
 
         log.warning(f'Network Stats after time: {state.simulation_time} / 'f'{state.network_stats} / '
                     f' {self.metrics.get_metrics()} / {state.network["metrics"]}')
@@ -276,21 +277,21 @@ class G1Algo:
 
 def main():
     # Simulator params
+    network = 'dfn_58.graphml'
     args = {
-        'network': '../../../params/networks/dfn_58.graphml',
-        'service_functions': '../../../params/services/abc.yaml',
+        'network': f'../../../params/networks/{network}',
+        'service_functions': '../../../params/services/3sfcs.yaml',
         'resource_functions': '../../../params/services/resource_functions',
         'config': '../../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999,
-        'output_id': 'g1-out'
+        'output_path': f'g1-out/{network}'
     }
 
     # Setup logging
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    os.makedirs(f'{args["output_id"]}/logs/{os.path.basename(args["network"])}', exist_ok=True)
+    os.makedirs(f'{args["output_path"]}/logs', exist_ok=True)
     logging.basicConfig(filename=
-                        f'{args["output_id"]}/logs/{os.path.basename(args["network"])}/'
-                        f'{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
+                        f'{args["output_path"]}/logs/{os.path.basename(args["network"])}_{timestamp}_{args["seed"]}.log',
                         level=logging.INFO)
     logging.getLogger('coordsim').setLevel(logging.ERROR)
     logging.getLogger('coordsim.reader').setLevel(logging.INFO)
@@ -302,7 +303,7 @@ def main():
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
               args['seed'],
-              args['output_id'],
+              args['output_path'],
               resource_functions_path=os.path.abspath(args['resource_functions']))
     # Execute orchestrated simulation
     algo.run()

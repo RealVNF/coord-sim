@@ -1,14 +1,10 @@
 import logging
 import os
 
-import random
-import networkx as nx
-import numpy as np
+
 from datetime import datetime
-from collections import defaultdict
-from siminterface.simulator import ExtendedSimulatorAction
 from siminterface.simulator import Simulator
-from algorithms.greedy.g1 import G1Algo
+from algorithms.greedy.gpasp import GPASPAlgo
 
 import sys
 import yaml
@@ -25,14 +21,38 @@ def main():
     ingress = sys.argv[4]
     algo = sys.argv[5]
 
-    result_path = f'scenarios/{scenario}/{run}/{network}/{ingress}/{algo}'
-    os.makedirs(result_path, exist_ok=True)
+    args = {
+        'network': network_path,
+        'service_functions': '../../../params/services/3sfcs.yaml',
+        'resource_functions': '../../../params/services/resource_functions',
+        'config': f'configurations/{scenario}_{ingress}.yaml',
+        'seed': int(run),
+        'output_path': f'scenarios/{scenario}/{run}/{network}/{ingress}/{algo}'
+    }
 
-    with open(f'{result_path}/out.csv', 'w') as outfile:
-        writer = csv.writer(outfile)
-        writer.writerow([1, 2, 3, 4, 5, 6])
+    os.makedirs(args['output_path'], exist_ok=True)
 
+    logging.getLogger('coordsim').setLevel(logging.CRITICAL)
+    logging.getLogger('coordsim.reader').setLevel(logging.CRITICAL)
+
+    simulator = Simulator(test_mode=True)
+
+    # Setup algorithm
+    algo = GPASPAlgo(simulator)
+    algo.init(os.path.abspath(args['network']),
+              os.path.abspath(args['service_functions']),
+              os.path.abspath(args['config']),
+              args['seed'],
+              args['output_path'],
+              resource_functions_path=os.path.abspath(args['resource_functions']))
+    # Execute orchestrated simulation
+    algo.run()
     print(f'{scenario}-{run}-{os.path.basename(network)}-{ingress}-{algo}')
+
+    # with open(f'{result_path}/out.csv', 'w') as outfile:
+    #     writer = csv.writer(outfile)
+    #     writer.writerow([1+int(run), 2+int(run), 3+int(run), 4+int(run), 5+int(run), 6+int(run)])
+
 
 if __name__ == "__main__":
     main()
