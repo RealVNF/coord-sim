@@ -20,6 +20,7 @@ def write_config(file_name, config):
 def main():
     base_config_file = '../../../../params/config/probabilistic_discrete_config.yaml'
     base_config = get_config(os.path.abspath(base_config_file))
+    os.makedirs('configurations/')
 
     ingress_percentage = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
 
