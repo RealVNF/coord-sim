@@ -16,7 +16,13 @@ class NoCandidateException(Exception):
     pass
 
 
-class SPRAlgo:
+class SPR1Algo:
+    """
+    SPR base algorithm
+    Score: closeness + compound path length + remaining node cap + unavailable links + remaining path cap
+    Node cap requirement: soft
+    Blocked links: only for each forwarding operation
+    """
     def __init__(self, simulator: Simulator):
         # Besides interaction we need the simulator reference to query all needed information. Not all information can
         # conveniently put into the simulator state, nevertheless it is justified that the algorithm can access these.
@@ -116,7 +122,6 @@ class SPRAlgo:
                     if need_placement:
                         placement[exec_node_id].append(flow.current_sf)
                     processing_rules[exec_node_id][flow.flow_id] = [flow.current_sf]
-                    # flow['state'] = 'processing'
                 else:
                     try:
                         self.plan_placement(flow)
