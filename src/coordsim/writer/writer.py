@@ -67,8 +67,13 @@ class ResultWriter():
         # scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
         placement_output_header = ['time', 'node', 'sf']
         resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
+        # metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
+        #                          'avg_end_2_end_delay']
         metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
-                                 'avg_end_2_end_delay']
+                                 'avg_end2end_delay_of_dropped_flows', 'avg_end2end_delay_of_processed_flows',
+                                 'avg_sf_processing_delay', 'avg_sfc_length', 'avg_crossed_link_delay',
+                                 'avg_path_delay', 'avg_path_delay_of_processed_flows',
+                                 'avg_ingress_2_egress_path_delay_of_processed_flows', 'avg_node_load', 'avg_link_load']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -113,7 +118,12 @@ class ResultWriter():
             time = env.now
 
             metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
-                              stats['in_network_flows'], stats['avg_end2end_delay_of_dropped_flows']]
+                              stats['in_network_flows'], stats['avg_end2end_delay_of_dropped_flows'],
+                              stats['avg_end2end_delay_of_processed_flows'], stats['avg_sf_processing_delay'],
+                              stats['avg_sfc_length'], stats['avg_crossed_link_delay'], stats['avg_path_delay'],
+                              stats['avg_path_delay_of_processed_flows'],
+                              stats['avg_ingress_2_egress_path_delay_of_processed_flows'], stats['avg_node_load'],
+                              stats['avg_link_load']]
 
             resource_output = []
             for key, node in network['nodes'].items():

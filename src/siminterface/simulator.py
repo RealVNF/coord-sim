@@ -206,8 +206,6 @@ class Simulator:
 
     def write_state(self):
         state = self.get_state()
-        self.metrics.add_node_load(state.network['metrics']['network_node_load'])
-        self.metrics.add_link_load(state.network['metrics']['network_edge_load'])
         self.writer.write_state_results(self.env, state)
         return state
 
@@ -265,6 +263,8 @@ class Simulator:
 
         self.network_dict['metrics']['network_node_load'] = network_node_load / network_node_cap
         self.network_dict['metrics']['network_edge_load'] = network_egde_load / network_egde_cap
+        self.metrics.add_node_load(self.network_dict['metrics']['network_node_load'])
+        self.metrics.add_link_load(self.network_dict['metrics']['network_edge_load'])
 
     def network_metrics(self):
         """
@@ -284,5 +284,7 @@ class Simulator:
             'avg_crossed_link_delay': stats['avg_crossed_link_delay'],
             'avg_path_delay': stats['avg_path_delay'],
             'avg_path_delay_of_processed_flows': stats['avg_path_delay_of_processed_flows'],
-            'avg_ingress_2_egress_path_delay_of_processed_flows': stats['avg_ingress_2_egress_path_delay_of_processed_flows']
+            'avg_ingress_2_egress_path_delay_of_processed_flows': stats['avg_ingress_2_egress_path_delay_of_processed_flows'],
+            'avg_node_load' : stats['avg_node_load'],
+            'avg_link_load' : stats['avg_link_load'],
         }

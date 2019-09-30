@@ -93,7 +93,7 @@ class G1Algo:
         node = state.network['nodes'][node_id]
         # Algorithm management
         new_target = False
-        # Metric managment
+        # Metric management
         self.metrics['node_visit'][node_id] += 1
 
         # Is flow processed?
@@ -172,7 +172,7 @@ class G1Algo:
         edge = self.simulator.params.network[node_id][next_neighbor_id]
 
         # Can forward?
-        if (edge['remaining_cap'] >= flow.dr):
+        if edge['remaining_cap'] >= flow.dr:
             # yes => set forwarding rule
             state.flow_forwarding_rules[node_id][flow.flow_id] = next_neighbor_id
         else:
@@ -216,27 +216,12 @@ class G1Algo:
                 self.network_copy.add_edge(link[0], link[1], **link.attributes)
             assert self.network_copy.number_of_edges() == self.simulator.params.network.number_of_edges(), 'Post edge count mismatch with internal state!'
 
-    def calculate_demand(self, flow, state) -> float:
-        """
-        Calculate the demanded capacity when the flow is processed at this node
-        """
-        demanded_total_capacity = 0.0
-        for sf_i, sf_data in state.network['nodes'][flow.current_node_id]['available_sf'].items():
-            if flow.current_sf == sf_i:
-                # Include flows data rate in requested sf capacity calculation
-                demanded_total_capacity += state.service_functions[sf_i]['resource_function'](sf_data['load'] + flow.dr)
-            else:
-                demanded_total_capacity += state.service_functions[sf_i]['resource_function'](sf_data['load'])
-        return demanded_total_capacity
-
     def periodic_measurement(self):
         """
         <Callback>
         Called periodically to capture the simulator state.
         """
         state = self.simulator.write_state()
-        # state = self.simulator.get_state()
-
         log.warning(f'Network Stats after time: {state.simulation_time} / 'f'{state.network_stats} / '
                     f' {self.metrics.get_metrics()} / {state.network["metrics"]}')
 

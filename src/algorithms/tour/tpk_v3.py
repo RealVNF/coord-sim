@@ -23,6 +23,9 @@ class NoCandidateException(Exception):
 
 
 class TPK3Algo:
+    """
+    SPR base test algorithm
+    """
     def __init__(self, simulator: Simulator):
         # Besides interaction we need the simulator reference to query all needed information. Not all information can
         # conveniently put into the simulator state, nevertheless it is justified that the algorithm can access these.
@@ -126,7 +129,6 @@ class TPK3Algo:
                     if need_placement:
                         placement[exec_node_id].append(flow.current_sf)
                     processing_rules[exec_node_id][flow.flow_id] = [flow.current_sf]
-                    # flow['state'] = 'processing'
                 else:
                     try:
                         self.plan_placement(flow)
