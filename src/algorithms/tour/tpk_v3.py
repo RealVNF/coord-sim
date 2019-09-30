@@ -78,6 +78,7 @@ class TPK3Algo:
         log.info(f'Start simulation at: {datetime.now().strftime("%H-%M-%S")}')
         self.simulator.run()
         log.info(f'End simulation at: {datetime.now().strftime("%H-%M-%S")}')
+        self.simulator.write_state()
         log.info(f'Network Stats after run(): {self.simulator.get_state().network_stats}')
 
     def init_flow(self, flow):
@@ -131,13 +132,13 @@ class TPK3Algo:
                     processing_rules[exec_node_id][flow.flow_id] = [flow.current_sf]
                 else:
                     try:
-                        self.plan_placement(flow)
+                        self.plan_placement(flow, exclude=[flow.current_node_id])
                         assert flow['target_node_id'] != exec_node_id, \
                             'Flow cannot be processed here, why does it stay?'
                         flow['blocked_links'] = []
                         self.set_new_path(flow)
                         self.forward_flow(flow, state)
-                    except:
+                    except (NoCandidateException, nx.NetworkXNoPath) as e:
                         flow['state'] = 'drop'
                         flow['path'] = []
             else:
@@ -145,7 +146,7 @@ class TPK3Algo:
                     # self.plan_placement(flow)
                     # self.set_new_path(flow)
                     self.forward_flow(flow, state)
-                except:
+                except nx.NetworkXNoPath:
                     flow['state'] = 'drop'
                     flow['path'] = []
 
@@ -162,9 +163,9 @@ class TPK3Algo:
 
         self.simulator.apply(state.derive_action())
 
-    def plan_placement(self, flow):
+    def plan_placement(self, flow, exclude=[]):
         try:
-            score_table = self.score(flow)
+            score_table = self.score(flow, exclude)
             #score_table = score_table[:self.avg_ceil_degree]
             #score_table = score_table[:1]
             # Determine target node
@@ -177,7 +178,7 @@ class TPK3Algo:
         except NoCandidateException:
             raise
 
-    def score(self, flow):
+    def score(self, flow, exclude=[]):
         state = self.simulator.get_state()
         exec_node_id = flow.current_node_id
         candidates_nodes = []
@@ -186,10 +187,11 @@ class TPK3Algo:
         rejected_path = []
 
         for n in state.network['node_list']:
-            node_stats = self.node_stats(n, flow)
-            path_stats = self.path_stats(flow.current_node_id, n, flow)
-            candidates_nodes.append(node_stats)
-            candidates_path.append(path_stats)
+            if n not in exclude:
+                node_stats = self.node_stats(n, flow)
+                path_stats = self.path_stats(flow.current_node_id, n, flow)
+                candidates_nodes.append(node_stats)
+                candidates_path.append(path_stats)
 
         # Determine max min
         # Nodes

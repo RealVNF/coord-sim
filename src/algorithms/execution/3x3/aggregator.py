@@ -2,7 +2,7 @@ import csv
 import os
 
 scenarios = ['llc', 'lnc', 'hc']
-runs = 2
+runs = ['0']
 networks = ['net_x', 'dfn_58.graphml', 'intellifiber_73.graphml']
 ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
 algos = ['g1', 'spr1', 'spr2']
@@ -13,22 +13,28 @@ metrics_id = {0: 'ab', 1: 'cd', 2: 'ef', 3: 'gh', 4: 'ij', 5: 'kl'}
 def read_output_file(path):
     with open(path) as csvfile:
         filereader = csv.reader(csvfile)
+        content = []
         for row in filereader:
-            return row
+            content.append(row)
+        return content
+
+
+def get_last_row(content):
+    return content[-1]
 
 
 def collect_data():
     data = {}
     for s in scenarios:
         data[s] = {}
-        for r in range(runs):
+        for r in runs:
             data[s][r] = {}
             for net in networks:
                 data[s][r][net] = {}
                 for ing in ingress:
                     data[s][r][net][ing] = {}
                     for a in algos:
-                        data[s][r][net][ing][a] = read_output_file(f'scenarios/{s}/{r}/{net}/{ing}/{a}/out.csv')
+                        data[s][r][net][ing][a] = get_last_row(read_output_file(f'scenarios/{s}/{r}/{net}/{ing}/{a}/out.csv'))
     return data
 
 
@@ -44,9 +50,9 @@ def avgerage_data(data):
                     avg_data[s][net][ing][a] = []
                     for m in metrics:
                         sum = 0
-                        for r in range(runs):
+                        for r in runs:
                             sum += int(data[s][r][net][ing][a][m])
-                        avg_data[s][net][ing][a].append(sum / runs)
+                        avg_data[s][net][ing][a].append(sum / len(runs))
     return avg_data
 
 
