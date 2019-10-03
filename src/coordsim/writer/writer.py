@@ -117,7 +117,7 @@ class ResultWriter():
             stats = state.network_stats
             time = env.now
 
-            metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
+            metrics_output = [int(time), stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
                               stats['in_network_flows'], stats['avg_end2end_delay_of_dropped_flows'],
                               stats['avg_end2end_delay_of_processed_flows'], stats['avg_sf_processing_delay'],
                               stats['avg_sfc_length'], stats['avg_crossed_link_delay'], stats['avg_path_delay'],
