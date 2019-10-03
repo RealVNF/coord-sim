@@ -14,8 +14,6 @@ __pycache__/
 # Result files
 results/
 configurations/
-dfn_58.graphml/
-intellifiber_73.graphml/
 
 
 # Distribution / packaging
