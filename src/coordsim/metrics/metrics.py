@@ -151,39 +151,39 @@ class MetricStore:
         if self['num_sf_processing_delays'] > 0:
             self['avg_sf_processing_delay'] = self['total_sf_processing_delay'] / self['num_sf_processing_delays']
         else:
-            self['avg_sf_processing_delay'] = np.Inf
+            self['avg_sf_processing_delay'] = 0
 
     def calc_avg_sfc_length(self):
         if self['generated_flows'] > 0:
             self['avg_sfc_length'] = self['total_sfc_length'] / self['generated_flows']
         else:
-            self['avg_sfc_length'] = np.Inf
+            self['avg_sfc_length'] = 0
 
     def avg_crossed_link_delay(self):
         if self['num_crossed_links'] > 0:
             self['avg_crossed_link_delay'] = self['total_crossed_link_delay'] / self['num_crossed_links']
         else:
-            self['avg_crossed_link_delay'] = np.Inf
+            self['avg_crossed_link_delay'] = 0
 
     def calc_avg_path_delay(self):
         if self['generated_flows'] > 0:
             self['avg_path_delay'] = self['total_path_delay'] / self['generated_flows']
         else:
-            self['avg_path_delay'] = np.Inf
+            self['avg_path_delay'] = 0
 
     def calc_avg_path_delay_of_processed_flows(self):
         if self['processed_flows'] > 0:
             self['avg_path_delay_of_processed_flows'] = self['total_path_delay_of_processed_flows'] / self[
                 'processed_flows']
         else:
-            self['avg_path_delay_of_processed_flows'] = np.Inf
+            self['avg_path_delay_of_processed_flows'] = 0
 
     def calc_avg_ingress_2_egress_path_delay_of_processed_flows(self):
         if self['processed_flows'] > 0:
             self['avg_ingress_2_egress_path_delay_of_processed_flows'] = \
                 self['total_ingress_2_egress_path_delay_of_processed_flows'] / self['processed_flows']
         else:
-            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = np.Inf
+            self['avg_ingress_2_egress_path_delay_of_processed_flows'] = 0
 
     def calc_avg_end2end_delay_of_dropped_flows(self):
         # We devide by number of processed flows to get end2end delays for processed flows only
@@ -191,7 +191,7 @@ class MetricStore:
             self['avg_end2end_delay_of_dropped_flows'] = self['total_end2end_delay_of_dropped_flows'] \
                                                          / self['dropped_flows']
         else:
-            self['avg_end2end_delay_of_dropped_flows'] = np.Inf  # No avg end2end delay yet (no dropped flows yet)
+            self['avg_end2end_delay_of_dropped_flows'] = 0  # No avg end2end delay yet (no dropped flows yet)
 
     def calc_avg_end2end_delay_of_processed_flows(self):
         # We devide by number of processed flows to get end2end delays for processed flows only
@@ -199,7 +199,7 @@ class MetricStore:
             self['avg_end2end_delay_of_processed_flows'] = self['total_end2end_delay_of_processed_flows'] \
                                                            / self['processed_flows']
         else:
-            self['avg_end2end_delay_of_processed_flows'] = np.Inf  # No avg end2end delay yet (no processed flows yet)
+            self['avg_end2end_delay_of_processed_flows'] = 0  # No avg end2end delay yet (no processed flows yet)
 
     def calc_avg_total_delay(self):
         avg_sf_processing_delay = self['avg_sf_processing_delay']
@@ -210,13 +210,13 @@ class MetricStore:
         if self['node_load_measurments'] > 0:
             self['avg_node_load'] = self['total_node_load'] / self['node_load_measurments']
         else:
-            self['avg_node_load'] = np.Inf
+            self['avg_node_load'] = 0
 
     def calc_avg_link_load(self):
         if self['link_load_measurments'] > 0:
             self['avg_link_load'] = self['total_link_load'] / self['link_load_measurments']
         else:
-            self['avg_link_load'] = np.Inf
+            self['avg_link_load'] = 0
 
     def get_active_flows(self):
         return self['current_active_flows']
