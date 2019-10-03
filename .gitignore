@@ -14,7 +14,6 @@ __pycache__/
 # Result files
 results/
 configurations/
-scenarios/
 dfn_58.graphml/
 intellifiber_73.graphml/
 
