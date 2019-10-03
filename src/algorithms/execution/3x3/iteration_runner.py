@@ -1,16 +1,11 @@
+import sys
 import logging
 import os
 
-
-from datetime import datetime
 from siminterface.simulator import Simulator
 from algorithms.greedy.gpasp import GPASPAlgo
 from algorithms.tour.spr1 import SPR1Algo
 from algorithms.tour.spr2 import SPR2Algo
-
-import sys
-import yaml
-import csv
 
 log = logging.getLogger(__name__)
 

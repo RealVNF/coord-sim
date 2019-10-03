@@ -3,9 +3,16 @@ import os
 
 scenarios = ['llc', 'lnc', 'hc']
 runs = ['0']
-networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
-ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
-algos = ['g1', 'spr1', 'spr2']
+# networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
+networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
+# ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
+ingress = ['0.1', '0.2', '0.3', '0.4', '0.5']
+algos = ['gpasp', 'spr1', 'spr2']
+
+metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
+               'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
+                         'avg_end2end_delay_of_processed_flows'],
+               'load': ['avg_node_load', 'avg_link_load']}
 
 metrics2index = {'time': 0,
                  'total_flows': 1,
@@ -66,7 +73,7 @@ def collect_data():
                     data[s][r][net][ing] = {}
                     for a in algos:
                         data[s][r][net][ing][a] = get_last_row(
-                            read_output_file(f'scenarios/{s}/{r}/{net}/{ing}/{a}/out.csv'))
+                            read_output_file(f'scenarios/{s}/{r}/{net}/{ing}/{a}/metrics.csv'))
     return data
 
 
@@ -83,28 +90,30 @@ def average_data(data):
                     for m in range(15):
                         sum = 0
                         for r in runs:
-                            sum += int(data[s][r][net][ing][a][m])
+                            sum += float(data[s][r][net][ing][a][m])
                         avg_data[s][net][ing][a].append(sum / len(runs))
     return avg_data
 
 
 def transform_data(data, metric_set, metric_set_id):
-    os.makedirs(f'transformed/{metric_set_id}', exist_ok=False)
-
     for s in scenarios:
         for net in networks:
-            for a in algos:
-                for ing in ingress:
-                    with open(f'transformed/{metric_set_id}/{s}/{net}/t-metrics.csv', 'a+') as csvfile:
+            os.makedirs(f'transformed/{s}/{net}/{metric_set_id}/', exist_ok=True)
+            with open(f'transformed/{s}/{net}/{metric_set_id}/t-metrics.csv', 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                for a in algos:
+                    for ing in ingress:
                         for m in metric_set:
-                            row = [ing, data[s][net][ing][a][metrics2index[m]], f'{a}-{m}']
-                            writer = csv.writer(row)
+                            # x(ing), y(value), hue(metric), style(algo)
+                            row = [ing, data[s][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
+                            writer.writerow(row)
 
 
 def main():
     data = collect_data()
     avg_data = average_data(data)
-    transform_data(avg_data, ['total_flows', 'successful_flows'], 'flows')
+    for key, value in metric_sets.items():
+        transform_data(avg_data, value, key)
     print('')
 
 
