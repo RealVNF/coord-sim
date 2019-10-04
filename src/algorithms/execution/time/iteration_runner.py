@@ -1,7 +1,5 @@
 import logging
 import os
-
-
 from datetime import datetime
 from siminterface.simulator import Simulator
 from algorithms.greedy.gpasp import GPASPAlgo

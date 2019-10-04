@@ -53,10 +53,6 @@ def main():
     algo.run()
     print(f'{scenario}-{run}-{os.path.basename(network)}-{ingress}-{algo_id}')
 
-    # with open(f'{result_path}/out.csv', 'w') as outfile:
-    #     writer = csv.writer(outfile)
-    #     writer.writerow([1+int(run), 2+int(run), 3+int(run), 4+int(run), 5+int(run), 6+int(run)])
-
 
 if __name__ == "__main__":
     main()

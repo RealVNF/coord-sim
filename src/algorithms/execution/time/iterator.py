@@ -4,7 +4,7 @@ from datetime import timedelta
 
 def main():
 	config = ['c1']
-	runs = ['0']
+	runs = [str(x) for x in range(10)]
 	networks = ['../../../../params/networks/dfn_58.graphml']
 	algos = ['gpasp', 'spr1', 'spr2']
 
@@ -14,7 +14,7 @@ def main():
 			for net in networks:
 				processes = []
 				for a in algos:
-					processes.append(subprocess.Popen(['python', "runner.py", c, r, net, a]))
+					processes.append(subprocess.Popen(['E:/Paderborn/Bachelorarbeit/Code_working/adapted_simulator/env/Scripts/python', 'iteration_runner.py', c, r, net, a]))
 				for p in processes:
 					p.wait()
 	end = timer()

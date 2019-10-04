@@ -26,9 +26,9 @@ def get_data(data_path, metric_set_id):
         for row in reader:
             table.append(row)
 
-    data = {'Ingress node %': [], pp_yaxis[metric_set_id]: [], 'Metrics': [], 'Algorithms': []}
+    data = {'Time': [], pp_yaxis[metric_set_id]: [], 'Metrics': [], 'Algorithms': []}
     for row in table:
-        data['Ingress node %'].append(float(row[0]))
+        data['Time'].append(float(row[0]))
         data[pp_yaxis[metric_set_id]].append(float(row[1]))
         data['Metrics'].append(pp_metrics[row[2]])
         data['Algorithms'].append(pp_algo[row[3]])
@@ -48,7 +48,7 @@ def main():
 
     data = get_data(f'{input_path}/t-metrics.csv', metric_set_id)
     df = pd.DataFrame(data=data)
-    sns_plot = sns.lineplot(x='Ingress node %', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
+    sns_plot = sns.lineplot(x='Time', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
                             data=df)
     sns_plot.set_title(f'{pp_network[network]}')
 
