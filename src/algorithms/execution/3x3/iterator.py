@@ -15,6 +15,14 @@ import json
 #                 for p in processes:
 #                     p.wait()
 
+
+def sec2str(s):
+    days, dr = divmod(s, 60*60*24)
+    hours, hr = divmod(dr, 3600)
+    minutes, seconds = divmod(hr, 60)
+    return f'{int(days)}:{int(hours)}:{int(minutes)}:{int(seconds)}'
+
+
 def main():
     scenarios = ['llc', 'lnc', 'hc']
     runs = ['0']
@@ -45,15 +53,15 @@ def main():
                     for p in processes:
                         p.wait()
                     i_end = timer()
-                    time_ing_dict[s][r][os.path.basename(net)][ing] = str(timedelta(i_end - i_start))
+                    time_ing_dict[s][r][os.path.basename(net)][ing] = sec2str(timedelta(i_end - i_start).seconds)
                 net_end = timer()
-                time_net_dict[s][r][os.path.basename(net)] = str(timedelta(net_end - net_start))
+                time_net_dict[s][r][os.path.basename(net)] = sec2str(timedelta(net_end - net_start).seconds)
             run_end= timer()
-            time_run_dict[s][r] = str(timedelta(run_end - run_start))
+            time_run_dict[s][r] = sec2str(timedelta(run_end - run_start).seconds)
         s_end = timer()
-        time_sce_dict[s] = str(timedelta(s_end - s_start))
+        time_sce_dict[s] = sec2str(timedelta(s_end - s_start).seconds)
     total_end = timer()
-    time_tot_dict['total'] = str(timedelta(total_end - total_start))
+    time_tot_dict['total'] = sec2str(timedelta(total_end - total_start).seconds)
 
     with open('time/total.json', 'w') as file:
         json.dump(time_tot_dict, file)
