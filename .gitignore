@@ -13,10 +13,17 @@ __pycache__/
 
 # Result files
 results/
-configurations/
 *.csv
-*.png
+
+# Generated configurations
+configurations/
 *.yml
+
+# Plotted charts
+plotted/
+
+# Internal readme
+README_.md
 
 # Distribution / packaging
 .Python
