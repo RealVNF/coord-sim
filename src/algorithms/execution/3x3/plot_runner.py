@@ -52,7 +52,10 @@ def main():
                             data=df)
     sns_plot.set_title(f'{pp_network[network]}')
 
-    sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # Place legend on the right side
+    #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
+    # Place legend below
+    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow = True, ncol = 2)
 
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
