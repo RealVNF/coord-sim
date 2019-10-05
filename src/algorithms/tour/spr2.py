@@ -86,7 +86,6 @@ class SPR2Algo:
         except NoCandidateException:
             flow['state'] = 'drop'
             flow['path'] = []
-            print('No candidate')
 
     def pass_flow(self, flow):
         """
