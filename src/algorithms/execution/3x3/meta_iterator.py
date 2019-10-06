@@ -1,9 +1,10 @@
+import sys
 import subprocess
 
 
 def main():
-    v = 'link_weight'
-    runs = ['0', '1', '2']
+    v = sys.argv[1]
+    runs = ['0', '1']
 
     processes = []
     for r in runs:
