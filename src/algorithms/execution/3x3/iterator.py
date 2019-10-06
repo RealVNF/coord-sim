@@ -1,3 +1,4 @@
+import sys
 import subprocess
 from datetime import timedelta
 from timeit import default_timer as timer
@@ -25,7 +26,7 @@ def sec2str(s):
 
 def main():
     scenarios = ['llc', 'lnc', 'hc']
-    runs = ['0']
+    runs = [sys.argv[1]]
     networks = ['../../../../params/networks/bics_34.graphml', '../../../../params/networks/dfn_58.graphml',
                 '../../../../params/networks/intellifiber_73.graphml']
     ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
@@ -63,16 +64,16 @@ def main():
     total_end = timer()
     time_tot_dict['total'] = sec2str(timedelta(total_end - total_start).seconds)
 
-    with open('time/total.json', 'w') as file:
-        json.dump(time_tot_dict, file)
-    with open('time/scenarios.json', 'w') as file:
-        json.dump(time_sce_dict, file)
-    with open('time/runs.json', 'w') as file:
-        json.dump(time_run_dict, file)
-    with open('time/networks.json', 'w') as file:
-        json.dump(time_net_dict, file)
-    with open('time/ing.json', 'w') as file:
-        json.dump(time_ing_dict, file)
+    # with open('time/total.json', 'w') as file:
+    #     json.dump(time_tot_dict, file)
+    # with open('time/scenarios.json', 'w') as file:
+    #     json.dump(time_sce_dict, file)
+    # with open('time/runs.json', 'w') as file:
+    #     json.dump(time_run_dict, file)
+    # with open('time/networks.json', 'w') as file:
+    #     json.dump(time_net_dict, file)
+    # with open('time/ing.json', 'w') as file:
+    #     json.dump(time_ing_dict, file)
 
 
 if __name__ == "__main__":
