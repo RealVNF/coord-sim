@@ -16,9 +16,6 @@ results/
 scenarios/
 *.csv
 
-# Tome measurements
-time/
-
 # Generated configurations
 configurations/
 *.yml
