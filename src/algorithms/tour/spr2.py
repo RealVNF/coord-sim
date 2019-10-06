@@ -50,8 +50,8 @@ class SPR2Algo:
         self.avg_ceil_degree = int(math.ceil(sum_of_degrees / len(self.network_copy)))
 
         # All pairs shortest path calculations
-        self.apsp = dict(nx.all_pairs_dijkstra_path(self.network_copy))
-        self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy))
+        self.apsp = dict(nx.all_pairs_dijkstra_path(self.network_copy, weight='delay'))
+        self.apsp_length = dict(nx.all_pairs_dijkstra_path_length(self.network_copy, weight='delay'))
 
         # Record how often a flow was passed to a node, used to calculate score
         self.node_mortality = defaultdict(int)
@@ -342,7 +342,7 @@ class SPR2Algo:
         for link in flow['blocked_links']:
             self.network_copy.remove_edge(link[0], link[1])
         try:
-            shortest_path = nx.shortest_path(self.network_copy, flow.current_node_id, flow['target_node_id'])
+            shortest_path = nx.shortest_path(self.network_copy, flow.current_node_id, flow['target_node_id'], weight='delay')
             # Remove first node, as it is corresponds to the current node
             shortest_path.pop(0)
             flow['path'] = shortest_path
