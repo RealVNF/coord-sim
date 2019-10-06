@@ -2,11 +2,11 @@ import csv
 import os
 
 scenarios = ['llc', 'lnc', 'hc']
-runs = ['0']
-# networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
-networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
-# ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
-ingress = ['0.1', '0.2', '0.3', '0.4', '0.5']
+runs = [str(x) for x in range(8)]
+networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
+# networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
+ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
+# ingress = ['0.1', '0.2', '0.3', '0.4', '0.5']
 algos = ['gpasp', 'spr1', 'spr2']
 
 metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
@@ -109,11 +109,27 @@ def transform_data(data, metric_set, metric_set_id):
                             writer.writerow(row)
 
 
+def transform_data_confidence_intervall(data, metric_set, metric_set_id):
+    for s in scenarios:
+        for net in networks:
+            os.makedirs(f'transformed/{s}/{net}/{metric_set_id}/', exist_ok=True)
+            with open(f'transformed/{s}/{net}/{metric_set_id}/ci-t-metrics.csv', 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                for r in runs:
+                    for a in algos:
+                        for ing in ingress:
+                            for m in metric_set:
+                                # x(ing), y(value), hue(metric), style(algo)
+                                row = [ing, data[s][r][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
+                                writer.writerow(row)
+
+
 def main():
     data = collect_data()
     avg_data = average_data(data)
     for key, value in metric_sets.items():
         transform_data(avg_data, value, key)
+        transform_data_confidence_intervall(data, value, key)
     print('')
 
 

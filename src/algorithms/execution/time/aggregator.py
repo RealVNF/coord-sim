@@ -87,7 +87,7 @@ def transform_data(data, metric_set, metric_set_id):
 
 
 def main():
-    #avg_data = average_data(data)
+    data = collect_data()
     for key, value in metric_sets.items():
         transform_data(data, value, key)
     print('')

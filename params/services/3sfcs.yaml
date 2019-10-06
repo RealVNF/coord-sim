@@ -7,12 +7,13 @@ sfc_list:
     - b
     - c
   sfc_2:
-    - a
-    - b
     - c
+    - b
+    - a
   sfc_3:
     - b
     - a
+    - c
 
 # SF attributes
 sf_list:
