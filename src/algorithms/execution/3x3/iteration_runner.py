@@ -11,12 +11,13 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    scenario = sys.argv[1]
-    run = sys.argv[2]
-    network_path = sys.argv[3]
+    version = sys.argv[1]
+    scenario = sys.argv[2]
+    run = sys.argv[3]
+    network_path = sys.argv[4]
     network = os.path.basename(network_path)
-    ingress = sys.argv[4]
-    algo_id = sys.argv[5]
+    ingress = sys.argv[5]
+    algo_id = sys.argv[6]
 
     args = {
         'network': network_path,
@@ -24,7 +25,7 @@ def main():
         'resource_functions': '../../../../params/services/resource_functions',
         'config': f'configurations/{scenario}_{ingress}.yaml',
         'seed': int(run),
-        'output_path': f'scenarios/{scenario}/{run}/{network}/{ingress}/{algo_id}'
+        'output_path': f'scenarios/{version}/{scenario}/{run}/{network}/{ingress}/{algo_id}'
     }
 
     os.makedirs(args['output_path'], exist_ok=True)

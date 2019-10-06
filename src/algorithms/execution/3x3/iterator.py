@@ -25,8 +25,9 @@ def sec2str(s):
 
 
 def main():
+    v = sys.argv[1]
     scenarios = ['llc', 'lnc', 'hc']
-    runs = [sys.argv[1]]
+    runs = [sys.argv[2]]
     networks = ['../../../../params/networks/bics_34.graphml', '../../../../params/networks/dfn_58.graphml',
                 '../../../../params/networks/intellifiber_73.graphml']
     ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
@@ -50,7 +51,7 @@ def main():
                     i_start = timer()
                     processes = []
                     for a in algos:
-                        processes.append(subprocess.Popen(['python', 'iteration_runner.py', s, r, net, ing, a]))
+                        processes.append(subprocess.Popen(['python', 'iteration_runner.py', v, s, r, net, ing, a]))
                     for p in processes:
                         p.wait()
                     i_end = timer()
