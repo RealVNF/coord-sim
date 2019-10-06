@@ -14,6 +14,7 @@ __pycache__/
 # Result files
 results/
 scenarios/
+*.csv
 
 # Tome measurements
 time/
