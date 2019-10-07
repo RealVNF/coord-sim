@@ -7,22 +7,27 @@ sfc_list:
     - b
     - c
   sfc_2:
-    - c
     - b
     - a
+    - c
   sfc_3:
-    - b
-    - a
-    - c
+    - d
+    - e
 
 # SF attributes
 sf_list:
   a:
-    processing_delay_mean: 6.0
+    processing_delay_mean: 5.0
     processing_delay_stdev: 1.0
   b:
-    processing_delay_mean: 4.5
+    processing_delay_mean: 5.0
     processing_delay_stdev: 1.0
   c:
-    processing_delay_mean: 3.0
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 1.0
+  d:
+    processing_delay_mean: 5.0
+    processing_delay_stdev: 1.0
+  e:
+    processing_delay_mean: 5.0
     processing_delay_stdev: 1.0
