@@ -1,7 +1,5 @@
 import math
-import os
 from collections import defaultdict
-from datetime import datetime
 import networkx as nx
 from auxiliary.link import Link
 from auxiliary.placement import Placement
@@ -57,12 +55,6 @@ class SPR1Algo:
         self.node_mortality = defaultdict(int)
         # Record current general load, used to calculate score
         self.occupancy_list = defaultdict(list)
-
-        # Load connectivity measurement
-        #node_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_node_con.json')
-        #edge_connectivity_json_file = open(f'{connectivity_path}/{os.path.basename(network_path)}_edge_con.json')
-        #self.node_connectivity = json.loads(node_connectivity_json_file.read())
-        #self.edge_connectivity = json.loads(edge_connectivity_json_file.read())
 
     def run(self):
         placement = defaultdict(list)

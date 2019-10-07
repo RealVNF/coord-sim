@@ -1,8 +1,8 @@
 import csv
 import os
 
-scenarios = ['llc', 'lnc', 'hc']
 runs = [str(x) for x in range(8)]
+scenarios = ['llc', 'lnc', 'hc']
 networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
 # networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
 ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
@@ -63,17 +63,17 @@ def get_last_row(content):
 
 def collect_data():
     data = {}
-    for s in scenarios:
-        data[s] = {}
-        for r in runs:
-            data[s][r] = {}
+    for r in runs:
+        data[r] = {}
+        for s in scenarios:
+            data[r][s] = {}
             for net in networks:
-                data[s][r][net] = {}
+                data[r][s][net] = {}
                 for ing in ingress:
-                    data[s][r][net][ing] = {}
+                    data[r][s][net][ing] = {}
                     for a in algos:
-                        data[s][r][net][ing][a] = get_last_row(
-                            read_output_file(f'scenarios/{s}/{r}/{net}/{ing}/{a}/metrics.csv'))
+                        data[r][s][net][ing][a] = get_last_row(
+                            read_output_file(f'scenarios/{r}/{s}/{net}/{ing}/{a}/metrics.csv'))
     return data
 
 
@@ -90,12 +90,12 @@ def average_data(data):
                     for m in range(15):
                         sum = 0
                         for r in runs:
-                            sum += float(data[s][r][net][ing][a][m])
+                            sum += float(data[r][s][net][ing][a][m])
                         avg_data[s][net][ing][a].append(sum / len(runs))
     return avg_data
 
 
-def transform_data(data, metric_set, metric_set_id):
+def transform_data(avg_data, metric_set, metric_set_id):
     for s in scenarios:
         for net in networks:
             os.makedirs(f'transformed/{s}/{net}/{metric_set_id}/', exist_ok=True)
@@ -105,7 +105,7 @@ def transform_data(data, metric_set, metric_set_id):
                     for ing in ingress:
                         for m in metric_set:
                             # x(ing), y(value), hue(metric), style(algo)
-                            row = [ing, data[s][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
+                            row = [ing, avg_data[s][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
                             writer.writerow(row)
 
 
@@ -120,7 +120,7 @@ def transform_data_confidence_intervall(data, metric_set, metric_set_id):
                         for ing in ingress:
                             for m in metric_set:
                                 # x(ing), y(value), hue(metric), style(algo)
-                                row = [ing, data[s][r][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
+                                row = [ing, data[r][s][net][ing][a][metrics2index[m]], f'{m}', f'{a}']
                                 writer.writerow(row)
 
 
