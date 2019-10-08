@@ -13,7 +13,6 @@ __pycache__/
 
 # Result files
 results/
-scenarios/
 
 # Debug data
 FALSE_DATA/
