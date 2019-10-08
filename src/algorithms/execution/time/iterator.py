@@ -3,7 +3,7 @@ from timeit import default_timer as timer
 from datetime import timedelta
 
 def main():
-	config = ['c1']
+	config = ['base_config']
 	runs = [str(x) for x in range(10)]
 	networks = ['../../../../params/networks/dfn_58.graphml']
 	algos = ['gpasp', 'spr1', 'spr2']

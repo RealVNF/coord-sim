@@ -24,7 +24,7 @@ def main():
         'network': network_path,
         'service_functions': '../../../../params/services/3sfcs.yaml',
         'resource_functions': '../../../../params/services/resource_functions',
-        'config': f'configurations/{config}.yaml',
+        'config': f'{config}.yaml',
         'seed': int(run),
         'output_path': f'scenarios/{config}/{run}/{network}/{algo_id}'
     }
