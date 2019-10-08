@@ -14,7 +14,12 @@ __pycache__/
 # Result files
 results/
 scenarios/
-*.csv
+
+# Debug data
+FALSE_DATA/
+g1-out/
+tpk_3-out/
+gp-runner-out/
 
 # Generated configurations
 configurations/
