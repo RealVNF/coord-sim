@@ -7,8 +7,6 @@ from algorithms.score.spr1 import SPR1Algo
 from algorithms.score.spr2 import SPR2Algo
 
 import sys
-import yaml
-import csv
 
 log = logging.getLogger(__name__)
 

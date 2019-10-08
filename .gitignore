@@ -22,8 +22,6 @@ gp-runner-out/
 
 # Generated configurations
 configurations/
-*.yml
-time/
 
 # Plotted charts
 plotted/
