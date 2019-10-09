@@ -9,17 +9,17 @@ flow_duration_weights: [0.5, 0.5]
 
 # Network parameter
 # Note: attributes defined in the graphml file have always precedence.
-node_ingress_probability: 0.3
+node_ingress_probability: 0.4
 node_egress_probability: 0.3
 node_parameter_mode: probabilistic_discrete
 node_cap_values: [30]
 node_cap_weights: [1]
 link_cap_parameter_mode: probabilistic_discrete
-link_cap_values: [30]
-link_cap_weights: [1]
+link_cap_values: [0, 30, 50]
+link_cap_weights: [0.4, 0.3, 0.3]
 link_delay_parameter_mode: probabilistic_discrete
 link_delay_values: [3, 5, 15]
 link_delay_weights: [0.4, 0.3, 0.3]
 
 # Simulator execution parameter
-run_duration: 10000
+run_duration: 1000
