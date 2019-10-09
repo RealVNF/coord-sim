@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
+import matplotlib.pyplot as plt
 
 
 # Pretty print
@@ -15,7 +16,7 @@ pp_metrics = {'total_flows': 'Total', 'successful_flows': 'Successful', 'dropped
               'avg_end2end_delay_of_processed_flows':'Avg e2e path delay processed',
               'avg_node_load': 'Avg node load', 'avg_link_load': 'Avg link load'}
 pp_yaxis = {'flow': 'Flows', 'delay': 'Delay', 'load': 'Load %'}
-pp_algo = {'gpasp': 'GPASP', 'spr1': 'SP1', 'spr2': 'SPR2'}
+pp_algo = {'gpasp': 'GPASP', 'spr1': 'SPR-1', 'spr2': 'SPR-2'}
 pp_network = {'bics_34.graphml': 'BICS', 'dfn_58.graphml': 'DFN', 'intellifiber_73.graphml': 'Intellifiber'}
 
 
@@ -49,7 +50,7 @@ def main():
     data = get_data(f'{input_path}/t-metrics.csv', metric_set_id)
     df = pd.DataFrame(data=data)
     sns_plot = sns.lineplot(x='Ingress node %', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
-                            data=df)
+                            data=df, markers=True)
     sns_plot.set_title(f'{pp_network[network]}')
 
     # Place legend on the right side
@@ -60,6 +61,21 @@ def main():
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
     fig.savefig(f'{output_path}/output.png', bbox_inches='tight')
+
+    # Second plot
+    plt.clf()
+    data = get_data(f'{input_path}/ci-t-metrics.csv', metric_set_id)
+    df = pd.DataFrame(data=data)
+    sns_plot = sns.lineplot(x='Ingress node %', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
+                            data=df, markers=True)
+    sns_plot.set_title(f'{pp_network[network]}')
+    # Place legend on the right side
+    # sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
+    # Place legend below
+    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
+    fig = sns_plot.get_figure()
+    os.makedirs(f'{output_path}', exist_ok=True)
+    fig.savefig(f'{output_path}/ci-output.png', bbox_inches='tight')
     # plt.show()
 
 
