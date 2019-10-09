@@ -467,6 +467,8 @@ class FlowSimulator:
         self.metrics.add_end2end_delay_of_dropped_flows(flow.end2end_delay)
 
         # assert flow['state'] == 'drop', f'Algorithm has not foreseen drop of flow {flow.flow_id}'
+        if flow['state'] != 'drop':
+            print(f'Algorithm has not foreseen drop of flow {flow.flow_id}')
 
         if 'drop_flow' in self.params.interception_callbacks:
             self.params.interception_callbacks['drop_flow'](flow)
