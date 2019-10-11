@@ -1,52 +1,31 @@
 import csv
 import os
 import sys
+import importlib
+
+settings = importlib.import_module('algorithms.execution.3x3.settings')
 
 start = int(sys.argv[1])
 end = int(sys.argv[2]) + 1
 runs = [str(x) for x in range(start, end)]
-scenarios = ['llc', 'lnc', 'hc']
-networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
-ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
-algos = ['gpasp', 'spr1', 'spr2']
 
-metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
-               'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
-                         'avg_end2end_delay_of_processed_flows'],
-               'load': ['avg_node_load', 'avg_link_load']}
+# Sync settings
+scenarios = settings.scenarios
+networks = settings.networks
+ingress = settings.ingress
+algos = settings.algos
+metric_sets = settings.metric_sets
+metrics2index = settings.metrics2index
 
-metrics2index = {'time': 0,
-                 'total_flows': 1,
-                 'successful_flows': 2,
-                 'dropped_flows': 3,
-                 'in_network_flows': 4,
-                 'avg_end2end_delay_of_dropped_flows': 5,
-                 'avg_end2end_delay_of_processed_flows': 6,
-                 'avg_sf_processing_delay': 7,
-                 'avg_sfc_length': 8,
-                 'avg_crossed_link_delay': 9,
-                 'avg_path_delay': 10,
-                 'avg_path_delay_of_processed_flows': 11,
-                 'avg_ingress_2_egress_path_delay_of_processed_flows': 12,
-                 'avg_node_load': 13,
-                 'avg_link_load': 14
-                 }
-index2metric = {0: 'time',
-                1: 'total_flows',
-                2: 'successful_flows',
-                3: 'dropped_flows',
-                4: 'in_network_flows',
-                5: 'avg_end2end_delay_of_dropped_flows',
-                6: 'avg_end2end_delay_of_processed_flows',
-                7: 'avg_sf_processing_delay',
-                8: 'avg_sfc_length',
-                9: 'avg_crossed_link_delay',
-                10: 'avg_path_delay',
-                11: 'avg_path_delay_of_processed_flows',
-                12: 'avg_ingress_2_egress_path_delay_of_processed_flows',
-                13: 'avg_node_load',
-                14: 'avg_link_load'
-                }
+# Custom settings
+# scenarios = ['llc', 'lnc', 'hc']
+# networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
+# ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
+# algos = ['gpasp', 'spr1', 'spr2']
+# metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
+#                'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
+#                          'avg_end2end_delay_of_processed_flows'],
+#                'load': ['avg_node_load', 'avg_link_load']}
 
 
 def read_output_file(path):

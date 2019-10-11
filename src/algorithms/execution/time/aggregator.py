@@ -1,33 +1,26 @@
 import csv
 import os
+import algorithms.execution.time.settings as settings
 
-config = ['base_config']
-runs = [str(x) for x in range(10)]
-networks = ['gts_ce_149.graphml']
-algos = ['gpasp', 'spr1', 'spr2']
+runs = [str(x) for x in range(15)]
 
-metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
-               'flow_1': ['total_flows'],
-               'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
-                         'avg_end2end_delay_of_processed_flows'],
-               'load': ['avg_node_load', 'avg_link_load']}
+# Sync settings
+config = settings.config
+networks = settings.networks
+algos = settings.algos
+metric_sets = settings.metric_sets
+metrics2index = settings.metrics2index
 
-metrics2index = {'time': 0,
-                 'total_flows': 1,
-                 'successful_flows': 2,
-                 'dropped_flows': 3,
-                 'in_network_flows': 4,
-                 'avg_end2end_delay_of_dropped_flows': 5,
-                 'avg_end2end_delay_of_processed_flows': 6,
-                 'avg_sf_processing_delay': 7,
-                 'avg_sfc_length': 8,
-                 'avg_crossed_link_delay': 9,
-                 'avg_path_delay': 10,
-                 'avg_path_delay_of_processed_flows': 11,
-                 'avg_ingress_2_egress_path_delay_of_processed_flows': 12,
-                 'avg_node_load': 13,
-                 'avg_link_load': 14
-                 }
+# Custom settings
+# config = ['hc_0.3']
+# networks = ['gts_ce_149.graphml']
+# algos = ['gpasp', 'spr1', 'spr2']
+# metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
+#                'flow_1': ['total_flows'],
+#                'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
+#                          'avg_end2end_delay_of_processed_flows'],
+#                'load': ['avg_node_load', 'avg_link_load']}
+
 
 def read_output_file(path):
     with open(path) as csvfile:
@@ -55,11 +48,24 @@ def collect_data():
     return data
 
 
+def collect_data_runs():
+    data = {}
+    for c in config:
+        data[c] = {}
+        for r in runs:
+            data[c][r] = {}
+            for net in networks:
+                data[c][r][net] = {}
+                for a in algos:
+                    data[c][r][net][a] = remove_first(read_output_file(f'scenarios/{r}/{c}/{net}/0.3/{a}/metrics.csv'))
+    return data
+
+
 def transform_data(data, metric_set, metric_set_id):
     for c in config:
         for net in networks:
             os.makedirs(f'transformed/{c}/{net}/{metric_set_id}/', exist_ok=False)
-            with open(f'transformed/{c}/{net}/{metric_set_id}/t-metrics.csv', 'a+', newline='') as csvfile:
+            with open(f'transformed/{c}/{net}/{metric_set_id}/t-metrics.csv', 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 for r in runs:
                     for a in algos:
