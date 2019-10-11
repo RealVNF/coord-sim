@@ -5,8 +5,8 @@ from datetime import timedelta
 
 
 def main():
-	config = ['base_config']
 	runs = [sys.argv[1]]
+	config = [sys.argv[2]]
 	networks = ['../../../../params/networks/gts_ce_149.graphml']
 	algos = ['gpasp', 'spr1', 'spr2']
 

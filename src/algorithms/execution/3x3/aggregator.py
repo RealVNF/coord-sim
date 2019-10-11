@@ -1,12 +1,13 @@
 import csv
 import os
+import sys
 
-runs = [str(x) for x in range(8)]
+start = int(sys.argv[1])
+end = int(sys.argv[2]) + 1
+runs = [str(x) for x in range(start, end)]
 scenarios = ['llc', 'lnc', 'hc']
 networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
-# networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
 ingress = ['0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5']
-# ingress = ['0.1', '0.2', '0.3', '0.4', '0.5']
 algos = ['gpasp', 'spr1', 'spr2']
 
 metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],

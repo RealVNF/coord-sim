@@ -1,7 +1,6 @@
 import subprocess
 
 scenarios = ['llc', 'lnc', 'hc']
-# networks = ['dfn_58.graphml', 'intellifiber_73.graphml']
 networks = ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml']
 
 metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
@@ -14,8 +13,8 @@ def plot_all():
     processes = []
     for s in scenarios:
         for net in networks:
-            for key, value in metric_sets.items():
-                processes.append(subprocess.Popen(['python', 'plot_runner.py', s, net, key]))
+            for ms_id, _ in metric_sets.items():
+                processes.append(subprocess.Popen(['E:/Paderborn/Bachelorarbeit/Code_working/adapted_simulator/env/Scripts/python', 'plot_runner.py', s, net, ms_id]))
     for p in processes:
         p.wait()
 

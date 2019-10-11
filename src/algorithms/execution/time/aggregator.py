@@ -1,12 +1,13 @@
 import csv
 import os
 
-config = ['c1']
+config = ['base_config']
 runs = [str(x) for x in range(10)]
-networks = ['dfn_58.graphml']
+networks = ['gts_ce_149.graphml']
 algos = ['gpasp', 'spr1', 'spr2']
 
 metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
+               'flow_1': ['total_flows'],
                'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
                          'avg_end2end_delay_of_processed_flows'],
                'load': ['avg_node_load', 'avg_link_load']}
@@ -27,23 +28,6 @@ metrics2index = {'time': 0,
                  'avg_node_load': 13,
                  'avg_link_load': 14
                  }
-index2metric = {0: 'time',
-                1: 'total_flows',
-                2: 'successful_flows',
-                3: 'dropped_flows',
-                4: 'in_network_flows',
-                5: 'avg_end2end_delay_of_dropped_flows',
-                6: 'avg_end2end_delay_of_processed_flows',
-                7: 'avg_sf_processing_delay',
-                8: 'avg_sfc_length',
-                9: 'avg_crossed_link_delay',
-                10: 'avg_path_delay',
-                11: 'avg_path_delay_of_processed_flows',
-                12: 'avg_ingress_2_egress_path_delay_of_processed_flows',
-                13: 'avg_node_load',
-                14: 'avg_link_load'
-                }
-
 
 def read_output_file(path):
     with open(path) as csvfile:
