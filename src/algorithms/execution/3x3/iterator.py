@@ -19,9 +19,11 @@ import json
 
 
 def main():
-    runs = [sys.argv[1]]
-    pparallel = int(sys.argv[2])
-    poll_pause = int(sys.argv[3])
+    start = int(sys.argv[1])
+    end = int(sys.argv[2]) + 1
+    runs = [str(x) for x in range(start, end)]
+    pparallel = int(sys.argv[3])
+    poll_pause = int(sys.argv[4])
 
     scenarios = ['llc', 'lnc', 'hc']
     networks = ['../../../../params/networks/bics_34.graphml', '../../../../params/networks/dfn_58.graphml',
