@@ -6,10 +6,12 @@ from datetime import timedelta
 
 
 def main():
-	runs = [sys.argv[1]]
-	config = [sys.argv[2]]
-	pparallel = int(sys.argv[3])
-	poll_pause = int(sys.argv[4])
+	start = int(sys.argv[1])
+	end = int(sys.argv[2]) + 1
+	runs = [str(x) for x in range(start, end)]
+	config = [sys.argv[3]]
+	pparallel = int(sys.argv[4])
+	poll_pause = int(sys.argv[5])
 
 	networks = ['../../../../params/networks/gts_ce_149.graphml']
 	algos = ['gpasp', 'spr1', 'spr2']
