@@ -22,7 +22,7 @@ def plot_all():
     for c in config:
         for net in networks:
             for key, value in metric_sets.items():
-                processes.append(subprocess.Popen(['python', 'plot_runner.py', c, net, key]))
+                processes.append(subprocess.Popen(['E:/Paderborn/Bachelorarbeit/Code_working/adapted_simulator/env/Scripts/python', 'plot_runner.py', c, net, key]))
     for p in processes:
         p.wait()
 

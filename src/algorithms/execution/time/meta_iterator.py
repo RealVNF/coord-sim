@@ -23,13 +23,17 @@ def main():
     end = int(sys.argv[2]) + 1
     chunk_size = int(sys.argv[3])
     config = sys.argv[4]
+    pparallel = sys.argv[5]
+    poll_pause = sys.argv[6]
+
     runs = [str(x) for x in range(start, end)]
     sequential_instances = chunkit(runs, chunk_size)
 
     for sr in sequential_instances:
         processes = []
         for r in sr:
-            processes.append(subprocess.Popen(['python', 'iterator.py', r, config]))
+            processes.append(subprocess.Popen(['python', 'iterator.py', r, config, pparallel, poll_pause]))
+            print(f'{r}-{config}')
         for p in processes:
             p.wait()
 
