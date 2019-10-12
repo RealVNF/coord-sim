@@ -74,7 +74,6 @@ class SimulatorParams:
         change_prob = self.states[self.current_state]['switch_p']
         remain_prob = 1 - change_prob
         switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
-        np.random.choice
         if switch_decision:
             state_names = list(self.states.keys())
             if self.current_state == state_names[0]:
