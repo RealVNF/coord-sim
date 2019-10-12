@@ -37,7 +37,7 @@ def main():
             for net in networks:
                 for ing in ingress:
                     for a in algos:
-                        running_processes.append(subprocess.Popen(['E:/Paderborn/Bachelorarbeit/Code_working/adapted_simulator/env/Scripts/python', 'iteration_runner.py', r, s, net, ing, a]))
+                        running_processes.append(subprocess.Popen(['python', 'iteration_runner.py', r, s, net, ing, a]))
                         print(f'{r}-{s}-{net}-{ing}-{a}')
                         while len(running_processes) == pparallel:
                             unfinished_processes = []
