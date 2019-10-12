@@ -1,0 +1,12 @@
+time,total_flows,successful_flows,dropped_flows,in_network_flows,avg_end2end_delay_of_dropped_flows,avg_end2end_delay_of_processed_flows,avg_sf_processing_delay,avg_sfc_length,avg_crossed_link_delay,avg_path_delay,avg_path_delay_of_processed_flows,avg_ingress_2_egress_path_delay_of_processed_flows,avg_node_load,avg_link_load
+0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+100,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+200,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+300,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+400,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+500,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+600,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+700,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+800,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+900,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
+1000,0,0,0,0,0,0,0,0,0,0,0,0,0.0,0.0
