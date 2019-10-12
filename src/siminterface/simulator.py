@@ -15,15 +15,23 @@ logger = logging.getLogger(__name__)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self, test_mode=False, test_dir=None):
+    def __init__(self,  network_file, service_functions_file, config_file, resource_functions_path="",
+                 test_mode=False, test_dir=None):
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.test_mode = test_mode
         self.test_dir = test_dir
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
+        # init network, sfc, sf, and config files
+        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
+        self.sfc_list = reader.get_sfc(service_functions_file)
+        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
+        self.config = reader.get_config(config_file)
+        # Simulator parameters
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config)
 
-    def init(self, network_file, service_functions_file, config_file, seed, resource_functions_path=""):
+    def init(self, seed):
 
         # Initialize metrics, record start time
         metrics.reset_metrics()
@@ -31,17 +39,16 @@ class Simulator(SimulatorInterface):
         self.start_time = time.time()
 
         # Parse network and SFC + SF file
-        self.network, self.ing_nodes = reader.read_network(network_file, node_cap=10, link_cap=10)
-        self.sfc_list = reader.get_sfc(service_functions_file)
-        self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
-        self.config = reader.get_config(config_file)
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
         # Instantiate the parameter object for the simulator.
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config, seed)
-
+        if self.params.use_states:
+            if self.params.in_init_state:
+                self.params.in_init_state = False
+            else:
+                self.params.update_state()
         # Trace handling
         if 'trace_path' in self.config:
             trace_path = os.path.join(os.getcwd(), self.config['trace_path'])

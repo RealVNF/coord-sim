@@ -6,12 +6,11 @@ Flow Simulator parameters.
 other parameters for the simulator.
 
 """
+import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, seed, schedule={}, sf_placement={}):
-        # Seed for the random generator: int
-        self.seed = seed
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, schedule={}, sf_placement={}):
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -57,6 +56,32 @@ class SimulatorParams:
         # also allow to set determinism for inter-arrival times and flow size separately
         # The duration of a run in the simulator's interface
         self.run_duration = config['run_duration']
+
+        self.use_states = False
+        self.states = {}
+        self.in_init_state = True
+
+        if 'use_states' in config and config['use_states']:
+            self.use_states = True
+            self.init_state = config['init_state']
+            self.states = config['states']
+            if self.in_init_state:
+                self.current_state = self.init_state
+            self.inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
+
+    def update_state(self):
+        switch = [False, True]
+        change_prob = self.states[self.current_state]['switch_p']
+        remain_prob = 1 - change_prob
+        switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
+        np.random.choice
+        if switch_decision:
+            state_names = list(self.states.keys())
+            if self.current_state == state_names[0]:
+                self.current_state = state_names[1]
+            else:
+                self.current_state = state_names[0]
+        self.inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
 
     # string representation for logging
     def __str__(self):
