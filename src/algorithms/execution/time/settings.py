@@ -3,9 +3,9 @@ networks = ['gts_ce_149.graphml']
 algos = ['gpasp', 'spr1', 'spr2']
 
 metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows'],
-               'flow_1': ['total_flows'],
                'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
                          'avg_end2end_delay_of_processed_flows'],
+               'delay_min': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows'],
                'load': ['avg_node_load', 'avg_link_load']}
 
 metrics2index = {'time': 0,
