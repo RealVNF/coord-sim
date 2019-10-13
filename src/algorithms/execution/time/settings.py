@@ -6,7 +6,9 @@ metric_sets = {'flow': ['total_flows', 'successful_flows', 'dropped_flows', 'in_
                'delay': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows',
                          'avg_end2end_delay_of_processed_flows'],
                'delay_min': ['avg_path_delay_of_processed_flows', 'avg_ingress_2_egress_path_delay_of_processed_flows'],
-               'load': ['avg_node_load', 'avg_link_load']}
+               'load': ['avg_node_load', 'avg_link_load'],
+               'delay_other': ['avg_end2end_delay_of_processed_flows', 'avg_end2end_delay_of_dropped_flows']
+               }
 
 metrics2index = {'time': 0,
                  'total_flows': 1,

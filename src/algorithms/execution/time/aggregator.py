@@ -3,7 +3,7 @@ import os
 
 import algorithms.execution.time.settings as settings
 
-runs = [str(x) for x in range(31)]
+runs = [str(x) for x in range(40)]
 
 # Sync settings
 config = settings.config
@@ -99,10 +99,10 @@ def main():
     for key, value in metric_sets.items():
         transform_data(data, value, key)
 
-    rdata = collect_data_runs(['hc', 'llc', 'lnc'], [str(x) for x in range(35)],
+    rdata = collect_data_runs(['hc', 'llc', 'lnc'], [str(x) for x in range(40)],
                               ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml'], '0.3')
     for key, value in metric_sets.items():
-        transform_data_runs(rdata, ['hc', 'llc', 'lnc'], [str(x) for x in range(35)],
+        transform_data_runs(rdata, ['hc', 'llc', 'lnc'], [str(x) for x in range(40)],
                             ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml'], value, key)
     print('')
 
