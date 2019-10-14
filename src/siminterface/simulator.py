@@ -29,7 +29,6 @@ class Simulator(SimulatorInterface):
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
         # Simulator parameters
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config)
 
     def init(self, seed):
 
@@ -43,7 +42,12 @@ class Simulator(SimulatorInterface):
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config)
+
         # Instantiate the parameter object for the simulator.
+        if self.params.use_states and 'trace_path' in self.config:
+            logger.warning('Two state model and traces are both activated, thi will cause unexpected behaviour!')
+
         if self.params.use_states:
             if self.params.in_init_state:
                 self.params.in_init_state = False
@@ -139,7 +143,8 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.env, simulator_state)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-
+        if self.params.use_states:
+            self.params.update_state()
         return simulator_state
 
     def parse_network(self) -> dict:

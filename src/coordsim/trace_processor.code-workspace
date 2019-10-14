@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "/mnt/d/SWC/forks/rl-coordination"
+		},
+		{
+			"path": "/mnt/d/SWC/forks/coordination-simulation"
+		}
+	],
+	"settings": {
+		"debug.allowBreakpointsEverywhere": true
+	}
+}

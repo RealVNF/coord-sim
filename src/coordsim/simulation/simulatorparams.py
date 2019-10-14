@@ -10,7 +10,7 @@ import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, schedule={}, sf_placement={}):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, schedule=None, sf_placement=None):
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -20,6 +20,14 @@ class SimulatorParams:
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)
         self.sf_list = sf_list
 
+        self.use_trace = False
+        if 'trace_path' in config:
+            self.use_trace = True
+
+        if schedule is None:
+            schedule = {}
+        if sf_placement is None:
+            sf_placement = {}
         # read dummy placement and schedule if specified
         # Flow forwarding schedule: dict
         self.schedule = schedule
@@ -30,8 +38,7 @@ class SimulatorParams:
             for sf in placed_sf_list:
                 self.network.nodes[node_id]['available_sf'][sf] = self.network.nodes[node_id]['available_sf'].get(sf, {
                     'load': 0.0})
-        # Flow interarrival exponential distribution mean: float
-        self.inter_arr_mean = config['inter_arrival_mean']
+
         # Flow data rate normal distribution mean: float
         self.flow_dr_mean = config['flow_dr_mean']
         # Flow data rate normal distribution standard deviation: float
@@ -67,7 +74,11 @@ class SimulatorParams:
             self.states = config['states']
             if self.in_init_state:
                 self.current_state = self.init_state
-            self.inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
+            state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
+            self.update_single_inter_arr_mean(state_inter_arr_mean)
+        else:
+            inter_arr_mean = config['inter_arrival_mean']
+            self.update_single_inter_arr_mean(inter_arr_mean)
 
     def update_state(self):
         switch = [False, True]
@@ -80,7 +91,11 @@ class SimulatorParams:
                 self.current_state = state_names[1]
             else:
                 self.current_state = state_names[0]
-        self.inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
+        state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
+        self.update_single_inter_arr_mean(state_inter_arr_mean)
+
+    def update_single_inter_arr_mean(self, new_mean):
+        self.inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
 
     # string representation for logging
     def __str__(self):
