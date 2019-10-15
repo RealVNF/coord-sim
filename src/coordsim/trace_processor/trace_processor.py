@@ -38,7 +38,7 @@ class TraceProcessor():
                 old_mean = self.params.inter_arr_mean[node_id]
                 self.params.inter_arr_mean[node_id] = inter_arrival_mean
                 if old_mean is None:
-                    self.simulator.generate_flow(node_id)
+                    self.env.process(self.simulator.generate_flow(node_id))
         else:
             inter_arrival_mean = float(inter_arrival_mean)
             self.params.update_single_inter_arr_mean(inter_arrival_mean)
