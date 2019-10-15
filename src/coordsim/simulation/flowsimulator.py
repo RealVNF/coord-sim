@@ -40,7 +40,7 @@ class FlowSimulator:
         """
         Generate flows at the ingress nodes.
         """
-        while True:
+        while self.params.inter_arr_mean[node_id] is not None:
             self.total_flow_count += 1
 
             # set normally distributed flow data rate
@@ -48,10 +48,10 @@ class FlowSimulator:
 
             # set deterministic or random flow arrival times and flow sizes according to config
             if self.params.deterministic_arrival:
-                inter_arr_time = self.params.inter_arr_mean
+                inter_arr_time = self.params.inter_arr_mean[node_id]
             else:
                 # Poisson arrival -> exponential distributed inter-arrival time
-                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean)
+                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
 
             if self.params.deterministic_size:
                 flow_size = self.params.flow_size_shape

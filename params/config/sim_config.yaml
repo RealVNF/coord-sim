@@ -16,4 +16,18 @@ run_duration: 100                  # default: 100
 
 # Optional: Trace file trace relative to the CWD.
 # Until values start in the trace file, the defaults from this file are used
-trace_path: params/traces/default_trace.csv
+# trace_path: params/traces/default_trace.csv
+
+
+# States (two state markov arrival)
+# Optional param: states: True | False 
+use_states: True
+init_state: state_1
+
+states:
+  state_1:
+    inter_arr_mean: 10.0
+    switch_p: 0.8
+  state_2:
+    inter_arr_mean: 2.0
+    switch_p: 0.3

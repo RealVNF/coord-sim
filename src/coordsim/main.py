@@ -45,7 +45,7 @@ def main():
     config = reader.get_config(args.config)
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, args.seed, sf_placement=sf_placement,
+    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, sf_placement=sf_placement,
                              schedule=schedule)
     log.info(params)
 
