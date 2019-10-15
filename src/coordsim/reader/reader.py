@@ -219,3 +219,8 @@ def read_network(file, node_cap=None, link_cap=None):
             ing_nodes.append(node)
 
     return networkx_network, ing_nodes
+
+
+def reset_cap(network):
+    for node in network.nodes.items():
+        node[1]['remaining_cap'] = node[1]['cap']
