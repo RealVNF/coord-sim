@@ -40,45 +40,41 @@ class FlowSimulator:
         """
         Generate flows at the ingress nodes.
         """
-        while True:
-            if self.params.inter_arr_mean[node_id] is not None:
-                self.total_flow_count += 1
+        while self.params.inter_arr_mean[node_id] is not None:
+            self.total_flow_count += 1
 
-                # set normally distributed flow data rate
-                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+            # set normally distributed flow data rate
+            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
 
-                # set deterministic or random flow arrival times and flow sizes according to config
-                if self.params.deterministic_arrival:
-                    inter_arr_time = self.params.inter_arr_mean[node_id]
-                else:
-                    # Poisson arrival -> exponential distributed inter-arrival time
-                    inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
-
-                if self.params.deterministic_size:
-                    flow_size = self.params.flow_size_shape
-                else:
-                    # heavy-tail flow size
-                    flow_size = np.random.pareto(self.params.flow_size_shape) + 1
-
-                # Skip flows with negative flow_dr or flow_size values
-                if flow_dr <= 0.00 or flow_size <= 0.00:
-                    continue
-
-                # Assign a random SFC to the flow
-                flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
-                # Get the flow's creation time (current environment time)
-                creation_time = self.env.now
-                # Generate flow based on given params
-                flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
-                            current_node_id=node_id)
-                # Update metrics for the generated flow
-                metrics.generated_flow(flow, node_id)
-                # Generate flows and schedule them at ingress node
-                self.env.process(self.init_flow(flow))
-                yield self.env.timeout(inter_arr_time)
+            # set deterministic or random flow arrival times and flow sizes according to config
+            if self.params.deterministic_arrival:
+                inter_arr_time = self.params.inter_arr_mean[node_id]
             else:
-                # To make the env progress and not stop the env now timer, increase env.now by one
-                yield self.env.timeout(1)
+                # Poisson arrival -> exponential distributed inter-arrival time
+                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
+
+            if self.params.deterministic_size:
+                flow_size = self.params.flow_size_shape
+            else:
+                # heavy-tail flow size
+                flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+
+            # Skip flows with negative flow_dr or flow_size values
+            if flow_dr <= 0.00 or flow_size <= 0.00:
+                continue
+
+            # Assign a random SFC to the flow
+            flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
+            # Get the flow's creation time (current environment time)
+            creation_time = self.env.now
+            # Generate flow based on given params
+            flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
+                        current_node_id=node_id)
+            # Update metrics for the generated flow
+            metrics.generated_flow(flow, node_id)
+            # Generate flows and schedule them at ingress node
+            self.env.process(self.init_flow(flow))
+            yield self.env.timeout(inter_arr_time)
 
     def init_flow(self, flow):
         """

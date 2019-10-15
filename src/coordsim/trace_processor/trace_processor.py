@@ -1,4 +1,5 @@
 from coordsim.simulation.simulatorparams import SimulatorParams
+from coordsim.simulation.flowsimulator import FlowSimulator
 from simpy import Environment
 import logging
 log = logging.getLogger(__name__)
@@ -9,11 +10,12 @@ class TraceProcessor():
     Trace processor class
     """
 
-    def __init__(self, params: SimulatorParams, env: Environment, trace: list,):
+    def __init__(self, params: SimulatorParams, env: Environment, trace: list, simulator: FlowSimulator):
         self.params = params
         self.env = env
         self.trace_index = 0
         self.trace = trace
+        self.simulator = simulator
         self.env.process(self.process_trace())
 
     def process_trace(self):
@@ -33,7 +35,10 @@ class TraceProcessor():
                 self.params.inter_arr_mean[node_id] = None
             else:
                 inter_arrival_mean = float(inter_arrival_mean)
+                old_mean = self.params.inter_arr_mean[node_id]
                 self.params.inter_arr_mean[node_id] = inter_arrival_mean
+                if old_mean is None:
+                    self.simulator.generate_flow(node_id)
         else:
             inter_arrival_mean = float(inter_arrival_mean)
             self.params.update_single_inter_arr_mean(inter_arrival_mean)

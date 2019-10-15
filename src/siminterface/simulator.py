@@ -53,11 +53,6 @@ class Simulator(SimulatorInterface):
                 self.params.in_init_state = False
             else:
                 self.params.update_state()
-        # Trace handling
-        if 'trace_path' in self.config:
-            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
-            trace = reader.get_trace(trace_path)
-            TraceProcessor(self.params, self.env, trace)
 
         self.duration = self.params.run_duration
         # Get and plant random seed
@@ -70,6 +65,11 @@ class Simulator(SimulatorInterface):
 
         # Start the simulator
         self.simulator.start()
+        # Trace handling
+        if 'trace_path' in self.config:
+            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
+            trace = reader.get_trace(trace_path)
+            TraceProcessor(self.params, self.env, trace, self.simulator)
 
         # Run the environment for one step to get initial stats.
         self.env.step()
