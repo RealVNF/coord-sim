@@ -11,7 +11,6 @@ class TraceProcessor():
 
     def __init__(self, params: SimulatorParams, env: Environment, trace: list,):
         self.params = params
-        self.params.inter_arr_means = []
         self.env = env
         self.trace_index = 0
         self.trace = trace

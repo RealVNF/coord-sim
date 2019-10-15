@@ -76,6 +76,9 @@ class FlowSimulator:
                 # Generate flows and schedule them at ingress node
                 self.env.process(self.init_flow(flow))
                 yield self.env.timeout(inter_arr_time)
+            else:
+                # To make the env progress and not stop the env now timer, increase env.now by one
+                yield self.env.timeout(1)
 
     def init_flow(self, flow):
         """
