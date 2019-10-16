@@ -222,5 +222,6 @@ def read_network(file, node_cap=None, link_cap=None):
 
 
 def reset_cap(network):
-    for node in network.nodes.items():
-        node[1]['remaining_cap'] = node[1]['cap']
+    for node_id, node_content in network.nodes.items():
+        network.nodes[node_id]['remaining_cap'] = network.nodes[node_id]['cap']
+        network.nodes[node_id]['available_sf'] = {}
