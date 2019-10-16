@@ -25,6 +25,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
         # init network, sfc, sf, and config files
+        self.network, self.ing_nodes = reader.read_network(self.network_file, node_cap=10, link_cap=10)
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
@@ -32,9 +33,8 @@ class Simulator(SimulatorInterface):
 
     def init(self, seed):
 
-        # reset network caps:
-        self.network, self.ing_nodes = reader.read_network(self.network_file, node_cap=10, link_cap=10)
-        # reader.reset_cap(self.network) TODO: This fixes having to set the network again in init.
+        # reset network caps and available SFs:
+        reader.reset_cap(self.network)
         # Initialize metrics, record start time
         metrics.reset_metrics()
         self.run_times = int(1)
