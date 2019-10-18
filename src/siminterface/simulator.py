@@ -197,3 +197,7 @@ class Simulator(SimulatorInterface):
             'run_avg_path_delay': stats['run_avg_path_delay'],
             'run_total_processed_traffic': stats['run_total_processed_traffic']
         }
+
+    def get_active_ingress_nodes(self):
+        """Return names of all ingress nodes that are currently active, ie, produce flows."""
+        return [ing[0] for ing in self.ing_nodes if self.params.inter_arr_mean[ing[0]] is not None]
