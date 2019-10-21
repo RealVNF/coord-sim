@@ -90,7 +90,7 @@ See PR https://github.com/RealVNF/coordination-simulation/pull/78 for details.
 
 ```bash
 # style check
-flake8 src
+pylint src/*
 
 # tests
 nose2

@@ -9,7 +9,7 @@ requirements = [
 ]
 
 test_requirements = [
-    'flake8',
+    'pylint',
     'pytest',
     'nose2'
 ]
