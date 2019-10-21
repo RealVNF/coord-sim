@@ -25,6 +25,7 @@ class ResultWriter():
             self.placement_file_name = f'{self.result_path}/placement.csv'
             self.resources_file_name = f'{self.result_path}/resources.csv'
             self.metrics_file_name = f'{self.result_path}/metrics.csv'
+            self.decisions_file_name = f'{self.result_path}/decisions.csv'
 
             # self.result_path = f'{simulator_params["output_id"]}/results/' \
             #     f'{os.path.basename(simulator_params["network"])}/' \
@@ -48,12 +49,14 @@ class ResultWriter():
             # self.scheduling_stream = open(self.scheduling_file_name, 'a+', newline='')
             self.resources_stream = open(self.resources_file_name, 'w', newline='')
             self.metrics_stream = open(self.metrics_file_name, 'w', newline='')
+            self.decisions_stream = open(self.decisions_file_name, 'w', newline='')
 
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
             # self.scheduling_writer = csv.writer(self.scheduling_stream)
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
+            self.decisions_writer = csv.writer(self.decisions_stream)
 
             # Write the headers to the files
             self.create_csv_headers()
@@ -74,12 +77,14 @@ class ResultWriter():
                                  'avg_sf_processing_delay', 'avg_sfc_length', 'avg_crossed_link_delay',
                                  'avg_path_delay', 'avg_path_delay_of_processed_flows',
                                  'avg_ingress_2_egress_path_delay_of_processed_flows', 'avg_node_load', 'avg_link_load']
+        decisions_output_header = ['time', 'node', 'decisions']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
         # self.scheduling_writer.writerow(scheduling_output_header)
         self.resources_writer.writerow(resources_output_header)
         self.metrics_writer.writerow(metrics_output_header)
+        self.decisions_writer.writerow(decisions_output_header)
 
     def write_action_result(self, env, action: SimulatorAction):
         """
@@ -143,6 +148,19 @@ class ResultWriter():
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
 
+    def write_decisions_results(self, env, state: SimulatorState):
+        network = state.network
+        stats = state.network_stats
+        time = env.now
+
+        decisions_output = []
+        for key, node in network['nodes'].items():
+            node_id = node['id']
+            decisions_output_row = [int(time), node_id, stats['decisions'][node_id]]
+            decisions_output.append(decisions_output_row)
+
+        self.decisions_writer.writerows(decisions_output)
+
     def close_streams(self):
         """
         Close open streams
@@ -152,6 +170,7 @@ class ResultWriter():
             # self.scheduling_stream.close()
             self.resources_stream.close()
             self.metrics_stream.close()
+            self.decisions_stream.close()
 
     def __del__(self):
         # Close all writer streams

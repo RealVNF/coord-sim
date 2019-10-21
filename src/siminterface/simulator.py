@@ -209,6 +209,11 @@ class Simulator:
         self.writer.write_state_results(self.env, state)
         return state
 
+    def write_decisions(self):
+        state = self.get_state()
+        self.writer.write_decisions_results(self.env, state)
+        return state
+
     def get_network_copy(self) -> nx.Graph:
         """
         Returns a deepcopy of the network topology and its current state. The returned network can be used by external
@@ -285,6 +290,7 @@ class Simulator:
             'avg_path_delay': stats['avg_path_delay'],
             'avg_path_delay_of_processed_flows': stats['avg_path_delay_of_processed_flows'],
             'avg_ingress_2_egress_path_delay_of_processed_flows': stats['avg_ingress_2_egress_path_delay_of_processed_flows'],
-            'avg_node_load' : stats['avg_node_load'],
-            'avg_link_load' : stats['avg_link_load'],
+            'avg_node_load': stats['avg_node_load'],
+            'avg_link_load': stats['avg_link_load'],
+            'decisions': stats['decisions']
         }

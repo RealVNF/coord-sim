@@ -48,6 +48,7 @@ class GPASPAlgo:
         self.simulator.apply(action)
         self.simulator.run()
         self.simulator.write_state()
+        self.simulator.write_decisions()
 
     def init_flow(self, flow):
         """
@@ -81,6 +82,7 @@ class GPASPAlgo:
         # The associated node
         node_id = flow.current_node_id
         node = state.network['nodes'][node_id]
+        self.simulator.metrics.add_decision(node_id)
         # Algorithm management
         new_target = False
         # Metric management

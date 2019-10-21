@@ -26,6 +26,7 @@ configurations/
 
 # Plotted charts
 plotted/
+move/
 
 # Internal readme
 README_.md

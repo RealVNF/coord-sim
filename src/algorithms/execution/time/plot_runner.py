@@ -42,7 +42,7 @@ def main():
     metric_set_id = sys.argv[3]
 
     register_matplotlib_converters()
-    sns.set(style="whitegrid")
+    sns.set(style="whitegrid", rc={"axes.labelsize":16})
 
     input_path = f'transformed/{config}/{network}/{metric_set_id}'
     output_path = f'plotted/{config}/{network}/{metric_set_id}'

@@ -65,6 +65,7 @@ class SPR1Algo:
         self.simulator.apply(action)
         self.simulator.run()
         self.simulator.write_state()
+        self.simulator.write_decisions()
 
     def init_flow(self, flow):
         """
@@ -94,6 +95,7 @@ class SPR1Algo:
         # The associated node
         exec_node_id = flow.current_node_id
         exec_node = state.network['nodes'][exec_node_id]
+        self.simulator.metrics.add_decision(exec_node_id)
 
         if (flow.flow_id, flow.dr) not in self.occupancy_list[exec_node_id]:
             self.occupancy_list[exec_node_id].append((flow.flow_id, flow.dr))

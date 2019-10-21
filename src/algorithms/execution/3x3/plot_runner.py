@@ -19,7 +19,7 @@ pp_metrics = {'total_flows': 'Total', 'successful_flows': 'Successful', 'dropped
 pp_yaxis = {'flow': 'Flows', 'delay': 'Delay', 'load': 'Load %', 'delay_reduce': 'Delay', 'delay_other': 'Delay'}
 pp_algo = {'gpasp': 'GPASP', 'spr1': 'SPR-1', 'spr2': 'SPR-2'}
 pp_network = {'bics_34.graphml': 'BICS', 'dfn_58.graphml': 'DFN', 'intellifiber_73.graphml': 'Intellifiber'}
-pp_scenario = {'hc': 'HC', 'llc': 'LLC', 'lnc': 'LNC'}
+pp_scenario = {'hc': 'HNC', 'llc': 'LLC', 'lnc': 'LNC'}
 
 def get_data(data_path, metric_set_id):
     table = []
@@ -69,12 +69,13 @@ def main():
                             data=df, markers=True)
     sns_plot.set_title(f'{pp_scenario[scenario]} - {pp_network[network]}')
     # Place legend on the right side
-    # sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
+    #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
     # Place legend below
     sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
+    #sns_plot.get_legend().remove()
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
-    fig.savefig(f'{output_path}/ci-output.png', bbox_inches='tight')
+    fig.savefig(f'{output_path}/{scenario}-{network[:-8]}-{metric_set_id}.png', bbox_inches='tight')
     # plt.show()
 
 

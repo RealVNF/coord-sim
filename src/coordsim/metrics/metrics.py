@@ -69,9 +69,13 @@ class MetricStore:
         self['link_load_measurments'] = 0
 
         self['graveyard'] = defaultdict(int)
+        self['decisions'] = defaultdict(int)
 
         # Record all flows, to access their trace
         self['flows'] = []
+
+    def add_decision(self, node_id):
+        self['decisions'][node_id] += 1
 
     def add_active_flow(self, flow, current_node_id, current_sf):
         self['current_active_flows'][current_node_id][flow.sfc][current_sf] += 1
