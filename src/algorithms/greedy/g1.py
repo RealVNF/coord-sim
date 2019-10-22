@@ -58,6 +58,7 @@ class G1Algo:
         log.info(f'End simulation at: {datetime.now().strftime("%H-%M-%S")}')
         self.simulator.write_state()
         log.info(f'Network Stats after run(): {self.simulator.get_state().network_stats}')
+        self.simulator.write_decisions()
 
     def init_flow(self, flow):
         """
@@ -91,6 +92,7 @@ class G1Algo:
         # The associated node
         node_id = flow.current_node_id
         node = state.network['nodes'][node_id]
+        self.simulator.metrics.add_decision(node_id)
         # Algorithm management
         new_target = False
         # Metric management
@@ -262,7 +264,7 @@ class G1Algo:
 
 def main():
     # Simulator params
-    network = 'dfn_58.graphml'
+    network = 'bics_34.graphml'
     args = {
         'network': f'../../../params/networks/{network}',
         'service_functions': '../../../params/services/3sfcs.yaml',
