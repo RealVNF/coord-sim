@@ -50,6 +50,20 @@ def collect_data():
     return data
 
 
+def collect_data_decisions():
+    data = {}
+    for c in config:
+        data[c] = {}
+        for r in runs:
+            data[c][r] = {}
+            for net in networks:
+                data[c][r][net] = {}
+                for a in algos:
+                    data[c][r][net][a] = remove_first(read_output_file(f'scenarios/{c}/{r}/{net}/{a}/decisions.csv'))
+    return data
+
+
+#Deprecated
 def collect_data_runs(rconfig, rruns, rnetworks, ring):
     data = {}
     for c in rconfig:
@@ -63,7 +77,7 @@ def collect_data_runs(rconfig, rruns, rnetworks, ring):
                         read_output_file(f'scenarios/{r}/{c}/{net}/{ring}/{a}/metrics.csv'))
     return data
 
-
+#Deprecated
 def transform_data_runs(data, rconfig, rruns, rnetworks, metric_set, metric_set_id):
     for c in rconfig:
         for net in rnetworks:
@@ -94,10 +108,28 @@ def transform_data(data, metric_set, metric_set_id):
                                 writer.writerow(row)
 
 
+def transform_combine_data_decisions(d_data, data):
+    for c in config:
+        for net in networks:
+            os.makedirs(f'transformed/{c}/{net}/decisions/', exist_ok=False)
+            with open(f'transformed/{c}/{net}/decisions/t-metrics.csv', 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                for r in runs:
+                    for a in algos:
+                        for drow in d_data[c][r][net][a]:
+                             # x(algorithm), y(value), hue(categorie)
+                            row = [f'{a}', drow[2], 'counted']
+                            writer.writerow(row)
+                        row = [f'{a}', data[c][r][net][a][-1][metrics2index['total_flows']], 'total']
+                        writer.writerow(row)
+
+
 def main():
     data = collect_data()
+    d_data = collect_data_decisions()
     for key, value in metric_sets.items():
         transform_data(data, value, key)
+    transform_combine_data_decisions(d_data, data)
 
     # rdata = collect_data_runs(['hc', 'llc', 'lnc'], [str(x) for x in range(40)],
     #                           ['bics_34.graphml', 'dfn_58.graphml', 'intellifiber_73.graphml'], '0.3')
