@@ -18,6 +18,7 @@ pp_yaxis = {'flow': 'Flows', 'delay': 'Delay', 'load': 'Load %', 'delay_min': 'D
 pp_algo = {'gpasp': 'GPASP', 'spr1': 'SPR-1', 'spr2': 'SPR-2'}
 pp_network = {'bics_34.graphml': 'BICS', 'dfn_58.graphml': 'DFN', 'intellifiber_73.graphml': 'Intellifiber',
               'gts_ce_149.graphml': 'GTS CE'}
+pp_title = {'flow': 'Flows', 'delay': 'Delay', 'load': 'Load', 'delay_min': 'Path Delay', 'delay_other': 'E2E Delay'}
 
 
 def get_data(data_path, metric_set_id):
@@ -51,7 +52,10 @@ def main():
     df = pd.DataFrame(data=data)
     sns_plot = sns.lineplot(x='Time', y=pp_yaxis.get(metric_set_id, metric_set_id), hue='Metrics', style='Algorithms',
                             data=df, markers=True)
-    sns_plot.set_title(f'{pp_network[network]}')
+    sns_plot.set_title(f'{pp_network[network]} - {pp_title[metric_set_id]}')
+    sns_plot.set_xlabel('Time', fontsize=16) #added
+    sns_plot.set_ylabel(pp_yaxis.get(metric_set_id, metric_set_id), fontsize=16) #added
+    sns_plot.tick_params(labelsize=16) #added
     # Place legend on the right side
     # sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
     # Place legend below
