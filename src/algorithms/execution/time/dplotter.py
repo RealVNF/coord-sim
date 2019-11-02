@@ -34,9 +34,9 @@ def get_test():
 
 
 def main():
-    config = 'hc_0.5+'
+    config = 'hc_0.3+'
     network = 'gts_ce_149.graphml'
-    prefix = '0.5 - '
+    prefix = '0.3 - '
 
     register_matplotlib_converters()
     sns.set(style="whitegrid", rc={"axes.labelsize":16, "axes.titlesize":16})
@@ -46,46 +46,30 @@ def main():
 
     data = get_data(f'{input_path}/t-metrics.csv')
     df = pd.DataFrame(data=data)
-    sns_plot = sns.boxplot(x="Algorithms", y="Decisions", hue="Categories", data=df) # whis=[0, 100]
-    sns_plot.set_title(f'{prefix}{pp_network[network]}')
-    # Place legend on the right side
-    #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
-    # Place legend below
-    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
-    fig = sns_plot.get_figure()
-    os.makedirs(f'{output_path}', exist_ok=True)
-    fig.savefig(f'{output_path}/boxplot.png', bbox_inches='tight')
-    # plt.show()
 
 
-    plt.clf()
-    df = pd.DataFrame(data=data)
     sns_plot = sns.boxenplot(x="Algorithms", y="Decisions", hue="Categories", data=df)
     sns_plot.set_title(f'{prefix}{pp_network[network]}')
-    # Place legend on the right side
-    #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
-    # Place legend below
+    #sns_plot.tick_params(labelsize=16)  # added
+
     sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
+    plt.setp(sns_plot.get_legend().get_texts(), fontsize='16')  # for legend text
+    plt.setp(sns_plot.get_legend().get_title(), fontsize='18')  # for legend title
+
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
     fig.savefig(f'{output_path}/boxenplot.png', bbox_inches='tight')
 
-    # plt.clf()
-    # dt = get_test()
-    # sns_plot = sns.boxenplot(x='x', y='y', data=dt)
-    # # Place legend on the right side
-    # sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow=True)
-    # sns_plot.set_title(f'{pp_network[network]}')
-    # # Place legend below
-    # # sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
-    # fig = sns_plot.get_figure()
-    # os.makedirs(f'{output_path}', exist_ok=True)
-    # fig.savefig(f'{output_path}/boxenplotX.png', bbox_inches='tight')
 
     plt.clf()
     sns_plot = sns.barplot(x="Algorithms", y="Decisions", hue="Categories", data=df)
     sns_plot.set_title(f'{prefix}{pp_network[network]}')
+    #sns_plot.tick_params(labelsize=16)  # added
+
     sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
+    plt.setp(sns_plot.get_legend().get_texts(), fontsize='16')  # for legend text
+    plt.setp(sns_plot.get_legend().get_title(), fontsize='18')  # for legend title
+
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
     fig.savefig(f'{output_path}/barplot.png', bbox_inches='tight')

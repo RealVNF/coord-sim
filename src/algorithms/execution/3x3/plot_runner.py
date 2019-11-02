@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # Pretty print
 pp_metrics = {'total_flows': 'Total', 'successful_flows': 'Successful', 'dropped_flows': 'Dropped',
-              'in_network_flows': 'In network',
+              'in_network_flows': 'In-network',
               'avg_path_delay_of_processed_flows' :'Avg path delay processed',
               'avg_ingress_2_egress_path_delay_of_processed_flows': 'Avg i2e path delay processed',
               'avg_end2end_delay_of_dropped_flows':'Avg end2end path delay dropped',
@@ -48,35 +48,24 @@ def main():
     input_path = f'transformed/{scenario}/{network}/{metric_set_id}'
     output_path = f'plotted/{scenario}/{network}/{metric_set_id}'
 
-    data = get_data(f'{input_path}/t-metrics.csv', metric_set_id)
-    df = pd.DataFrame(data=data)
-    sns_plot = sns.lineplot(x='Ingress node %', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
-                            data=df, markers=True)
-    sns_plot.set_title(f'{pp_scenario[scenario]} - {pp_network[network]}')
-    # Place legend on the right side
-    #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
-    # Place legend below
-    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow = True, ncol = 2)
-    fig = sns_plot.get_figure()
-    os.makedirs(f'{output_path}', exist_ok=True)
-    fig.savefig(f'{output_path}/output.png', bbox_inches='tight')
-
     # Second plot
     plt.clf()
     data = get_data(f'{input_path}/ci-t-metrics.csv', metric_set_id)
     df = pd.DataFrame(data=data)
+
     sns_plot = sns.lineplot(x='Ingress node %', y=pp_yaxis[metric_set_id], hue='Metrics', style='Algorithms',
                             data=df, markers=True)
     sns_plot.set_title(f'{pp_scenario[scenario]} - {pp_network[network]}')
     # Place legend on the right side
     #sns_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., shadow = True)
-    # Place legend below
-    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2)
+    sns_plot.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), shadow=True, ncol=2) # Place legend below
+    plt.setp(sns_plot.get_legend().get_texts(), fontsize='16')  # for legend text
+    plt.setp(sns_plot.get_legend().get_title(), fontsize='18')  # for legend title
+
     #sns_plot.get_legend().remove()
     fig = sns_plot.get_figure()
     os.makedirs(f'{output_path}', exist_ok=True)
     fig.savefig(f'{output_path}/{scenario}-{network[:-8]}-{metric_set_id}.png', bbox_inches='tight')
-    # plt.show()
 
 
 if __name__ == "__main__":
