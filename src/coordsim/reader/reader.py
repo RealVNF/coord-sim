@@ -114,6 +114,13 @@ def weight(edge_cap, edge_delay):
     return 1 / (edge_cap + 1 / edge_delay)
 
 
+def network_diameter(nx_network):
+    """Return the network diameter, ie, delay of longest shortest path"""
+    if 'shortest_paths' not in nx_network.graph:
+        shortest_paths(nx_network)
+    return max([path[1] for path in nx_network.graph['shortest_paths'].values()])
+
+
 def shortest_paths(networkx_network):
     """
     finds the all pairs shortest paths using Johnson Algo
