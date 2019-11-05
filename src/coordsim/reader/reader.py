@@ -69,7 +69,7 @@ def load_resource_function(name, path):
         raise Exception(f'There is no "resource_function" defined in file "{name}.py."')
 
 
-def get_sf(sf_file, resource_functions_path):
+def get_sf(sf_file, resource_functions_path=''):
     """
     Get the list of SFs and their properties from the yaml data.
     """
