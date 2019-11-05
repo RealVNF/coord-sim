@@ -69,7 +69,7 @@ def load_resource_function(name, path):
         raise Exception(f'There is no "resource_function" defined in file "{name}.py."')
 
 
-def get_sf(sf_file, resource_functions_path):
+def get_sf(sf_file, resource_functions_path=''):
     """
     Get the list of SFs and their properties from the yaml data.
     """
@@ -112,6 +112,13 @@ def weight(edge_cap, edge_delay):
     elif edge_delay == 0:
         return 0
     return 1 / (edge_cap + 1 / edge_delay)
+
+
+def network_diameter(nx_network):
+    """Return the network diameter, ie, delay of longest shortest path"""
+    if 'shortest_paths' not in nx_network.graph:
+        shortest_paths(nx_network)
+    return max([path[1] for path in nx_network.graph['shortest_paths'].values()])
 
 
 def shortest_paths(networkx_network):
