@@ -22,7 +22,7 @@ class NoCandidateException(Exception):
     pass
 
 
-class TPK3Algo:
+class s1:
     """
     SPR base test algorithm
     """
@@ -440,7 +440,7 @@ def main():
         'resource_functions': '../../../params/services/resource_functions',
         'config': '../../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999,
-        'output_path': f'tpk_3-out/{network}'
+        'output_path': f's1-out/{network}'
     }
 
     # Setup logging
@@ -454,7 +454,7 @@ def main():
     simulator = Simulator(test_mode=True)
 
     # Setup algorithm
-    algo = TPK3Algo(simulator)
+    algo = s1(simulator)
     algo.init(os.path.abspath(args['network']),
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),
