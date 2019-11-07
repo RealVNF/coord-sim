@@ -100,7 +100,6 @@ class SimulatorParams:
     # string representation for logging
     def __str__(self):
         params_str = "Simulator parameters: \n"
-        params_str += "seed: {}\n".format(self.seed)
         params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
         params_str += f"deterministic_arrival: {self.deterministic_arrival}\n"
         params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
