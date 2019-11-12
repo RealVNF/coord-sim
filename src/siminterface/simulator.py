@@ -11,16 +11,17 @@ import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
+
 logger = logging.getLogger(__name__)
 
 
 class Simulator(SimulatorInterface):
     def __init__(self,  network_file, service_functions_file, config_file, resource_functions_path="",
                  test_mode=False, test_dir=None):
+        SimulatorInterface.__init__(self, test_mode=test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.network_file = network_file
-        self.test_mode = test_mode
         self.test_dir = test_dir
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
@@ -29,10 +30,8 @@ class Simulator(SimulatorInterface):
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
-        # Simulator parameters
 
     def init(self, seed):
-
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
@@ -40,11 +39,8 @@ class Simulator(SimulatorInterface):
         self.run_times = int(1)
         self.start_time = time.time()
 
-        # Parse network and SFC + SF file
-
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
-
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config)
 
         # Instantiate the parameter object for the simulator.
