@@ -106,7 +106,11 @@ def get_sf(sf_file, resource_functions_path=''):
 def weight(edge_cap, edge_delay):
     """
     edge weight = 1 / (cap + 1/delay) => prefer high cap, use smaller delay as additional influence/tie breaker
+    if cap = None, set it to 0 use edge_delay as weight
     """
+    assert edge_delay is not None
+    if edge_cap is None:
+        return edge_delay
     if edge_cap == 0:
         return math.inf
     elif edge_delay == 0:
@@ -189,7 +193,7 @@ def read_network(file, node_cap=None, link_cap=None):
         # As edges are undirectional, only LinkFwdCap determines the available data rate
         link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
         if e[2].get("LinkFwdCap") is None:
-            log.warning("Link {} has no capacity defined in graphml file. So, Using the default capacity".format(e))
+            log.warning(f"Link {(e[0], e[1])} has no capacity defined in graphml file. So, Using the default capacity {link_cap}")
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
         delay = 3
