@@ -193,7 +193,7 @@ def read_network(file, node_cap=None, link_cap=None):
         # As edges are undirectional, only LinkFwdCap determines the available data rate
         link_fwd_cap = e[2].get("LinkFwdCap", link_cap)
         if e[2].get("LinkFwdCap") is None:
-            log.warning(f"Link {(e[0], e[1])} has no capacity defined in graphml file. So, Using the default capacity {link_cap}")
+            log.warning(f"Link {(e[0], e[1])} has no capacity defined. Using the default capacity {link_cap} instead.")
         # Setting a default delay of 3 incase no delay specified in GraphML file
         # and we are unable to set it based on Geo location
         delay = 3
