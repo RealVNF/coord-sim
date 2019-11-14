@@ -22,9 +22,9 @@ class NoCandidateException(Exception):
     pass
 
 
-class s1:
+class s2:
     """
-    SPR-1 extensive logging
+    SPR-2 extensive logging
     """
     def __init__(self, simulator: Simulator):
         # Besides interaction we need the simulator reference to query all needed information. Not all information can
@@ -188,11 +188,14 @@ class s1:
         rejected_path = []
 
         for n in state.network['node_list']:
-            if n not in exclude:
-                node_stats = self.node_stats(n, flow)
-                path_stats = self.path_stats(flow.current_node_id, n, flow)
+            node_stats = self.node_stats(n, flow)
+            path_stats = self.path_stats(flow.current_node_id, n, flow)
+            if node_stats[1] == 1:
                 candidates_nodes.append(node_stats)
                 candidates_path.append(path_stats)
+
+        if len(candidates_nodes) == 0:
+            raise NoCandidateException
 
         # Determine max min
         # Nodes
@@ -276,8 +279,8 @@ class s1:
         # Scoring
         score_table = []
         for i in range(len(candidates_nodes)):
-            node_score = candidates_nodes[i][2] + candidates_nodes[i][3] + candidates_nodes[i][4]
-            path_score = candidates_path[i][2] + candidates_path[i][3]
+            node_score = candidates_nodes[i][2] + candidates_nodes[i][3] + candidates_nodes[i][4] + candidates_nodes[i][5]
+            path_score = candidates_path[i][4]
             score_table.append((candidates_nodes[i][0], node_score + path_score))
 
         score_table.sort(key=lambda x: x[1], reverse=True)
@@ -442,7 +445,7 @@ def main():
         'resource_functions': '../../../params/services/resource_functions',
         'config': '../../../params/config/probabilistic_discrete_config.yaml',
         'seed': 9999,
-        'output_path': f's1-out/{network}'
+        'output_path': f's2-out/{network}'
     }
 
     # Setup logging
@@ -456,7 +459,7 @@ def main():
     simulator = Simulator(test_mode=True)
 
     # Setup algorithm
-    algo = s1(simulator)
+    algo = s2(simulator)
     algo.init(os.path.abspath(args['network']),
               os.path.abspath(args['service_functions']),
               os.path.abspath(args['config']),

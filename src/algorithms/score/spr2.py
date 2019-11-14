@@ -16,10 +16,9 @@ class NoCandidateException(Exception):
 
 class SPR2Algo:
     """
-    SPR modified algorithm
+    SPR-2
     Score: closeness + compound path length + remaining node cap + node mortality + path occupancy
     Node cap requirement: hard
-    Blocked links: only for each forwarding operation
     """
     def __init__(self, simulator: Simulator):
         # Besides interaction we need the simulator reference to query all needed information. Not all information can
@@ -129,8 +128,6 @@ class SPR2Algo:
                         flow['path'] = []
             else:
                 try:
-                    # self.plan_placement(flow)
-                    # self.set_new_path(flow)
                     self.forward_flow(flow, state)
                 except nx.NetworkXNoPath:
                     flow['state'] = 'drop'
@@ -152,12 +149,6 @@ class SPR2Algo:
     def plan_placement(self, flow, exclude=[]):
         try:
             score_table = self.score(flow, exclude)
-            #score_table = score_table[:self.avg_ceil_degree]
-            #score_table = score_table[:1]
-            # Determine target node
-            #sum_score = sum(map(lambda x: x[1], score_table))
-            #p = list(map(lambda x: x[1] / sum_score, score_table))
-            #target = np.random.choice(list(map(lambda x: x[0], score_table)), p=p)
             target = score_table[0][0]
             flow['target_node_id'] = target
             flow['state'] = 'transit'
