@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 requirements = [
     'simpy',
-    'networkx',
+    'networkx==2.3',
     'geopy',
     'pyyaml>=5.1',
     'numpy',
