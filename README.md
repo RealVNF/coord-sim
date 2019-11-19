@@ -29,3 +29,8 @@ Then follow original setup procedure:
 ```bash
 pip install -r requirements.txt
 ```
+
+
+## Notes
+
+Due to the use of deprecated networkx functions and their removal in the 2.4 version, released while developing, the networkx library is locked to version 2.3
