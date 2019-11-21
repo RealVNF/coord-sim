@@ -2,7 +2,7 @@ import logging
 import random
 import time
 import os
-import coordsim.metrics.metrics as metrics
+from coordsim.metrics.metrics import Metrics
 import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.simulation.simulatorparams import SimulatorParams
@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 class Simulator(SimulatorInterface):
     def __init__(self,  network_file, service_functions_file, config_file, resource_functions_path="",
                  test_mode=False, test_dir=None):
-        SimulatorInterface.__init__(self, test_mode=test_mode)
+        # SimulatorInterface.__init__(self, test_mode=test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.network_file = network_file
+        self.test_mode = test_mode
         self.test_dir = test_dir
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
@@ -30,18 +31,20 @@ class Simulator(SimulatorInterface):
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
+        self.metrics = Metrics()
 
     def init(self, seed):
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
-        metrics.reset_metrics()
         self.run_times = int(1)
         self.start_time = time.time()
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config)
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
+                                      self.metrics)
+        self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
         if self.params.use_states and 'trace_path' in self.config:
@@ -81,7 +84,7 @@ class Simulator(SimulatorInterface):
 
         # Record end time and running time metrics
         self.end_time = time.time()
-        metrics.running_time(self.start_time, self.end_time)
+        self.params.metrics.running_time(self.start_time, self.end_time)
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
@@ -113,7 +116,7 @@ class Simulator(SimulatorInterface):
         self.simulator.params.schedule = actions.scheduling
 
         # reset metrics for steps
-        metrics.reset_run_metrics()
+        self.params.metrics.reset_run_metrics()
 
         # Run the simulation again with the new params for the set duration.
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
@@ -135,7 +138,7 @@ class Simulator(SimulatorInterface):
         # Record end time of the apply round, doesn't change start time to show the running time of the entire
         # simulation at the end of the simulation.
         self.end_time = time.time()
-        metrics.running_time(self.start_time, self.end_time)
+        self.params.metrics.running_time(self.start_time, self.end_time)
 
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -150,7 +153,7 @@ class Simulator(SimulatorInterface):
         """
         Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
         """
-        max_node_usage = metrics.get_metrics()['run_max_node_usage']
+        max_node_usage = self.params.metrics.get_metrics()['run_max_node_usage']
         self.network_dict = {'nodes': [], 'edges': []}
         for node in self.params.network.nodes(data=True):
             node_cap = node[1]['cap']
@@ -179,7 +182,7 @@ class Simulator(SimulatorInterface):
         """
         Processes the metrics and parses them in a format specified in the SimulatorState class.
         """
-        stats = metrics.get_metrics()
+        stats = self.params.metrics.get_metrics()
         self.traffic = stats['run_total_requested_traffic']
         self.network_stats = {
             'processed_traffic': stats['run_total_processed_traffic'],
