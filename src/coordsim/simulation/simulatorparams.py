@@ -10,7 +10,7 @@ import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, schedule=None, sf_placement=None):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, schedule=None, sf_placement=None):
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -19,7 +19,7 @@ class SimulatorParams:
         self.sfc_list = sfc_list
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)
         self.sf_list = sf_list
-
+        self.metrics = metrics
         self.use_trace = False
         if 'trace_path' in config:
             self.use_trace = True
