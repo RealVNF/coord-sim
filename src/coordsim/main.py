@@ -4,7 +4,7 @@ import random
 import numpy
 from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.reader import reader
-from coordsim.metrics import metrics
+from coordsim.metrics.metrics import Metrics
 from coordsim.simulation.simulatorparams import SimulatorParams
 import coordsim.network.dummy_data as dummy_data
 from coordsim.trace_processor.trace_processor import TraceProcessor
@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 def main():
     args = parse_args()
+    metrics = Metrics()
     metrics.reset_metrics()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
@@ -45,7 +46,7 @@ def main():
     config = reader.get_config(args.config)
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, sf_placement=sf_placement,
+    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, metrics, sf_placement=sf_placement,
                              schedule=schedule)
     log.info(params)
 
