@@ -3,10 +3,9 @@ from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.simulation.simulatorparams import SimulatorParams
 from coordsim.network import dummy_data
 from coordsim.reader import reader
-from coordsim.metrics import metrics
 import simpy
 import logging
-
+from coordsim.metrics.metrics import Metrics
 
 NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/abc.yaml"
@@ -25,7 +24,8 @@ class TestFlowSimulator(TestCase):
         Setup test environment
         """
         logging.basicConfig(level=logging.ERROR)
-        metrics.reset_metrics()
+        self.metrics = Metrics()
+        self.metrics.reset_metrics()
 
         self.env = simpy.Environment()
         # Configure simulator parameters
@@ -38,7 +38,7 @@ class TestFlowSimulator(TestCase):
         schedule = dummy_data.triangle_schedule
 
         # Initialize Simulator and SimulatoParams objects
-        self.simulator_params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config,
+        self.simulator_params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, self.metrics,
                                                 sf_placement=sf_placement, schedule=schedule)
         self.flow_simulator = FlowSimulator(self.env, self.simulator_params)
         self.flow_simulator.start()
@@ -49,7 +49,7 @@ class TestFlowSimulator(TestCase):
         Test the simulator
         """
         # Collect metrics
-        self.metric_collection = metrics.get_metrics()
+        self.metric_collection = self.metrics.get_metrics()
         # Check if Simulator is initiated correctly
         self.assertIsInstance(self.flow_simulator, FlowSimulator)
         # Check if Params are set correctly
