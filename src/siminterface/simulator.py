@@ -31,7 +31,11 @@ class Simulator(SimulatorInterface):
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
-        self.metrics = Metrics()
+        self.metrics = Metrics(self.network, self.sf_list)
+
+    def __del__(self):
+        # write dropped flow locs to yaml
+        self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
 
     def init(self, seed):
         # reset network caps and available SFs:
@@ -44,7 +48,6 @@ class Simulator(SimulatorInterface):
         self.env = simpy.Environment()
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
                                       self.metrics)
-        self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
         if self.params.use_states and 'trace_path' in self.config:

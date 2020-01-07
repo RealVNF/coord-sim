@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class Metrics:
-    def __init__(self):
+    def __init__(self, network, sfs):
         self.metrics = {}
+        self.network = network
+        self.sfs = sfs
+        self.reset_metrics()
 
     def reset_metrics(self):
         """Set/Reset all metrics"""
@@ -24,6 +27,8 @@ class Metrics:
         self.metrics['processed_flows'] = 0
         self.metrics['dropped_flows'] = 0
         self.metrics['total_active_flows'] = 0
+        # number of dropped flows per node and SF (locations)
+        self.metrics['dropped_flows_locs'] = {v: {sf: 0 for sf in self.sfs.keys()} for v in self.network.nodes.keys()}
 
         # delay
         self.metrics['total_processing_delay'] = 0.0
@@ -115,9 +120,10 @@ class Metrics:
         self.metrics['total_active_flows'] -= 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
-    def dropped_flow(self):
+    def dropped_flow(self, flow):
         self.metrics['dropped_flows'] += 1
         self.metrics['total_active_flows'] -= 1
+        self.metrics['dropped_flows_locs'][flow.current_node_id][flow.current_sf] += 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
     def add_processing_delay(self, delay):
