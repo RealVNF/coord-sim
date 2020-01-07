@@ -24,8 +24,6 @@ class TestFlowSimulator(TestCase):
         Setup test environment
         """
         logging.basicConfig(level=logging.ERROR)
-        self.metrics = Metrics()
-        self.metrics.reset_metrics()
 
         self.env = simpy.Environment()
         # Configure simulator parameters
@@ -33,6 +31,8 @@ class TestFlowSimulator(TestCase):
         sfc_list = reader.get_sfc(SERVICE_FUNCTIONS_FILE)
         sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE, RESOURCE_FUNCTION_PATH)
         config = reader.get_config(CONFIG_FILE)
+
+        self.metrics = Metrics(network, sf_list)
 
         sf_placement = dummy_data.triangle_placement
         schedule = dummy_data.triangle_schedule

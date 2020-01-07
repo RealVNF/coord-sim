@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class Metrics:
-    def __init__(self):
+    def __init__(self, network, sfs):
         self.metrics = {}
+        self.network = network
+        self.sfs = sfs
+        self.reset_metrics()
 
     def reset_metrics(self):
         """Set/Reset all metrics"""
@@ -44,6 +47,9 @@ class Metrics:
         # Current number of active flows per each node
         self.metrics['current_active_flows'] = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
         self.metrics['current_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+        # number of dropped flows per node and SF
+        self.metrics['dropped_flows'] = {(v, sf): 0 for v in self.network.nodes.keys() for sf in self.sfs.keys()}
 
         self.reset_run_metrics()
 
