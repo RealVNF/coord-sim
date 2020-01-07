@@ -33,6 +33,10 @@ class Simulator(SimulatorInterface):
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
 
+    def __del__(self):
+        # write dropped flow locs to yaml
+        self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
+
     def init(self, seed):
         # reset network caps and available SFs:
         reader.reset_cap(self.network)

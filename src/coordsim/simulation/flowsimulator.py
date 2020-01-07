@@ -96,7 +96,7 @@ class FlowSimulator:
         else:
             log.info(f"Requested SFC was not found. Dropping flow {flow.flow_id}")
             # Update metrics for the dropped flow
-            self.params.metrics.dropped_flow()
+            self.params.metrics.dropped_flow(flow)
             self.env.exit()
 
     def pass_flow(self, flow, sfc):
@@ -145,12 +145,12 @@ class FlowSimulator:
                 log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
                             f'Dropping flow!')
                 log.warning(ex)
-                self.params.metrics.dropped_flow()
+                self.params.metrics.dropped_flow(flow)
                 self.env.exit()
         else:
             # Scheduling rule does not exist: drop flow
             log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
-            self.params.metrics.dropped_flow()
+            self.params.metrics.dropped_flow(flow)
             self.env.exit()
 
     def forward_flow(self, flow, next_node):
@@ -271,11 +271,11 @@ class FlowSimulator:
             else:
                 log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
                 # Update metrics for the dropped flow
-                self.params.metrics.dropped_flow()
+                self.params.metrics.dropped_flow(flow)
                 self.env.exit()
         else:
             log.info(f"SF {sf} was not found at {current_node_id}. Dropping flow {flow.flow_id}")
-            self.params.metrics.dropped_flow()
+            self.params.metrics.dropped_flow(flow)
             self.env.exit()
 
     def depart_flow(self, flow):

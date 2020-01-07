@@ -4,6 +4,7 @@ Simulator file writer module
 
 import csv
 import os
+import yaml
 from spinterface import SimulatorAction, SimulatorState
 
 
@@ -22,6 +23,7 @@ class ResultWriter():
             self.placement_file_name = f"{test_dir}/placements.csv"
             self.resources_file_name = f"{test_dir}/resources.csv"
             self.metrics_file_name = f"{test_dir}/metrics.csv"
+            self.dropped_flows_file_name = f"{test_dir}/dropped_flows.yaml"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
@@ -39,6 +41,14 @@ class ResultWriter():
 
             # Write the headers to the files
             self.create_csv_headers()
+
+    def __del__(self):
+        # Close all writer streams
+        if self.test_mode:
+            self.placement_stream.close()
+            self.scheduleing_stream.close()
+            self.resources_stream.close()
+            self.metrics_stream.close()
 
     def create_csv_headers(self):
         """
@@ -107,16 +117,8 @@ class ResultWriter():
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
 
-    def close_streams(self):
-        """
-        Close open streams
-        """
+    def write_dropped_flow_locs(self, dropped_flow_locs):
+        """Dump dropped flow counters into yaml file. Called at end of simulation"""
         if self.test_mode:
-            self.placement_stream.close()
-            self.scheduleing_stream.close()
-            self.resources_stream.close()
-            self.metrics_stream.close()
-
-    def __del__(self):
-        # Close all writer streams
-        self.close_streams()
+            with open(self.dropped_flows_file_name, 'w') as f:
+                yaml.dump(dropped_flow_locs, f, default_flow_style=False)
