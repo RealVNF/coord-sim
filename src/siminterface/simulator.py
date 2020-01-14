@@ -33,11 +33,15 @@ class Simulator(SimulatorInterface):
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
 
+        self.episode = 0
+
     def __del__(self):
         # write dropped flow locs to yaml
         self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
 
     def init(self, seed):
+        # increment episode count
+        self.episode += 1
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
@@ -48,6 +52,7 @@ class Simulator(SimulatorInterface):
         self.env = simpy.Environment()
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
                                       self.metrics)
+        self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
         if self.params.use_states and 'trace_path' in self.config:
@@ -96,7 +101,7 @@ class Simulator(SimulatorInterface):
 
     def apply(self, actions: SimulatorAction):
 
-        self.writer.write_action_result(self.env, actions)
+        self.writer.write_action_result(self.episode, self.env.now, actions)
         logger.debug(f"t={self.env.now}: {actions}")
 
         # Get the new placement from the action passed by the RL agent
@@ -146,7 +151,7 @@ class Simulator(SimulatorInterface):
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        self.writer.write_state_results(self.env, simulator_state)
+        self.writer.write_state_results(self.episode, self.env.now, simulator_state)
         logger.debug(f"t={self.env.now}: {simulator_state}")
         if self.params.use_states:
             self.params.update_state()
