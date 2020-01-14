@@ -46,11 +46,11 @@ class ResultWriter():
         """
 
         # Create CSV headers
-        scheduling_output_header = ['time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
-        placement_output_header = ['time', 'node', 'sf']
-        resources_output_header = ['time', 'node', 'node_capacity', 'used_resources']
-        metrics_output_header = ['time', 'total_flows', 'successful_flows', 'dropped_flows', 'in_network_flows',
-                                 'avg_end2end_delay']
+        scheduling_output_header = ['episode', 'time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
+        placement_output_header = ['episode', 'time', 'node', 'sf']
+        resources_output_header = ['episode', 'time', 'node', 'node_capacity', 'used_resources']
+        metrics_output_header = ['episode', 'time', 'total_flows', 'successful_flows', 'dropped_flows',
+                                 'in_network_flows', 'avg_end2end_delay']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -58,42 +58,40 @@ class ResultWriter():
         self.resources_writer.writerow(resources_output_header)
         self.metrics_writer.writerow(metrics_output_header)
 
-    def write_action_result(self, env, action: SimulatorAction):
+    def write_action_result(self, episode, time, action: SimulatorAction):
         """
         Write simulator actions to CSV files for statistics purposes
         """
         if self.test_mode:
             placement = action.placement
             scheduling = action.scheduling
-            time = env.now
             placement_output = []
             scheduling_output = []
 
             for node_id, sfs in placement.items():
                 for sf in sfs:
-                    placement_output_row = [time, node_id, sf]
+                    placement_output_row = [episode, time, node_id, sf]
                     placement_output.append(placement_output_row)
 
             for node, sfcs in scheduling.items():
                 for sfc, sfs in sfcs.items():
                     for sf, scheduling in sfs.items():
                         for schedule_node, schedule_prob in scheduling.items():
-                            scheduling_output_row = [time, node, sfc, sf, schedule_node, schedule_prob]
+                            scheduling_output_row = [episode, time, node, sfc, sf, schedule_node, schedule_prob]
                             scheduling_output.append(scheduling_output_row)
 
             self.placement_writer.writerows(placement_output)
             self.scheduling_writer.writerows(scheduling_output)
 
-    def write_state_results(self, env, state: SimulatorState):
+    def write_state_results(self, episode, time, state: SimulatorState):
         """
         Write node resource consumption to CSV file
         """
         if self.test_mode:
             network = state.network
             stats = state.network_stats
-            time = env.now
 
-            metrics_output = [time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
+            metrics_output = [episode, time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
                               stats['in_network_flows'], stats['avg_end2end_delay']]
 
             resource_output = []
@@ -101,7 +99,7 @@ class ResultWriter():
                 node_id = node['id']
                 node_cap = node['resource']
                 used_resources = node['used_resources']
-                resource_output_row = [time, node_id, node_cap, used_resources]
+                resource_output_row = [episode, time, node_id, node_cap, used_resources]
                 resource_output.append(resource_output_row)
 
             self.metrics_writer.writerow(metrics_output)
