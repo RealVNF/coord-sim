@@ -53,7 +53,6 @@ class Simulator(SimulatorInterface):
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
                                       self.metrics)
         self.params.metrics.reset_metrics()
-        self.params.metrics.reset_run_metrics()
 
         # Instantiate the parameter object for the simulator.
         if self.params.use_states and 'trace_path' in self.config:
