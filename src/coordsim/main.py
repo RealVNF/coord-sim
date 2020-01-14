@@ -18,8 +18,6 @@ log = logging.getLogger(__name__)
 
 def main():
     args = parse_args()
-    metrics = Metrics()
-    metrics.reset_metrics()
     start_time = time.time()
     logging.basicConfig(level=logging.INFO)
 
@@ -33,8 +31,6 @@ def main():
     # Parse network and get NetworkX object and ingress network list
     network, ing_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
 
-    # Getting current SFC list, and the SF list of each SFC, and config
-
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI
     sf_placement = dummy_data.triangle_placement
@@ -44,6 +40,8 @@ def main():
     sfc_list = reader.get_sfc(args.sf)
     sf_list = reader.get_sf(args.sf, args.sfr)
     config = reader.get_config(args.config)
+
+    metrics = Metrics(network, sf_list)
 
     # Create the simulator parameters object with the provided args
     params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, metrics, sf_placement=sf_placement,
