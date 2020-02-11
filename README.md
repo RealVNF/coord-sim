@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.com/RealVNF/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/RealVNF/coordination-simulation)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5b21d652862548e6903a50e32333bea5)](https://www.codacy.com/manual/RealVNF/coordination-simulation?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RealVNF/coordination-simulation&amp;utm_campaign=Badge_Grade)
 
 # Simulation: Coordination of chained virtual network functions
 
