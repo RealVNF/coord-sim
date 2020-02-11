@@ -24,6 +24,7 @@ class ResultWriter():
             self.resources_file_name = f"{test_dir}/resources.csv"
             self.metrics_file_name = f"{test_dir}/metrics.csv"
             self.dropped_flows_file_name = f"{test_dir}/dropped_flows.yaml"
+            self.rl_state_file_name = f"{test_dir}/rl_state.csv"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
@@ -32,12 +33,14 @@ class ResultWriter():
             self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
             self.resources_stream = open(self.resources_file_name, 'a+', newline='')
             self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
+            self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
 
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
             self.scheduling_writer = csv.writer(self.scheduleing_stream)
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
+            self.rl_state_writer = csv.writer(self.rl_state_stream)
 
             # Write the headers to the files
             self.create_csv_headers()
@@ -49,6 +52,7 @@ class ResultWriter():
             self.scheduleing_stream.close()
             self.resources_stream.close()
             self.metrics_stream.close()
+            self.rl_state_stream.close()
 
     def create_csv_headers(self):
         """
@@ -120,3 +124,7 @@ class ResultWriter():
         if self.test_mode:
             with open(self.dropped_flows_file_name, 'w') as f:
                 yaml.dump(dropped_flow_locs, f, default_flow_style=False)
+
+    def write_rl_state(self, rl_state):
+        if self.test_mode:
+            self.rl_state_writer.writerow(rl_state)
