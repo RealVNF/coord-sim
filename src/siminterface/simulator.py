@@ -202,7 +202,8 @@ class Simulator(SimulatorInterface):
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
             'run_max_end2end_delay': stats['run_max_end2end_delay'],
             'run_avg_path_delay': stats['run_avg_path_delay'],
-            'run_total_processed_traffic': stats['run_total_processed_traffic']
+            'run_total_processed_traffic': stats['run_total_processed_traffic'],
+            'run_dropped_flows_per_node': stats['run_dropped_flows_per_node']
         }
 
     def get_active_ingress_nodes(self):
