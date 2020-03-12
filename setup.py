@@ -5,7 +5,7 @@ requirements = [
     'geopy',
     'pyyaml>=5.1',
     'numpy',
-    'coord-interface'
+    'common-utils'
 ]
 
 test_requirements = [
@@ -15,7 +15,7 @@ test_requirements = [
 ]
 
 dependency_links = [
-    'git+https://github.com/RealVNF/coord-env-interface'
+    'git+https://github.com/RealVNF/common-utils'
 ]
 
 setup(
@@ -23,7 +23,7 @@ setup(
     version='0.9.3',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
-    url='https://github.com/CN-UPB/coordination-simulation',
+    url='https://github.com/RealVNF/coordination-simulation',
     author='Stefan Schneider',
     dependency_links=dependency_links,
     author_email='stefan.schneider@upb.de',

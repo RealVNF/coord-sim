@@ -1,2 +1,2 @@
---editable git://github.com/RealVNF/coord-env-interface#egg=coord-interface
+--editable git://github.com/RealVNF/common-utils#egg=common-utils
 --editable .
