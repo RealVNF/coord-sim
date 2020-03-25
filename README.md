@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/RealVNF/coordination-simulation.svg?token=LHEsk5x5tv7SsiZCzuoZ&branch=master)](https://travis-ci.com/RealVNF/coordination-simulation)
+[![Build Status](https://travis-ci.com/RealVNF/coord-sim.svg?branch=master)](https://travis-ci.com/RealVNF/coord-sim)
 
 # Simulation: Coordination of chained virtual network functions
 
