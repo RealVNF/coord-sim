@@ -4,6 +4,12 @@
 
 Simulate flow-level, inter-node network coordination including scaling and placement of services and scheduling/balancing traffic between them.
 
+<p align="center">
+    <img src="docs/realvnf_logo.png" height="150" hspace="30"/>
+  <img src="docs/upb.png" width="200" hspace="30"/>
+  <img src="docs/huawei_horizontal.png" width="250" hspace="30"/>
+</p>
+
 
 **Features**:
 
@@ -34,7 +40,7 @@ Type `coord-sim -h` for help using the simulator. For now, this should print
 ``` 
 $ coord-sim -h
 usage: coord-sim [-h] -d DURATION -sf SF [-sfr SFR] -n NETWORK -c CONFIG
-                 [-s SEED]
+                 [-t TRACE] [-s SEED]
 
 Coordination-Simulation tool
 
@@ -52,6 +58,9 @@ optional arguments:
                         edges of the network.
   -c CONFIG, --config CONFIG
                         Path to the simulator config file.
+  -t TRACE, --trace TRACE
+                        Provide a CSV trace file to configure the traffic the
+                        simulator is generating.
   -s SEED, --seed SEED  Random seed
 ```
 
@@ -94,3 +103,12 @@ flake8 src
 # tests
 nose2
 ```
+
+## Acknowledgement
+
+This project has received funding from German Federal Ministry of Education and Research ([BMBF](https://www.bmbf.de/)) through Software Campus grant 01IS17046 ([RealVNF](https://realvnf.github.io/)).
+
+<p align="center">
+  <img src="docs/software_campus.png" width="200"/>
+  <img src="docs/BMBF_sponsored_by.jpg" width="250"/>
+</p>
