@@ -11,6 +11,21 @@ Simulate flow-level, inter-node network coordination including scaling and place
 </p>
 
 
+## Citing this work
+
+If you are using this work in whole or in part in your project, please cite it as follows: 
+
+```
+@inproceedings{schneider2020coordination,
+	author = {Schneider, Stefan and Khalili, Ramin and Manzoor, Adnan and Qarawlus, Haydar and Uthe, Sven and Karl, Holger and Hecker, Artur},
+	booktitle = {ACM SIGCOMM NetAI Workshop 2020 (SIGCOMM NetAI ’20)},
+	pages = {1--8},
+	title = {Self-Driving Coordination of Massively Scaled Services Using Deep Reinforcement Learning},
+	year = {2020},
+	note = {under review}
+}
+```
+
 **Features**:
 
 * Simulate any given network topology with arbitrary node and link capacities and link delays
