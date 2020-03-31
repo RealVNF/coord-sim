@@ -10,7 +10,6 @@ requirements = [
 
 test_requirements = [
     'flake8',
-    'pytest',
     'nose2'
 ]
 
@@ -20,10 +19,10 @@ dependency_links = [
 
 setup(
     name='coord-sim',
-    version='0.9.3',
+    version='1.0.0',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
-    url='https://github.com/RealVNF/coordination-simulation',
+    url='https://github.com/RealVNF/coord-sim',
     author='Stefan Schneider',
     dependency_links=dependency_links,
     author_email='stefan.schneider@upb.de',
