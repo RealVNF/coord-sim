@@ -10,7 +10,8 @@ import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, schedule=None, sf_placement=None):
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, prediction,
+                 schedule=None, sf_placement=None):
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -23,6 +24,9 @@ class SimulatorParams:
         self.use_trace = False
         if 'trace_path' in config:
             self.use_trace = True
+
+        self.prediction = prediction  # bool
+        self.predicted_inter_arr_mean = {node_id: config['inter_arrival_mean'] for node_id in self.network.nodes}
 
         if schedule is None:
             schedule = {}
@@ -96,6 +100,9 @@ class SimulatorParams:
 
     def update_single_inter_arr_mean(self, new_mean):
         self.inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
+
+    def update_single_predicted_inter_arr_mean(self, new_mean):
+        self.predicted_inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
 
     # string representation for logging
     def __str__(self):

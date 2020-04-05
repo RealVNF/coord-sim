@@ -11,6 +11,7 @@ import simpy
 from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
+from coordsim.traffic_predictor.traffic_predictor import TrafficPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,14 @@ class Simulator(SimulatorInterface):
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
 
+        self.prediction = False
+        # Check if future ingress traffic setting is enabled
+        if 'future_traffic' in self.config and self.config['future_traffic']:
+            self.prediction = True
+        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
+                                      self.metrics, self.prediction)
+        if self.prediction:
+            self.predictor = TrafficPredictor(self.params)
         self.episode = 0
 
     def __del__(self):
@@ -50,8 +59,7 @@ class Simulator(SimulatorInterface):
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
-                                      self.metrics)
+
         self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
@@ -93,6 +101,11 @@ class Simulator(SimulatorInterface):
         # Record end time and running time metrics
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
+        # Check to see if traffic prediction is enabled to provide future traffic not current traffic
+        if self.prediction:
+            self.predictor.predict_traffic()
+            stats = self.params.metrics.get_metrics()
+            self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
@@ -148,6 +161,11 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
+        # Check to see if traffic prediction is enabled to provide future traffic not current traffic
+        if self.prediction:
+            self.predictor.predict_traffic()
+            stats = self.params.metrics.get_metrics()
+            self.traffic = stats['run_total_requested_traffic']
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
