@@ -39,7 +39,7 @@ class Simulator(SimulatorInterface):
         if 'future_traffic' in self.config and self.config['future_traffic']:
             self.prediction = True
         self.params = SimulatorParams(self.network, self.ing_nodes, self.sfc_list, self.sf_list, self.config,
-                                      self.metrics, self.prediction)
+                                      self.metrics, prediction=self.prediction)
         if self.prediction:
             self.predictor = TrafficPredictor(self.params)
         self.episode = 0

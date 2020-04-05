@@ -39,7 +39,7 @@ class TestFlowSimulator(TestCase):
 
         # Initialize Simulator and SimulatoParams objects
         self.simulator_params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, self.metrics,
-                                                prediction=False, sf_placement=sf_placement, schedule=schedule)
+                                                sf_placement=sf_placement, schedule=schedule)
         self.flow_simulator = FlowSimulator(self.env, self.simulator_params)
         self.flow_simulator.start()
         self.env.run(until=SIMULATION_DURATION)

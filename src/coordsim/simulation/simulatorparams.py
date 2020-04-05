@@ -10,7 +10,7 @@ import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, prediction,
+    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
         # NetworkX network object: DiGraph
         self.network = network
