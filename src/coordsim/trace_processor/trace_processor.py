@@ -41,6 +41,7 @@ class TraceProcessor():
                 inter_arrival_mean = float(inter_arrival_mean)
                 old_mean = self.params.inter_arr_mean[node_id]
                 self.params.inter_arr_mean[node_id] = inter_arrival_mean
+                # Check for changing capacities in the trace file
                 if 'cap' in self.trace[self.trace_index]:
                     cap = self.trace[self.trace_index]["cap"]
                     self.params.network.nodes[node_id]["cap"] = float(cap)
