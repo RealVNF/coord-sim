@@ -28,8 +28,8 @@ def main():
     random.seed(args.seed)
     numpy.random.seed(args.seed)
 
-    # Parse network and get NetworkX object and ingress network list
-    network, ing_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
+    # Parse network, get NetworkX object ,ingress network list, and egress nodes list
+    network, ing_nodes, eg_nodes = reader.read_network(args.network, node_cap=10, link_cap=10)
 
     # use dummy placement and schedule for running simulator without algorithm
     # TODO: make configurable via CLI
@@ -44,8 +44,8 @@ def main():
     metrics = Metrics(network, sf_list)
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, metrics, sf_placement=sf_placement,
-                             schedule=schedule)
+    params = SimulatorParams(network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics,
+                             sf_placement=sf_placement, schedule=schedule)
     log.info(params)
 
     if 'trace_path' in config:
