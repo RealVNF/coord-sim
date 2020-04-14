@@ -249,7 +249,7 @@ class FlowSimulator:
                     elif flow.egress_node_id is None:
                         # Flow is processed and no egress node specified: depart flow
                         log.info(f'Flow {flow.flow_id} has no egress node, will depart from'
-                                    f' current node {flow.current_node_id}. Time {self.env.now}.')
+                                 f' current node {flow.current_node_id}. Time {self.env.now}.')
                         yield self.env.timeout(flow.duration)
                         self.depart_flow(flow)
                     else:
