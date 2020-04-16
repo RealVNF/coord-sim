@@ -27,7 +27,7 @@ Simulate flow-level, inter-node network coordination including scaling and place
 
 ## Citing this work
 
-If you are using this work in whole or in part in your project, please cite it as follows: 
+If you are using this work in whole or in part in your project, please cite it as follows:
 
 ```
 @inproceedings{schneider2020coordination,
@@ -54,9 +54,9 @@ pip install -r requirements.txt
 
 ## Usage
 
-Type `coord-sim -h` for help using the simulator. For now, this should print 
+Type `coord-sim -h` for help using the simulator. For now, this should print
 
-``` 
+```
 $ coord-sim -h
 usage: coord-sim [-h] -d DURATION -sf SF [-sfr SFR] -n NETWORK -c CONFIG
                  [-t TRACE] [-s SEED]
@@ -85,7 +85,7 @@ optional arguments:
 
 You can use the following command as an example (run from the root project folder)
 
-```bash 
+```bash
 coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -sfr params/services/resource_functions -c params/config/sim_config.yaml
 ```
 This will run a simulation on a provided GraphML network file and a YAML placement file for a duration of 20 timesteps.
@@ -95,7 +95,7 @@ This will run a simulation on a provided GraphML network file and a YAML placeme
 
 By default, all SFs have a node resource consumption, which exactly equals the aggregated traffic that they have to handle.
 
-It is possible to specify arbitrary other resource consumption models simply by implementing a python module with a 
+It is possible to specify arbitrary other resource consumption models simply by implementing a python module with a
 function `resource_function(load)` (see examples [here](https://github.com/RealVNF/coordination-simulation/tree/master/params/services/resource_functions)).
 
 To use these modules, they need to be referenced in the service file:
@@ -112,6 +112,15 @@ And the path to the folder with the Python modules needs to be passed via the `-
 
 See PR https://github.com/RealVNF/coordination-simulation/pull/78 for details.
 
+
+### Egress nodes
+
+- A node can be set to be a `Egress` node in the `NodeType` attribute of the network file
+- If some nodes are set as `Egress` then only the simulator will randomly choose one of them as the Egress node for each flow in the network
+- If some nodes are set to be Egress then once the flow is processed we check if for the flow, `current node == egress node` . If Yes then we depart , otherwise we forward the flow to the egress_node using the shortest_path routing.
+- **Todo**: Ideally the coordination algorithms should keep the path(Ingress to Egress) of the flow in view while creating the schedule/placement.
+
+See [PR 137](https://github.com/RealVNF/coord-sim/pull/137) for details.
 
 ## Tests
 
