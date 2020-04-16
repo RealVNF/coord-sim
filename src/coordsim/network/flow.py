@@ -9,8 +9,8 @@ TODO: Add get/set methods
 
 class Flow:
 
-    def __init__(self, flow_id, sfc, dr, size, creation_time,
-                 destination=None, current_sf=None, current_node_id=None, current_position=0, end2end_delay=0.0):
+    def __init__(self, flow_id, sfc, dr, size, creation_time, destination=None, egress_node_id=None, current_sf=None,
+                 current_node_id=None, current_position=0, end2end_delay=0.0):
 
         # Flow ID: Unique ID string
         self.flow_id = flow_id
@@ -24,6 +24,10 @@ class Flow:
         self.current_sf = current_sf
         # The current node that the flow is being processed in
         self.current_node_id = current_node_id
+        # The specified ingress node of the flow. The flow will spawn at the ingress node.
+        self.ingress_node_id = current_node_id
+        # The specified egress node of the flow. The flow will depart at the egress node. Might be non-existent.
+        self.egress_node_id = egress_node_id
         # The duration of the flow calculated in ms.
         self.duration = (float(size) / float(dr)) * 1000  # Converted flow duration to ms
         # Current flow position within the SFC
