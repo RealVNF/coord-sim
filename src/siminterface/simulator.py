@@ -34,7 +34,7 @@ class Simulator(SimulatorInterface):
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
-        # Assume result path is the path where network file is in. 
+        # Assume result path is the path where network file is in.
         self.result_base_path = os.path.dirname(self.network_file)
         if 'trace_path' in self.config:
             # Quick solution to copy trace file to same path for network file as provided by calling algo.
