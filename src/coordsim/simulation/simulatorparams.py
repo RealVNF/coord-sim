@@ -10,12 +10,14 @@ import numpy as np
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, sfc_list, sf_list, config, metrics, prediction=False,
+    def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
         self.ing_nodes = ing_nodes
+        # Egress nodes of the network (nodes at which flows may leave the network): list
+        self.eg_nodes = eg_nodes
         # List of available SFCs and their child SFs: defaultdict(None)
         self.sfc_list = sfc_list
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)

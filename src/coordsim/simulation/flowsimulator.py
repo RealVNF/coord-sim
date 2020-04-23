@@ -31,6 +31,8 @@ class FlowSimulator:
         # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
         log.info("Using nodes list {}\n".format(list(self.params.network.nodes.keys())))
         log.info("Total of {} ingress nodes available\n".format(len(self.params.ing_nodes)))
+        if self.params.eg_nodes:
+            log.info("Total of {} egress nodes available\n".format(len(self.params.eg_nodes)))
         for node in self.params.ing_nodes:
             node_id = node[0]
             self.env.process(self.generate_flow(node_id))
@@ -66,9 +68,13 @@ class FlowSimulator:
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
             # Get the flow's creation time (current environment time)
             creation_time = self.env.now
+            # Set the egress node for the flow if some are specified in the network file
+            flow_egress_node = None
+            if self.params.eg_nodes:
+                flow_egress_node = random.choice(self.params.eg_nodes)
             # Generate flow based on given params
             flow = Flow(str(self.total_flow_count), flow_sfc, flow_dr, flow_size, creation_time,
-                        current_node_id=node_id)
+                        current_node_id=node_id, egress_node_id=flow_egress_node)
             # Update metrics for the generated flow
             self.params.metrics.generated_flow(flow, node_id)
             # Generate flows and schedule them at ingress node
@@ -230,10 +236,31 @@ class FlowSimulator:
                 log.info("Flow {} started departing sf {} at node {}. Time {}"
                          .format(flow.flow_id, current_sf, current_node_id, self.env.now))
 
-                # Check if flow is currently in last SF, if so, then depart flow.
-                if (flow.current_position == len(sfc) - 1):
-                    yield self.env.timeout(flow.duration)
-                    self.depart_flow(flow)
+                # Check if flow is currently in last SF, if so, then:
+                # - Check if the flow has some Egress node set or not. If not then just depart. If Yes then:
+                #   - check if the current node is the egress node. If Yes then depart. If No then forward the flow to
+                #     the egress node using the shortest_path
+
+                if flow.current_position == len(sfc) - 1:
+                    if flow.current_node_id == flow.egress_node_id:
+                        # Flow is processed and resides at egress node: depart flow
+                        yield self.env.timeout(flow.duration)
+                        self.depart_flow(flow)
+                    elif flow.egress_node_id is None:
+                        # Flow is processed and no egress node specified: depart flow
+                        log.info(f'Flow {flow.flow_id} has no egress node, will depart from'
+                                 f' current node {flow.current_node_id}. Time {self.env.now}.')
+                        yield self.env.timeout(flow.duration)
+                        self.depart_flow(flow)
+                    else:
+                        # Remove the active flow from the SF after it departed the SF on current node towards egress
+                        self.params.metrics.remove_active_flow(flow, current_node_id, current_sf)
+                        # Forward flow to the egress node and then depart from there
+                        yield self.env.process(self.forward_flow(flow, flow.egress_node_id))
+                        yield self.env.timeout(flow.duration)
+                        # In this situation the last sf was never active for the egress node,
+                        # so we should not remove it from the metrics
+                        self.depart_flow(flow, remove_active_flow=False)
                 else:
                     # Increment the position of the flow within SFC
                     flow.current_position += 1
@@ -278,13 +305,14 @@ class FlowSimulator:
             self.params.metrics.dropped_flow(flow)
             self.env.exit()
 
-    def depart_flow(self, flow):
+    def depart_flow(self, flow, remove_active_flow=True):
         """
         Process the flow at the requested SF of the current node.
         """
         # Update metrics for the processed flow
         self.params.metrics.completed_flow()
         self.params.metrics.add_end2end_delay(flow.end2end_delay)
-        self.params.metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
+        if remove_active_flow:
+            self.params.metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
         log.info("Flow {} was processed and departed the network from {}. Time {}"
                  .format(flow.flow_id, flow.current_node_id, self.env.now))

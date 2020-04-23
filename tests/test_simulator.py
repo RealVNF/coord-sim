@@ -27,7 +27,7 @@ class TestFlowSimulator(TestCase):
 
         self.env = simpy.Environment()
         # Configure simulator parameters
-        network, ing_nodes = reader.read_network(NETWORK_FILE, node_cap=10, link_cap=10)
+        network, ing_nodes, eg_nodes = reader.read_network(NETWORK_FILE, node_cap=10, link_cap=10)
         sfc_list = reader.get_sfc(SERVICE_FUNCTIONS_FILE)
         sf_list = reader.get_sf(SERVICE_FUNCTIONS_FILE, RESOURCE_FUNCTION_PATH)
         config = reader.get_config(CONFIG_FILE)
@@ -38,7 +38,7 @@ class TestFlowSimulator(TestCase):
         schedule = dummy_data.triangle_schedule
 
         # Initialize Simulator and SimulatoParams objects
-        self.simulator_params = SimulatorParams(network, ing_nodes, sfc_list, sf_list, config, self.metrics,
+        self.simulator_params = SimulatorParams(network, ing_nodes, eg_nodes, sfc_list, sf_list, config, self.metrics,
                                                 sf_placement=sf_placement, schedule=schedule)
         self.flow_simulator = FlowSimulator(self.env, self.simulator_params)
         self.flow_simulator.start()

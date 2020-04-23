@@ -223,13 +223,16 @@ def read_network(file, node_cap=None, link_cap=None):
     # Setting the all-pairs shortest path in the NetworkX network as a graph attribute
     shortest_paths(networkx_network)
 
-    # Filter ingress nodes
+    # Filter ingress and egress (if any) nodes
     ing_nodes = []
+    eg_nodes = []
     for node in networkx_network.nodes.items():
         if node[1]["type"] == "Ingress":
             ing_nodes.append(node)
+        if node[1]["type"] == "Egress":
+            eg_nodes.append(node[0])
 
-    return networkx_network, ing_nodes
+    return networkx_network, ing_nodes, eg_nodes
 
 
 def reset_cap(network):
