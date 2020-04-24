@@ -17,7 +17,7 @@ class TrafficPredictor():
 
     def predict_traffic(self):
         """
-        Predicts the traffic at ingress nodes based on the current inter_arrival_mean
+        Calculates the upcoming traffic at ingress nodes based on the current inter_arrival_mean
         Currently only supports deterministic traffic and single SFC
         """
         # reset total requested traffic

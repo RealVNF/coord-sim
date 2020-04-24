@@ -2,6 +2,7 @@ import logging
 import random
 import time
 import os
+from shutil import copyfile
 from coordsim.metrics.metrics import Metrics
 import coordsim.reader.reader as reader
 from coordsim.simulation.flowsimulator import FlowSimulator
@@ -33,6 +34,12 @@ class Simulator(SimulatorInterface):
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
+        # Assume result path is the path where network file is in.
+        self.result_base_path = os.path.dirname(self.network_file)
+        if 'trace_path' in self.config:
+            # Quick solution to copy trace file to same path for network file as provided by calling algo.
+            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
+            copyfile(trace_path, os.path.join(self.result_base_path, os.path.basename(trace_path)))
 
         self.prediction = False
         # Check if future ingress traffic setting is enabled
