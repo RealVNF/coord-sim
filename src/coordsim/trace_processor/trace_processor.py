@@ -60,9 +60,7 @@ class TraceProcessor():
         one run duration before the trace module updates the actual mean
 
         """
-        # -1 here because the prediction always was always scheduled after the SimulatorState code was executed
-        # Must check this further to see if there is a way to change orde of events in SimPy
-        timeout = float(self.trace[self.prediction_trace_index]['time']) - self.env.now - self.params.run_duration - 1
+        timeout = float(self.trace[self.prediction_trace_index]['time']) - self.env.now - self.params.run_duration
         # Cap to make sure we don't have timeout less 0, otherwise raises exception in SimPy
         self.prediction_timeout = np.clip(timeout, 0, None)
         inter_arrival_mean = self.trace[self.prediction_trace_index]['inter_arrival_mean']
