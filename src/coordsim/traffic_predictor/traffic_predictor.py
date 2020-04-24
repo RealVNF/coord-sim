@@ -43,7 +43,8 @@ class TrafficPredictor():
                 # Poisson arrival -> exponential distributed inter-arrival time
                 for _ in range(self.params.run_duration):
                     inter_arr_times.append(random.expovariate(lambd=1.0/self.params.predicted_inter_arr_mean[node_id]))
-                    # If the duration of the inter_arr_times reaches the run duration, assume enough flows generated for a run
+                    # If the duration of the inter_arr_times reaches the run duration, assume enough flows generated
+                    # for a run
                     # This is to simulate waiting before generating another flow
                     if sum(inter_arr_times) >= self.params.run_duration:
                         break
