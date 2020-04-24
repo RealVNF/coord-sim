@@ -2,6 +2,7 @@ from coordsim.simulation.simulatorparams import SimulatorParams
 from collections import defaultdict
 from math import ceil
 import numpy as np
+import random
 import logging
 log = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class TrafficPredictor():
     def predict_traffic(self):
         """
         Calculates the upcoming traffic at ingress nodes based on the current inter_arrival_mean
-        Currently only supports deterministic traffic and single SFC
+        Currently supports single SFC
         """
         # reset total requested traffic
         self.params.metrics.metrics['run_total_requested_traffic'] = defaultdict(
@@ -34,9 +35,23 @@ class TrafficPredictor():
             sfc = sfc_ids[0]
             ingress_sf = self.params.sfc_list[sfc][0]
 
+            inter_arr_mean = None
+            if self.params.deterministic_arrival:
+                inter_arr_mean = self.params.predicted_inter_arr_mean[node_id]
+            else:
+                inter_arr_times = []
+                # Poisson arrival -> exponential distributed inter-arrival time
+                for _ in range(self.params.run_duration):
+                    inter_arr_times.append(random.expovariate(lambd=1.0/self.params.predicted_inter_arr_mean[node_id]))
+                    # If the duration of the inter_arr_times reaches the run duration, assume enough flows generated
+                    # for a run
+                    # This is to simulate waiting before generating another flow
+                    if sum(inter_arr_times) >= self.params.run_duration:
+                        break
+                inter_arr_mean = np.mean(inter_arr_times)
             # Calculate flow count for each ingress node
             flow_dr = 0.0
-            number_of_flows = self.params.run_duration / self.params.predicted_inter_arr_mean[node_id]
+            number_of_flows = self.params.run_duration / inter_arr_mean
 
             # Predict data rate for expected number of flows
             for _ in range(ceil(number_of_flows)):
