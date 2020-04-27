@@ -12,6 +12,10 @@ import numpy as np
 class SimulatorParams:
     def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
+        # Arrival DR lists if traffic prediction is enabled
+        self.arrival_list = None
+        self.flow_drs = None
+        self.flow_sizes = None
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
