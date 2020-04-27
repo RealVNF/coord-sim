@@ -86,6 +86,8 @@ class SimulatorParams:
                 self.current_state = self.init_state
             state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
             self.update_single_inter_arr_mean(state_inter_arr_mean)
+            if self.prediction:
+                self.update_single_predicted_inter_arr_mean(state_inter_arr_mean)
         else:
             inter_arr_mean = config['inter_arrival_mean']
             self.update_single_inter_arr_mean(inter_arr_mean)
@@ -103,6 +105,8 @@ class SimulatorParams:
                 self.current_state = state_names[0]
         state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
         self.update_single_inter_arr_mean(state_inter_arr_mean)
+        if self.prediction:
+            self.update_single_predicted_inter_arr_mean(state_inter_arr_mean)
 
     def update_single_inter_arr_mean(self, new_mean):
         self.inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}

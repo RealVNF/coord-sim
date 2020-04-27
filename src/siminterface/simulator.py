@@ -85,6 +85,9 @@ class Simulator(SimulatorInterface):
         random.seed(self.seed)
         numpy.random.seed(self.seed)
 
+        # If traffic prediction is turned on: Generate flow arrival list for first run
+        if self.prediction:
+            self.predictor.gen_flow_lists()
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
 
@@ -108,9 +111,9 @@ class Simulator(SimulatorInterface):
         # Record end time and running time metrics
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
-        # Check to see if traffic prediction is enabled to provide future traffic not current traffic
+        # Update metrics with the predicted traffic for the next run since this is only init and sim is not running yet
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.update_metrics()
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -167,7 +170,9 @@ class Simulator(SimulatorInterface):
         # simulation at the end of the simulation.
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
-
+        # Update state before traffic prediction happens to enable MMPP traffic prediction
+        if self.params.use_states:
+            self.params.update_state()
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
             self.predictor.predict_traffic()
@@ -178,8 +183,7 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.episode, self.env.now, simulator_state)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-        if self.params.use_states:
-            self.params.update_state()
+
         return simulator_state
 
     def parse_network(self) -> dict:
