@@ -18,11 +18,6 @@ class TrafficPredictor():
         self.flow_drs = {}
         self.flow_sizes = {}
         self.arrival_list = {}
-        for node in self.params.ing_nodes:
-            node_id = node[0]
-            self.flow_drs[node_id] = []
-            self.flow_sizes[node_id] = []
-            self.arrival_list[node_id] = []
 
     def gen_flow_lists(self):
         """
@@ -36,28 +31,37 @@ class TrafficPredictor():
         for node in self.params.ing_nodes:
             # get node_id
             node_id = node[0]
-
+            # reset lists
+            self.arrival_list[node_id] = []
+            self.flow_drs[node_id] = []
+            self.flow_sizes[node_id] = []
             inter_arr_mean = None
 
-            inter_arr_times = []
             # Poisson arrival -> exponential distributed inter-arrival time
-            while sum(inter_arr_times) <= self.params.run_duration:
+            while sum(self.arrival_list[node_id]) <= self.params.run_duration:
                 if self.params.deterministic_arrival:
                     inter_arr_mean = self.params.predicted_inter_arr_mean[node_id]
                 else:
                     inter_arr_mean = random.expovariate(lambd=1.0/self.params.predicted_inter_arr_mean[node_id])
-                inter_arr_times.append(inter_arr_mean)
+                # Sometimes adding the generated inter_arr_mean can still make sum > run_duration
+                if sum(self.arrival_list[node_id]) + inter_arr_mean > self.params.run_duration:
+                    break
+                self.arrival_list[node_id].append(inter_arr_mean)
                 if self.params.deterministic_size:
-                    self.flow_sizes[node_id].append(self.params.flow_size_shape)
+                    flow_size = self.params.flow_size_shape
                 else:
                     # heavy-tail flow size
-                    self.flow_sizes[node_id].append(np.random.pareto(self.params.flow_size_shape) + 1)
-                self.flow_drs[node_id].append(np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev))
+                    flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
+                self.flow_sizes[node_id].append(flow_size)
+                self.flow_drs[node_id].append(flow_dr)
 
-            # Update ingress traffic in metrics module
-            self.params.arrival_list = inter_arr_times
-            self.params.flow_drs = self.flow_drs
-            self.params.flow_sizes = self.flow_sizes
+        # Update lists in sim param
+        self.params.arrival_list = self.arrival_list
+        self.params.flow_drs = self.flow_drs
+        self.params.flow_sizes = self.flow_sizes
 
     def update_metrics(self):
         for node in self.params.ing_nodes:

@@ -37,56 +37,48 @@ class FlowSimulator:
             node_id = node[0]
             self.env.process(self.generate_flow(node_id))
 
-    def gen_flow_params(self, node_id, index):
-        """
-        Calculate flow parameters based on whether prediction is enabled or not
-        """
-        if self.params.arrival_list is not None:
-            flow_dr = self.params.flow_drs[node_id][index]
-            flow_size = self.params.flow_sizes[node_id][index]
-            inter_arr_time = self.params.arrival_list[node_id][index]
-        else:
-            # set normally distributed flow data rate
-            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
-
-            # set deterministic or random flow arrival times and flow sizes according to config
-            if self.params.deterministic_arrival:
-                inter_arr_time = self.params.inter_arr_mean[node_id]
-            else:
-                # Poisson arrival -> exponential distributed inter-arrival time
-                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
-
-            if self.params.deterministic_size:
-                flow_size = self.params.flow_size_shape
-            else:
-                # heavy-tail flow size
-                flow_size = np.random.pareto(self.params.flow_size_shape) + 1
-
-        # Skip flows with negative flow_dr or flow_size values
-        if flow_dr <= 0.00 or flow_size <= 0.00:
-            flow_dr = False
-            flow_size = False
-
-        return inter_arr_time, flow_size, flow_dr
-
     def generate_flow(self, node_id):
         """
         Generate flows at the ingress nodes.
         """
         inter_arrival_index = 0
         # Change loop condition based on whether prediction is on or not
-        if self.params.arrival_list is not None:
-            loop_condition = inter_arrival_index < len(self.params.arrival_list)
+        if self.params.prediction:
+            loop_condition = inter_arrival_index < len(self.params.arrival_list[node_id])
         else:
             loop_condition = self.params.inter_arr_mean[node_id] is not None
 
         while loop_condition:
             self.total_flow_count += 1
-            inter_arr_time, flow_size, flow_dr = self.gen_flow_params(node_id, inter_arrival_index)
+            if self.params.prediction:
+                flow_dr = self.params.flow_drs[node_id][inter_arrival_index]
+                flow_size = self.params.flow_sizes[node_id][inter_arrival_index]
+                inter_arr_time = self.params.arrival_list[node_id][inter_arrival_index]
+                inter_arrival_index += 1
+                # Update loop condition again because it doesnt automatically update
+                loop_condition = inter_arrival_index < len(self.params.arrival_list[node_id])
+                # If we arrived at end of arrival list, prepare for new one
+                if not loop_condition:
+                    inter_arrival_index = 0
+                    loop_condition = True
+            else:
+                # set normally distributed flow data rate
+                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+                # set deterministic or random flow arrival times and flow sizes according to config
+                if self.params.deterministic_arrival:
+                    inter_arr_time = self.params.inter_arr_mean[node_id]
+                else:
+                    # Poisson arrival -> exponential distributed inter-arrival time
+                    inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
+                if self.params.deterministic_size:
+                    flow_size = self.params.flow_size_shape
+                else:
+                    # heavy-tail flow size
+                    flow_size = np.random.pareto(self.params.flow_size_shape) + 1
 
-            # Skip flows with negative flow_dr or flow_size values
-            if not flow_dr or not flow_size:
-                continue
+                # Skip flows with negative flow_dr or flow_size values
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
 
             # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
@@ -104,7 +96,6 @@ class FlowSimulator:
             # Generate flows and schedule them at ingress node
             self.env.process(self.init_flow(flow))
 
-            inter_arrival_index += 1
             yield self.env.timeout(inter_arr_time)
 
     def init_flow(self, flow):
