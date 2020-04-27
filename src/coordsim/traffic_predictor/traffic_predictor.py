@@ -77,4 +77,4 @@ class TrafficPredictor():
         Currently supports single SFC
         """
         self.gen_flow_lists()
-        self.update_metrics
+        self.update_metrics()
