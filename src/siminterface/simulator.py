@@ -84,7 +84,9 @@ class Simulator(SimulatorInterface):
         random.seed(self.seed)
         numpy.random.seed(self.seed)
 
-        # TODO: new --> generate flow arrival
+        self.params.reset_flow_lists()
+        # generate flow lists 2x (1x for upcoming run; 1x for next run - used for oracle)
+        self.params.generate_flow_lists()
         self.params.generate_flow_lists()
 
         # Instantiate a simulator object, pass the environment and params
@@ -170,6 +172,9 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
+        # generate flow data for next run (used for prediction)
+        self.params.generate_flow_lists()
+
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
             self.predictor.predict_traffic()
@@ -241,6 +246,7 @@ class Simulator(SimulatorInterface):
 # for debugging
 if __name__ == "__main__":
     # run from project root for file paths to work
+    # I changed triangle to have 2 ingress nodes for debugging
     network_file = 'params/networks/triangle.graphml'
     service_file = 'params/services/abc.yaml'
     config_file = 'params/config/sim_config.yaml'
