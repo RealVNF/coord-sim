@@ -131,13 +131,18 @@ class SimulatorParams:
         """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
         # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
         # dict: ingress_id --> list of arrival times, sizes, drs
-        for ing in self.ing_nodes:
-            self.flow_arrival_list = {ing[0]: []}
-            self.flow_size_list = {ing[0]: []}
-            self.flow_dr_list = {ing[0]: []}
+        self.flow_arrival_list = {}
+        self.flow_size_list = {}
+        self.flow_dr_list = {}
+        self.flow_list_idx = {}
+
+        for ing_node in self.ing_nodes:
+            self.flow_arrival_list[ing_node[0]] = []
+            self.flow_size_list[ing_node[0]] = []
+            self.flow_dr_list[ing_node[0]] = []
             # index in these lists: is initialized and reset when generating the lists
             # dict: ingress_id --> list index
-            self.flow_list_idx = {ing[0]: 0}
+            self.flow_list_idx[ing_node[0]] = 0
 
     def generate_flow_lists(self):
         """Generate and append dicts of lists of flow arrival, size, dr for the run duration"""
