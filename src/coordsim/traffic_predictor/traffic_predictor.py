@@ -1,8 +1,8 @@
 from coordsim.simulation.simulatorparams import SimulatorParams
 from collections import defaultdict
-from math import ceil
-import numpy as np
-import random
+# from math import ceil
+# import numpy as np
+# import random
 import logging
 log = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ class TrafficPredictor():
 
     def __init__(self, params: SimulatorParams):
         self.params = params
+        self.last_dr_idx = {ing[0]: 0 for ing in self.params.ing_nodes}
 
     def predict_traffic(self):
         """
@@ -34,28 +35,14 @@ class TrafficPredictor():
             sfc_ids = [*sfc_ids]  # New unpacking trick in python 3.5+
             sfc = sfc_ids[0]
             ingress_sf = self.params.sfc_list[sfc][0]
-
-            inter_arr_mean = None
-            if self.params.deterministic_arrival:
-                inter_arr_mean = self.params.predicted_inter_arr_mean[node_id]
-            else:
-                inter_arr_times = []
-                # Poisson arrival -> exponential distributed inter-arrival time
-                for _ in range(self.params.run_duration):
-                    inter_arr_times.append(random.expovariate(lambd=1.0/self.params.predicted_inter_arr_mean[node_id]))
-                    # If the duration of the inter_arr_times reaches the run duration, assume enough flows generated
-                    # for a run
-                    # This is to simulate waiting before generating another flow
-                    if sum(inter_arr_times) >= self.params.run_duration:
-                        break
-                inter_arr_mean = np.mean(inter_arr_times)
-            # Calculate flow count for each ingress node
-            flow_dr = 0.0
-            number_of_flows = self.params.run_duration / inter_arr_mean
-
-            # Predict data rate for expected number of flows
-            for _ in range(ceil(number_of_flows)):
-                flow_dr += np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+            flow_dr = 0
+            # DDPG Weirdly calls `init()` twice which causes the second (more important) init call to
+            # predict 0 traffic
+            if self.last_dr_idx[node_id] == len(self.params.flow_dr_list[node_id]):
+                self.last_dr_idx[node_id] = 0
+            for dr in self.params.flow_dr_list[node_id][self.last_dr_idx[node_id]:]:
+                flow_dr += dr
+                self.last_dr_idx[node_id] += 1
 
             # Update ingress traffic in metrics module
             self.params.metrics.metrics['run_total_requested_traffic'][node_id][sfc][ingress_sf] = flow_dr

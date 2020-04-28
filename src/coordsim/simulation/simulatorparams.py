@@ -131,38 +131,57 @@ class SimulatorParams:
         """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
         # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
         # dict: ingress_id --> list of arrival times, sizes, drs
-        self.flow_arrival_list = {ing[0]: [] for ing in self.ing_nodes}
-        self.flow_size_list = {ing[0]: [] for ing in self.ing_nodes}
-        self.flow_dr_list = {ing[0]: [] for ing in self.ing_nodes}
-        # index in these lists: is initialized and reset when generating the lists
-        # dict: ingress_id --> list index
-        self.flow_list_idx = {ing[0]: 0 for ing in self.ing_nodes}
+        for ing in self.ing_nodes:
+            self.flow_arrival_list = {ing[0]: []}
+            self.flow_size_list = {ing[0]: []}
+            self.flow_dr_list = {ing[0]: []}
+            # index in these lists: is initialized and reset when generating the lists
+            # dict: ingress_id --> list index
+            self.flow_list_idx = {ing[0]: 0}
 
     def generate_flow_lists(self):
         """Generate and append dicts of lists of flow arrival, size, dr for the run duration"""
-        if self.deterministic_arrival or self.use_states or self.use_trace:
-            # TODO: implement for deterministic traffic and MMPP?
-            raise NotImplementedError()
-
         # generate flow inter-arrival times for each ingress
         ingress_ids = [ing[0] for ing in self.ing_nodes]
         for ing in ingress_ids:
             flow_arrival = []
+            flow_sizes = []
+            flow_drs = []
             # generate flows for time frame of num_steps
             while sum(flow_arrival) < self.run_duration:
-                inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
+                # extension for det, and MMPP
+                if self.deterministic_arrival:
+                    inter_arr_time = self.inter_arr_mean[ing]
+                else:
+                    inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
+                # Generate flow dr
+                flow_dr = np.random.normal(self.flow_dr_mean, self.flow_dr_stdev)
+                # generate flow sizes
+                if self.deterministic_size:
+                    flow_size = self.flow_size_shape
+                else:
+                    # heavy-tail flow size
+                    flow_size = np.random.pareto(self.flow_size_shape) + 1
+                # Skip flows with negative flow_dr or flow_size values
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
+
                 flow_arrival.append(inter_arr_time)
-                # TODO: generate and append flow size and dr
+                flow_sizes.append(flow_size)
+                flow_drs.append(flow_dr)
 
             # append to existing flow list. it continues to grow across runs within an episode
             self.flow_arrival_list[ing].extend(flow_arrival)
+            self.flow_dr_list[ing].extend(flow_drs)
+            self.flow_size_list[ing].extend(flow_sizes)
 
     def get_next_flow_data(self, ing):
-        # TODO: extend to get all flow data (incl size and dr)
         """Return next flow data for given ingress from list of generated arrival times."""
         idx = self.flow_list_idx[ing]
         assert idx < len(self.flow_arrival_list[ing])
         inter_arrival_time = self.flow_arrival_list[ing][idx]
+        flow_dr = self.flow_dr_list[ing][idx]
+        flow_size = self.flow_size_list[ing][idx]
         # important: increment index!
         self.flow_list_idx[ing] += 1
-        return inter_arrival_time
+        return inter_arrival_time, flow_dr, flow_size

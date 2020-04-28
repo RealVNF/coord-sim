@@ -44,33 +44,22 @@ class FlowSimulator:
         while self.params.inter_arr_mean[node_id] is not None:
             self.total_flow_count += 1
 
-            # set normally distributed flow data rate
-            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
-
-            # set deterministic or random flow arrival times and flow sizes according to config
-            if self.params.deterministic_arrival:
-                inter_arr_time = self.params.inter_arr_mean[node_id]
-            else:
-                # keep this for backward compatibility
-                # when running the simulator without the sim interface, ie, without calling init,
-                # the flow lists are not generated
-                if self.params.flow_list_idx is None:
-                    # Poisson arrival -> exponential distributed inter-arrival time
-                    inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
-                # use generated list of flow arrivals
+            if self.params.flow_list_idx is None:
+                # Poisson arrival -> exponential distributed inter-arrival time
+                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
+                # set normally distributed flow data rate
+                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+                if self.params.deterministic_size:
+                    flow_size = self.params.flow_size_shape
                 else:
-                    # TODO: extend to also retrieve size and dr
-                    inter_arr_time = self.params.get_next_flow_data(node_id)
-
-            if self.params.deterministic_size:
-                flow_size = self.params.flow_size_shape
+                    # heavy-tail flow size
+                    flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+                # Skip flows with negative flow_dr or flow_size values
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
+            # use generated list of flow arrivals
             else:
-                # heavy-tail flow size
-                flow_size = np.random.pareto(self.params.flow_size_shape) + 1
-
-            # Skip flows with negative flow_dr or flow_size values
-            if flow_dr <= 0.00 or flow_size <= 0.00:
-                continue
+                inter_arr_time, flow_dr, flow_size = self.params.get_next_flow_data(node_id)
 
             # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])

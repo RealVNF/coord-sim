@@ -85,20 +85,20 @@ class Simulator(SimulatorInterface):
         numpy.random.seed(self.seed)
 
         self.params.reset_flow_lists()
-        # generate flow lists 2x (1x for upcoming run; 1x for next run - used for oracle)
-        self.params.generate_flow_lists()
+        # generate flow lists 1x here since we are in `init()`
         self.params.generate_flow_lists()
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
 
-        # Start the simulator
-        self.simulator.start()
         # Trace handling
         if 'trace_path' in self.config:
             trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
             trace = reader.get_trace(trace_path)
             TraceProcessor(self.params, self.env, trace, self.simulator)
+
+        # Start the simulator
+        self.simulator.start()
 
         # Run the environment for one step to get initial stats.
         self.env.step()
@@ -172,6 +172,8 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
+        if self.params.use_states:
+            self.params.update_state()
         # generate flow data for next run (used for prediction)
         self.params.generate_flow_lists()
 
@@ -185,8 +187,7 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.episode, self.env.now, simulator_state)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-        if self.params.use_states:
-            self.params.update_state()
+
         return simulator_state
 
     def parse_network(self) -> dict:
