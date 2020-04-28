@@ -52,7 +52,11 @@ class FlowSimulator:
                 inter_arr_time = self.params.inter_arr_mean[node_id]
             else:
                 # Poisson arrival -> exponential distributed inter-arrival time
-                inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
+                # inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
+
+                # use generated list of flow arrivals
+                # TODO: extend to also retrieve size and dr
+                inter_arr_time = self.params.get_next_flow_data(node_id)
 
             if self.params.deterministic_size:
                 flow_size = self.params.flow_size_shape
@@ -165,6 +169,12 @@ class FlowSimulator:
         Path delays are calculated using the Shortest path
         The delay is simulated by timing out for the delay amount of duration
         """
+        if next_node is None:
+            log.info(f"No node to forward flow {flow.flow_id} to. Dropping it")
+            # Update metrics for the dropped flow
+            self.params.metrics.dropped_flow(flow)
+            return
+
         path_delay = 0
         if flow.current_node_id != next_node:
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
