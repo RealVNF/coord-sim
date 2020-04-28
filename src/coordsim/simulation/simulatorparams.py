@@ -88,11 +88,12 @@ class SimulatorParams:
             self.update_single_inter_arr_mean(inter_arr_mean)
 
         # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
+        # dict: ingress_id --> list of arrival times, sizes, drs
         self.flow_arrival_list = None
-        # TODO: implement
         self.flow_size_list = None
         self.flow_dr_list = None
         # index in these lists: is initialized and reset when generating the lists
+        # dict: ingress_id --> list index
         self.flow_list_idx = None
 
     # string representation for logging
@@ -126,33 +127,42 @@ class SimulatorParams:
     def update_single_predicted_inter_arr_mean(self, new_mean):
         self.predicted_inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
 
+    def reset_flow_lists(self):
+        """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
+        # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
+        # dict: ingress_id --> list of arrival times, sizes, drs
+        self.flow_arrival_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_size_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_dr_list = {ing[0]: [] for ing in self.ing_nodes}
+        # index in these lists: is initialized and reset when generating the lists
+        # dict: ingress_id --> list index
+        self.flow_list_idx = {ing[0]: 0 for ing in self.ing_nodes}
+
     def generate_flow_lists(self):
-        """Generate and set dicts of lists of flow arrival, size, dr for the run duration"""
+        """Generate and append dicts of lists of flow arrival, size, dr for the run duration"""
         if self.deterministic_arrival or self.use_states or self.use_trace:
             # TODO: implement for deterministic traffic and MMPP?
             raise NotImplementedError()
 
-        # init empty list for each ingress node: node_id --> []
-        flow_arrival = {ing[0]: [] for ing in self.ing_nodes}
-        # TODO: init flow size & dr
         # generate flow inter-arrival times for each ingress
-        for ing in flow_arrival.keys():
+        ingress_ids = [ing[0] for ing in self.ing_nodes]
+        for ing in ingress_ids:
+            flow_arrival = []
             # generate flows for time frame of num_steps
-            while sum(flow_arrival[ing]) < self.run_duration:
+            while sum(flow_arrival) < self.run_duration:
                 inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
-                flow_arrival[ing].append(inter_arr_time)
-                # TODO: generate flow size and dr
+                flow_arrival.append(inter_arr_time)
+                # TODO: generate and append flow size and dr
 
-        # set index and generated dicts of lists as attributes
-        self.flow_list_idx = 0
-        # TODO: return flow size and dr
-        self.flow_arrival_list = flow_arrival
+            # append to existing flow list. it continues to grow across runs within an episode
+            self.flow_arrival_list[ing].extend(flow_arrival)
 
     def get_next_flow_data(self, ing):
         # TODO: extend to get all flow data (incl size and dr)
         """Return next flow data for given ingress from list of generated arrival times."""
-        assert self.flow_list_idx < len(self.flow_arrival_list[ing])
-        inter_arrival_time = self.flow_arrival_list[ing][self.flow_list_idx]
+        idx = self.flow_list_idx[ing]
+        assert idx < len(self.flow_arrival_list[ing])
+        inter_arrival_time = self.flow_arrival_list[ing][idx]
         # important: increment index!
-        self.flow_list_idx += 1
+        self.flow_list_idx[ing] += 1
         return inter_arrival_time
