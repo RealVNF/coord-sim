@@ -52,11 +52,15 @@ class FlowSimulator:
                 inter_arr_time = self.params.inter_arr_mean[node_id]
             else:
                 # Poisson arrival -> exponential distributed inter-arrival time
-                # inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
-
+                # keep this for backward compatibility
+                # when running the simulator without the sim interface, ie, without calling init,
+                # the flow lists are not generated
+                if self.params.flow_list_idx is None:
+                    inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
                 # use generated list of flow arrivals
-                # TODO: extend to also retrieve size and dr
-                inter_arr_time = self.params.get_next_flow_data(node_id)
+                else:
+                    # TODO: extend to also retrieve size and dr
+                    inter_arr_time = self.params.get_next_flow_data(node_id)
 
             if self.params.deterministic_size:
                 flow_size = self.params.flow_size_shape

@@ -248,5 +248,6 @@ if __name__ == "__main__":
     sim = Simulator(network_file, service_file, config_file)
     state = sim.init(seed=1234)
     dummy_action = SimulatorAction(placement={}, scheduling={})
-    # FIXME: this currently breaks - negative flow counter? should be possible to have an empty action and just drop all flows!
+    # FIXME: this currently breaks - negative flow counter?
+    #  should be possible to have an empty action and just drop all flows!
     state = sim.apply(dummy_action)
