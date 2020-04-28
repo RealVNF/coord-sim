@@ -18,13 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self,  network_file, service_functions_file, config_file, resource_functions_path="",
-                 test_mode=False, test_dir=None):
-        # SimulatorInterface.__init__(self, test_mode=test_mode)
+    def __init__(self, network_file, service_functions_file, config_file, resource_functions_path="", test_mode=False,
+                 test_dir=None):
+        super().__init__(test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.network_file = network_file
-        self.test_mode = test_mode
         self.test_dir = test_dir
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
@@ -84,6 +83,9 @@ class Simulator(SimulatorInterface):
         self.seed = seed
         random.seed(self.seed)
         numpy.random.seed(self.seed)
+
+        # TODO: new --> generate flow arrival
+        self.params.generate_flow_lists()
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
@@ -234,3 +236,18 @@ class Simulator(SimulatorInterface):
     def get_active_ingress_nodes(self):
         """Return names of all ingress nodes that are currently active, ie, produce flows."""
         return [ing[0] for ing in self.ing_nodes if self.params.inter_arr_mean[ing[0]] is not None]
+
+
+# for debugging
+if __name__ == "__main__":
+    # run from project root for file paths to work
+    network_file = 'params/networks/triangle.graphml'
+    service_file = 'params/services/abc.yaml'
+    config_file = 'params/config/sim_config.yaml'
+
+    sim = Simulator(network_file, service_file, config_file)
+    state = sim.init(seed=1234)
+    dummy_action = SimulatorAction(placement={}, scheduling={})
+    # FIXME: this currently breaks - negative flow counter?
+    #  should be possible to have an empty action and just drop all flows!
+    state = sim.apply(dummy_action)
