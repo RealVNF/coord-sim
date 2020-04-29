@@ -15,9 +15,10 @@ class TrafficPredictor():
 
     def __init__(self, params: SimulatorParams):
         self.params = params
-        self.last_dr_idx = {ing[0]: 0 for ing in self.params.ing_nodes}
+        self.last_flow_idx = {ing[0]: 0 for ing in self.params.ing_nodes}
+        self.last_arrival_sum = {ing[0]: 0 for ing in self.params.ing_nodes}
 
-    def predict_traffic(self):
+    def predict_traffic(self, now):
         """
         Calculates the upcoming traffic at ingress nodes based on the current inter_arrival_mean
         Currently supports single SFC
@@ -36,13 +37,16 @@ class TrafficPredictor():
             sfc = sfc_ids[0]
             ingress_sf = self.params.sfc_list[sfc][0]
             flow_dr = 0
-            # DDPG Weirdly calls `init()` twice which causes the second (more important) init call to
-            # predict 0 traffic
-            if self.last_dr_idx[node_id] == len(self.params.flow_dr_list[node_id]):
-                self.last_dr_idx[node_id] = 0
-            for dr in self.params.flow_dr_list[node_id][self.last_dr_idx[node_id]:]:
-                flow_dr += dr
-                self.last_dr_idx[node_id] += 1
+
+            if not self.params.warmup:
+                # check for each flow if it will arrive before run_end; if so, add it to the prediction
+                run_end = now + self.params.run_duration
+                # Check to see if next flow arrival is before end of run
+                while self.last_arrival_sum[node_id] < run_end:
+                    flow_dr += self.params.flow_dr_list[node_id][self.last_flow_idx[node_id]]
+                    self.last_arrival_sum[node_id] += self.params.flow_arrival_list[
+                        node_id][self.last_flow_idx[node_id]]
+                    self.last_flow_idx[node_id] += 1
 
             # Update ingress traffic in metrics module
             self.params.metrics.metrics['run_total_requested_traffic'][node_id][sfc][ingress_sf] = flow_dr

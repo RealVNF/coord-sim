@@ -46,8 +46,6 @@ class Simulator(SimulatorInterface):
             self.prediction = True
         self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
                                       self.config, self.metrics, prediction=self.prediction)
-        if self.prediction:
-            self.predictor = TrafficPredictor(self.params)
         self.episode = 0
 
     def __del__(self):
@@ -55,6 +53,9 @@ class Simulator(SimulatorInterface):
         self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
 
     def init(self, seed):
+        # Reset predictor class at beginning of every init
+        if self.prediction:
+            self.predictor = TrafficPredictor(self.params)
         # increment episode count
         self.episode += 1
         # reset network caps and available SFs:
@@ -114,13 +115,17 @@ class Simulator(SimulatorInterface):
         self.params.metrics.running_time(self.start_time, self.end_time)
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-
+        # Check to see if init called in warmup, if so, set warmup to false
+        # This is to allow for better prediction and better overall control
+        # in the future
+        if self.params.warmup:
+            self.params.warmup = False
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
@@ -179,7 +184,7 @@ class Simulator(SimulatorInterface):
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         # Create a new SimulatorState object to pass to the RL Agent
