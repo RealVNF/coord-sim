@@ -114,7 +114,7 @@ class Simulator(SimulatorInterface):
         self.params.metrics.running_time(self.start_time, self.end_time)
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -179,7 +179,7 @@ class Simulator(SimulatorInterface):
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         # Create a new SimulatorState object to pass to the RL Agent
