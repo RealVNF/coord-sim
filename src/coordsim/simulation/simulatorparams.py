@@ -13,6 +13,8 @@ import random
 class SimulatorParams:
     def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
+        # Bool to store if simulator is called in warmup
+        self.warmup = True
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -132,8 +134,8 @@ class SimulatorParams:
         # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
         # dict: ingress_id --> list of arrival times, sizes, drs
         self.flow_arrival_list = {ing[0]: [] for ing in self.ing_nodes}
-        self.flow_size_list = self.flow_arrival_list.copy()
-        self.flow_dr_list = self.flow_arrival_list.copy()
+        self.flow_size_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_dr_list = {ing[0]: [] for ing in self.ing_nodes}
         self.flow_list_idx = {ing[0]: 0 for ing in self.ing_nodes}
 
     def generate_flow_lists(self):
@@ -171,6 +173,7 @@ class SimulatorParams:
             self.flow_arrival_list[ing].extend(flow_arrival)
             self.flow_dr_list[ing].extend(flow_drs)
             self.flow_size_list[ing].extend(flow_sizes)
+            self.generated_flows = flow_drs
 
     def get_next_flow_data(self, ing):
         """Return next flow data for given ingress from list of generated arrival times."""
