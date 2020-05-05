@@ -180,7 +180,7 @@ class Simulator(SimulatorInterface):
         if self.params.use_states:
             self.params.update_state()
         # generate flow data for next run (used for prediction)
-        self.params.generate_flow_lists()
+        self.params.generate_flow_lists(now=self.env.now)
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:

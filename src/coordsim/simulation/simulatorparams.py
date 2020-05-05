@@ -137,8 +137,9 @@ class SimulatorParams:
         self.flow_size_list = {ing[0]: [] for ing in self.ing_nodes}
         self.flow_dr_list = {ing[0]: [] for ing in self.ing_nodes}
         self.flow_list_idx = {ing[0]: 0 for ing in self.ing_nodes}
+        self.last_arrival_sum = {ing[0]: 0 for ing in self.ing_nodes}
 
-    def generate_flow_lists(self):
+    def generate_flow_lists(self, now=0):
         """Generate and append dicts of lists of flow arrival, size, dr for the run duration"""
         # generate flow inter-arrival times for each ingress
         ingress_ids = [ing[0] for ing in self.ing_nodes]
@@ -147,7 +148,9 @@ class SimulatorParams:
             flow_sizes = []
             flow_drs = []
             # generate flows for time frame of num_steps
-            while sum(flow_arrival) < self.run_duration:
+            run_end = now + self.run_duration
+            # Check to see if next flow arrival is before end of run
+            while self.last_arrival_sum[ing] < run_end:
                 # extension for det, and MMPP
                 if self.deterministic_arrival:
                     inter_arr_time = self.inter_arr_mean[ing]
@@ -168,6 +171,7 @@ class SimulatorParams:
                 flow_arrival.append(inter_arr_time)
                 flow_sizes.append(flow_size)
                 flow_drs.append(flow_dr)
+                self.last_arrival_sum[ing] += inter_arr_time
 
             # append to existing flow list. it continues to grow across runs within an episode
             self.flow_arrival_list[ing].extend(flow_arrival)
