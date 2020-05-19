@@ -87,7 +87,8 @@ class Simulator(SimulatorInterface):
 
         self.params.reset_flow_lists()
         # generate flow lists 1x here since we are in `init()`
-        self.params.generate_flow_lists()
+        if not self.params.warmup:
+            self.params.generate_flow_lists()
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
