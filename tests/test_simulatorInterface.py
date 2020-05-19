@@ -10,7 +10,7 @@ NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/3sfcs.yaml"
 RESOURCE_FUNCTION_PATH = "params/services/resource_functions"
 CONFIG_FILE = "params/config/sim_config.yaml"
-TRACE_FILE = "params/traces/simple_trace.csv"
+TRACE_FILE = "params/traces/default_trace.csv"
 
 SIMULATOR_MODULE_NAME = "siminterface.simulator"
 SIMULATOR_CLS_NAME = "Simulator"
@@ -30,6 +30,8 @@ class TestSimulatorInterface(TestCase):
         # TODO: replace SimulatorInterface with implementation
         self.simulator = SIMULATOR_CLS(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, test_mode=TEST_MODE,
                                        resource_functions_path=RESOURCE_FUNCTION_PATH)
+        # FIXME: Simulator Warmup call 
+        self.simulator.init(1234)
         self.simulator.init(1234)
 
     def test_apply(self):
