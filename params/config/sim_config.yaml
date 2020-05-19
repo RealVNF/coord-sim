@@ -3,7 +3,7 @@
 # all parameters are required, defaults are in comments
 
 inter_arrival_mean: 10.0           # default: 10.0
-deterministic_arrival: True        # default: True
+deterministic_arrival: False        # default: True
 flow_dr_mean: 1.0                  # default: 1.0
 flow_dr_stdev: 0.0                 # default: 0.0
 flow_size_shape: 0.001             # default: 0.001 (for deterministic!)
@@ -21,7 +21,7 @@ run_duration: 100                  # default: 100
 
 # States (two state markov arrival)
 # Optional param: states: True | False 
-use_states: True
+use_states: False
 init_state: state_1
 
 states:

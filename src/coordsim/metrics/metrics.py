@@ -72,6 +72,8 @@ class Metrics:
 
         # total requested traffic: increased whenever a flow is requesting processing before scheduling or processing
         self.metrics['run_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        # record actual requested traffic for when traffic prediction is enabled
+        self.metrics['run_act_total_requested_traffic'] = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         # total generated traffic. traffic generate on ingress nodes is recorded
         #   this value could also be extracted from network and sim config file.
         self.metrics['run_total_requested_traffic_node'] = defaultdict(float)
@@ -87,6 +89,7 @@ class Metrics:
 
     def add_requesting_flow(self, flow):
         self.metrics['run_total_requested_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
+        self.metrics['run_act_total_requested_traffic'][flow.current_node_id][flow.sfc][flow.current_sf] += flow.dr
 
     # call when new flows starts processing at an SF
     def add_active_flow(self, flow, current_node_id, current_sf):

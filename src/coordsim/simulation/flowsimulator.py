@@ -44,25 +44,22 @@ class FlowSimulator:
         while self.params.inter_arr_mean[node_id] is not None:
             self.total_flow_count += 1
 
-            # set normally distributed flow data rate
-            flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
-
-            # set deterministic or random flow arrival times and flow sizes according to config
-            if self.params.deterministic_arrival:
-                inter_arr_time = self.params.inter_arr_mean[node_id]
-            else:
+            if self.params.flow_list_idx is None:
                 # Poisson arrival -> exponential distributed inter-arrival time
                 inter_arr_time = random.expovariate(lambd=1.0/self.params.inter_arr_mean[node_id])
-
-            if self.params.deterministic_size:
-                flow_size = self.params.flow_size_shape
+                # set normally distributed flow data rate
+                flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
+                if self.params.deterministic_size:
+                    flow_size = self.params.flow_size_shape
+                else:
+                    # heavy-tail flow size
+                    flow_size = np.random.pareto(self.params.flow_size_shape) + 1
+                # Skip flows with negative flow_dr or flow_size values
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
+            # use generated list of flow arrivals
             else:
-                # heavy-tail flow size
-                flow_size = np.random.pareto(self.params.flow_size_shape) + 1
-
-            # Skip flows with negative flow_dr or flow_size values
-            if flow_dr <= 0.00 or flow_size <= 0.00:
-                continue
+                inter_arr_time, flow_dr, flow_size = self.params.get_next_flow_data(node_id)
 
             # Assign a random SFC to the flow
             flow_sfc = np.random.choice([sfc for sfc in self.params.sfc_list.keys()])
@@ -165,6 +162,12 @@ class FlowSimulator:
         Path delays are calculated using the Shortest path
         The delay is simulated by timing out for the delay amount of duration
         """
+        if next_node is None:
+            log.info(f"No node to forward flow {flow.flow_id} to. Dropping it")
+            # Update metrics for the dropped flow
+            self.params.metrics.dropped_flow(flow)
+            return
+
         path_delay = 0
         if flow.current_node_id != next_node:
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]

@@ -7,6 +7,7 @@ other parameters for the simulator.
 
 """
 import numpy as np
+import random
 
 
 class SimulatorParams:
@@ -86,6 +87,26 @@ class SimulatorParams:
             inter_arr_mean = config['inter_arrival_mean']
             self.update_single_inter_arr_mean(inter_arr_mean)
 
+        # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
+        # dict: ingress_id --> list of arrival times, sizes, drs
+        self.flow_arrival_list = None
+        self.flow_size_list = None
+        self.flow_dr_list = None
+        # index in these lists: is initialized and reset when generating the lists
+        # dict: ingress_id --> list index
+        self.flow_list_idx = None
+
+    # string representation for logging
+    def __str__(self):
+        params_str = "Simulator parameters: \n"
+        params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
+        params_str += f"deterministic_arrival: {self.deterministic_arrival}\n"
+        params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
+        params_str += "flow_dr_stdv: {}\n".format(self.flow_dr_stdev)
+        params_str += "flow_size_shape: {}\n".format(self.flow_size_shape)
+        params_str += f"deterministic_size: {self.deterministic_size}\n"
+        return params_str
+
     def update_state(self):
         switch = [False, True]
         change_prob = self.states[self.current_state]['switch_p']
@@ -106,13 +127,63 @@ class SimulatorParams:
     def update_single_predicted_inter_arr_mean(self, new_mean):
         self.predicted_inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
 
-    # string representation for logging
-    def __str__(self):
-        params_str = "Simulator parameters: \n"
-        params_str += "inter_arr_mean: {}\n".format(self.inter_arr_mean)
-        params_str += f"deterministic_arrival: {self.deterministic_arrival}\n"
-        params_str += "flow_dr_mean: {}\n".format(self.flow_dr_mean)
-        params_str += "flow_dr_stdv: {}\n".format(self.flow_dr_stdev)
-        params_str += "flow_size_shape: {}\n".format(self.flow_size_shape)
-        params_str += f"deterministic_size: {self.deterministic_size}\n"
-        return params_str
+    def reset_flow_lists(self):
+        """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
+        # list of generated inter-arrival times, flow sizes, and data rates for the entire episode
+        # dict: ingress_id --> list of arrival times, sizes, drs
+        self.flow_arrival_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_size_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_dr_list = {ing[0]: [] for ing in self.ing_nodes}
+        self.flow_list_idx = {ing[0]: 0 for ing in self.ing_nodes}
+        self.last_arrival_sum = {ing[0]: 0 for ing in self.ing_nodes}
+
+    def generate_flow_lists(self, now=0):
+        """Generate and append dicts of lists of flow arrival, size, dr for the run duration"""
+        # generate flow inter-arrival times for each ingress
+        ingress_ids = [ing[0] for ing in self.ing_nodes]
+        for ing in ingress_ids:
+            flow_arrival = []
+            flow_sizes = []
+            flow_drs = []
+            # generate flows for time frame of num_steps
+            run_end = now + self.run_duration
+            # Check to see if next flow arrival is before end of run
+            while self.last_arrival_sum[ing] < run_end:
+                # extension for det, and MMPP
+                if self.deterministic_arrival:
+                    inter_arr_time = self.inter_arr_mean[ing]
+                else:
+                    inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
+                # Generate flow dr
+                flow_dr = np.random.normal(self.flow_dr_mean, self.flow_dr_stdev)
+                # generate flow sizes
+                if self.deterministic_size:
+                    flow_size = self.flow_size_shape
+                else:
+                    # heavy-tail flow size
+                    flow_size = np.random.pareto(self.flow_size_shape) + 1
+                # Skip flows with negative flow_dr or flow_size values
+                if flow_dr <= 0.00 or flow_size <= 0.00:
+                    continue
+
+                flow_arrival.append(inter_arr_time)
+                flow_sizes.append(flow_size)
+                flow_drs.append(flow_dr)
+                self.last_arrival_sum[ing] += inter_arr_time
+
+            # append to existing flow list. it continues to grow across runs within an episode
+            self.flow_arrival_list[ing].extend(flow_arrival)
+            self.flow_dr_list[ing].extend(flow_drs)
+            self.flow_size_list[ing].extend(flow_sizes)
+            self.generated_flows = flow_drs
+
+    def get_next_flow_data(self, ing):
+        """Return next flow data for given ingress from list of generated arrival times."""
+        idx = self.flow_list_idx[ing]
+        assert idx < len(self.flow_arrival_list[ing])
+        inter_arrival_time = self.flow_arrival_list[ing][idx]
+        flow_dr = self.flow_dr_list[ing][idx]
+        flow_size = self.flow_size_list[ing][idx]
+        # important: increment index!
+        self.flow_list_idx[ing] += 1
+        return inter_arrival_time, flow_dr, flow_size

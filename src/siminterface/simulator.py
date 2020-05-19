@@ -18,13 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class Simulator(SimulatorInterface):
-    def __init__(self,  network_file, service_functions_file, config_file, resource_functions_path="",
-                 test_mode=False, test_dir=None):
-        # SimulatorInterface.__init__(self, test_mode=test_mode)
+    def __init__(self, network_file, service_functions_file, config_file, resource_functions_path="", test_mode=False,
+                 test_dir=None):
+        super().__init__(test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
         self.run_times = int(1)
         self.network_file = network_file
-        self.test_mode = test_mode
         self.test_dir = test_dir
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir)
@@ -47,8 +46,6 @@ class Simulator(SimulatorInterface):
             self.prediction = True
         self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
                                       self.config, self.metrics, prediction=self.prediction)
-        if self.prediction:
-            self.predictor = TrafficPredictor(self.params)
         self.episode = 0
 
     def __del__(self):
@@ -56,6 +53,9 @@ class Simulator(SimulatorInterface):
         self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
 
     def init(self, seed):
+        # Reset predictor class at beginning of every init
+        if self.prediction:
+            self.predictor = TrafficPredictor(self.params)
         # increment episode count
         self.episode += 1
         # reset network caps and available SFs:
@@ -85,16 +85,21 @@ class Simulator(SimulatorInterface):
         random.seed(self.seed)
         numpy.random.seed(self.seed)
 
+        self.params.reset_flow_lists()
+        # generate flow lists 1x here since we are in `init()`
+        self.params.generate_flow_lists()
+
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
 
-        # Start the simulator
-        self.simulator.start()
         # Trace handling
         if 'trace_path' in self.config:
             trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
             trace = reader.get_trace(trace_path)
             TraceProcessor(self.params, self.env, trace, self.simulator)
+
+        # Start the simulator
+        self.simulator.start()
 
         # Run the environment for one step to get initial stats.
         self.env.step()
@@ -110,13 +115,15 @@ class Simulator(SimulatorInterface):
         self.params.metrics.running_time(self.start_time, self.end_time)
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-
+        # Check to see if init called in warmup, if so, set warmup to false
+        # This is to allow for better prediction and better overall control
+        # in the future
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
@@ -168,9 +175,14 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
+        if self.params.use_states:
+            self.params.update_state()
+        # generate flow data for next run (used for prediction)
+        self.params.generate_flow_lists(now=self.env.now)
+
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic()
+            self.predictor.predict_traffic(self.env.now)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         # Create a new SimulatorState object to pass to the RL Agent
@@ -178,8 +190,7 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.episode, self.env.now, simulator_state)
         logger.debug(f"t={self.env.now}: {simulator_state}")
-        if self.params.use_states:
-            self.params.update_state()
+
         return simulator_state
 
     def parse_network(self) -> dict:
@@ -234,3 +245,19 @@ class Simulator(SimulatorInterface):
     def get_active_ingress_nodes(self):
         """Return names of all ingress nodes that are currently active, ie, produce flows."""
         return [ing[0] for ing in self.ing_nodes if self.params.inter_arr_mean[ing[0]] is not None]
+
+
+# for debugging
+if __name__ == "__main__":
+    # run from project root for file paths to work
+    # I changed triangle to have 2 ingress nodes for debugging
+    network_file = 'params/networks/triangle.graphml'
+    service_file = 'params/services/abc.yaml'
+    config_file = 'params/config/sim_config.yaml'
+
+    sim = Simulator(network_file, service_file, config_file)
+    state = sim.init(seed=1234)
+    dummy_action = SimulatorAction(placement={}, scheduling={})
+    # FIXME: this currently breaks - negative flow counter?
+    #  should be possible to have an empty action and just drop all flows!
+    state = sim.apply(dummy_action)
