@@ -13,8 +13,6 @@ import random
 class SimulatorParams:
     def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
-        # Bool to store if simulator is called in warmup
-        self.warmup = True
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list

@@ -38,15 +38,14 @@ class TrafficPredictor():
             ingress_sf = self.params.sfc_list[sfc][0]
             flow_dr = 0
 
-            if not self.params.warmup:
-                # check for each flow if it will arrive before run_end; if so, add it to the prediction
-                run_end = now + self.params.run_duration
-                # Check to see if next flow arrival is before end of run
-                while self.last_arrival_sum[node_id] < run_end:
-                    flow_dr += self.params.flow_dr_list[node_id][self.last_flow_idx[node_id]]
-                    self.last_arrival_sum[node_id] += self.params.flow_arrival_list[
-                        node_id][self.last_flow_idx[node_id]]
-                    self.last_flow_idx[node_id] += 1
+            # check for each flow if it will arrive before run_end; if so, add it to the prediction
+            run_end = now + self.params.run_duration
+            # Check to see if next flow arrival is before end of run
+            while self.last_arrival_sum[node_id] < run_end:
+                flow_dr += self.params.flow_dr_list[node_id][self.last_flow_idx[node_id]]
+                self.last_arrival_sum[node_id] += self.params.flow_arrival_list[
+                    node_id][self.last_flow_idx[node_id]]
+                self.last_flow_idx[node_id] += 1
 
             # Update ingress traffic in metrics module
             self.params.metrics.metrics['run_total_requested_traffic'][node_id][sfc][ingress_sf] = flow_dr

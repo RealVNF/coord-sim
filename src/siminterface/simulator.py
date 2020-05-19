@@ -87,8 +87,7 @@ class Simulator(SimulatorInterface):
 
         self.params.reset_flow_lists()
         # generate flow lists 1x here since we are in `init()`
-        if not self.params.warmup:
-            self.params.generate_flow_lists()
+        self.params.generate_flow_lists()
 
         # Instantiate a simulator object, pass the environment and params
         self.simulator = FlowSimulator(self.env, self.params)
@@ -125,8 +124,6 @@ class Simulator(SimulatorInterface):
         # Check to see if init called in warmup, if so, set warmup to false
         # This is to allow for better prediction and better overall control
         # in the future
-        if self.params.warmup:
-            self.params.warmup = False
         return simulator_state
 
     def apply(self, actions: SimulatorAction):

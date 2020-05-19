@@ -30,8 +30,6 @@ class TestSimulatorInterface(TestCase):
         # TODO: replace SimulatorInterface with implementation
         self.simulator = SIMULATOR_CLS(NETWORK_FILE, SERVICE_FUNCTIONS_FILE, CONFIG_FILE, test_mode=TEST_MODE,
                                        resource_functions_path=RESOURCE_FUNCTION_PATH)
-        # FIXME: Simulator Warmup call 
-        self.simulator.init(1234)
         self.simulator.init(1234)
 
     def test_apply(self):
