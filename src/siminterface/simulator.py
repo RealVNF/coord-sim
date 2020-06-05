@@ -25,8 +25,6 @@ class Simulator(SimulatorInterface):
         self.run_times = int(1)
         self.network_file = network_file
         self.test_dir = test_dir
-        # Create CSV writer
-        self.writer = ResultWriter(self.test_mode, self.test_dir)
         # init network, sfc, sf, and config files
         self.network, self.ing_nodes, self.eg_nodes = reader.read_network(self.network_file)
         self.sfc_list = reader.get_sfc(service_functions_file)
@@ -46,6 +44,11 @@ class Simulator(SimulatorInterface):
             self.prediction = True
         self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
                                       self.config, self.metrics, prediction=self.prediction)
+        write_schedule = False
+        if 'write_schedule' in self.config and self.config['write_schedule']:
+            write_schedule = True
+        # Create CSV writer
+        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
         self.episode = 0
 
     def __del__(self):
