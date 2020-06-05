@@ -3,7 +3,7 @@
 # all parameters are required, defaults are in comments
 
 inter_arrival_mean: 10.0           # default: 10.0
-deterministic_arrival: False        # default: True
+deterministic_arrival: True        # default: True
 flow_dr_mean: 1.0                  # default: 1.0
 flow_dr_stdev: 0.0                 # default: 0.0
 flow_size_shape: 0.001             # default: 0.001 (for deterministic!)
@@ -18,6 +18,8 @@ run_duration: 100                  # default: 100
 # Until values start in the trace file, the defaults from this file are used
 # trace_path: params/traces/default_trace.csv
 
+# Optional: Write Scheduling results
+write_schedule: True
 
 # States (two state markov arrival)
 # Optional param: states: True | False 
