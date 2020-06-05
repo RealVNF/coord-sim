@@ -24,14 +24,17 @@ class Simulator(SimulatorInterface):
         self.network_file = network_file
         self.test_mode = test_mode
         self.test_dir = test_dir
-        # Create CSV writer
-        self.writer = ResultWriter(self.test_mode, self.test_dir)
         # init network, sfc, sf, and config files
         self.network, self.ing_nodes = reader.read_network(self.network_file)
         self.sfc_list = reader.get_sfc(service_functions_file)
         self.sf_list = reader.get_sf(service_functions_file, resource_functions_path)
         self.config = reader.get_config(config_file)
         self.metrics = Metrics(self.network, self.sf_list)
+        write_schedule = False
+        if 'write_schedule' in self.config and self.config['write_schedule']:
+            write_schedule = True
+        # Create CSV writer
+        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
 
         self.episode = 0
 
