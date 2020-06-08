@@ -116,6 +116,7 @@ class Simulator(SimulatorInterface):
         #  configurable: eg, based on test_mode? should only write when testing, not training. but also work with non RL
         # print(f"Alg. runtime: {alg_runtime}")
 
+        self.writer.write_runtime(self.run_times, alg_runtime)
         self.writer.write_action_result(self.episode, self.env.now, actions)
 
         # Get the new placement from the action passed by the RL agent
