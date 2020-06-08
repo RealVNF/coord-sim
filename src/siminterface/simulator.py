@@ -38,6 +38,8 @@ class Simulator(SimulatorInterface):
 
         self.episode = 0
 
+        self.last_apply_time = None
+
     def __del__(self):
         # write dropped flow locs to yaml
         self.writer.write_dropped_flow_locs(self.metrics.metrics['dropped_flows_locs'])
@@ -100,12 +102,21 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
 
+        # set time stamp to calculate runtime of next apply call
+        self.last_apply_time = time.time()
+
         return simulator_state
 
     def apply(self, actions: SimulatorAction):
+        logger.debug(f"t={self.env.now}: {actions}")
+
+        # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
+        alg_runtime = time.time() - self.last_apply_time
+        # TODO: save and save to file instead of printing
+        #  configurable: eg, based on test_mode? should only write when testing, not training. but also work with non RL
+        # print(f"Alg. runtime: {alg_runtime}")
 
         self.writer.write_action_result(self.episode, self.env.now, actions)
-        logger.debug(f"t={self.env.now}: {actions}")
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
@@ -158,6 +169,10 @@ class Simulator(SimulatorInterface):
         logger.debug(f"t={self.env.now}: {simulator_state}")
         if self.params.use_states:
             self.params.update_state()
+
+        # set time stamp to calculate runtime of next apply call
+        self.last_apply_time = time.time()
+
         return simulator_state
 
     def parse_network(self) -> dict:
