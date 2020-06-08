@@ -27,6 +27,7 @@ class ResultWriter():
             self.metrics_file_name = f"{test_dir}/metrics.csv"
             self.dropped_flows_file_name = f"{test_dir}/dropped_flows.yaml"
             self.rl_state_file_name = f"{test_dir}/rl_state.csv"
+            self.runtimes_file_name = f"{test_dir}/runtimes.csv"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
@@ -35,6 +36,7 @@ class ResultWriter():
             self.resources_stream = open(self.resources_file_name, 'a+', newline='')
             self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
             self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
+            self.runtimes_stream = open(self.runtimes_file_name, 'a+', newline='')
 
             if self.write_schedule:
                 self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
@@ -44,6 +46,7 @@ class ResultWriter():
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
             self.rl_state_writer = csv.writer(self.rl_state_stream)
+            self.runtimes_writer = csv.writer(self.runtimes_stream)
 
             # Write the headers to the files
             self.create_csv_headers()
@@ -57,6 +60,7 @@ class ResultWriter():
             self.resources_stream.close()
             self.metrics_stream.close()
             self.rl_state_stream.close()
+            self.runtimes_stream.close()
 
     def create_csv_headers(self):
         """
@@ -71,11 +75,20 @@ class ResultWriter():
         resources_output_header = ['episode', 'time', 'node', 'node_capacity', 'used_resources']
         metrics_output_header = ['episode', 'time', 'total_flows', 'successful_flows', 'dropped_flows',
                                  'in_network_flows', 'avg_end2end_delay']
+        runtimes_output_header = ['run', 'runtime']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
         self.resources_writer.writerow(resources_output_header)
         self.metrics_writer.writerow(metrics_output_header)
+        self.runtimes_writer.writerow(runtimes_output_header)
+
+    def write_runtime(self, run, time):
+        """
+        Write runtime results to output file
+        """
+        if self.test_mode:
+            self.runtimes_writer.writerow([run, time])
 
     def write_action_result(self, episode, time, action: SimulatorAction):
         """
