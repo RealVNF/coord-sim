@@ -29,7 +29,8 @@ class TraceProcessor():
         file does not start from 0, then the simulator will use the value set in sim_config
 
         """
-        self.timeout = float(self.trace[self.trace_index]['time']) - self.env.now
+        self.timeout = float(self.trace[self.trace_index]['time']) - self.env.now - 1
+        self.timeout = np.clip(self.timeout, 0, None)
         inter_arrival_mean = self.trace[self.trace_index]['inter_arrival_mean']
         yield self.env.timeout(self.timeout)
         log.debug(f"Inter arrival mean changed to {inter_arrival_mean} at {self.env.now}")
@@ -60,8 +61,6 @@ class TraceProcessor():
         one run duration before the trace module updates the actual mean
 
         """
-        # -1 here because the prediction always was always scheduled after the SimulatorState code was executed
-        # Must check this further to see if there is a way to change orde of events in SimPy
         timeout = float(self.trace[self.prediction_trace_index]['time']) - self.env.now - self.params.run_duration - 1
         # Cap to make sure we don't have timeout less 0, otherwise raises exception in SimPy
         self.prediction_timeout = np.clip(timeout, 0, None)

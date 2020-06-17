@@ -18,10 +18,12 @@ run_duration: 100                  # default: 100
 # Until values start in the trace file, the defaults from this file are used
 # trace_path: params/traces/default_trace.csv
 
+# Optional: Write Scheduling results
+write_schedule: True
 
 # States (two state markov arrival)
 # Optional param: states: True | False 
-use_states: True
+use_states: False
 init_state: state_1
 
 states:

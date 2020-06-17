@@ -13,13 +13,15 @@ class ResultWriter():
     Result Writer
     Helper class to write results to CSV files.
     """
-    def __init__(self, test_mode: bool, test_dir):
+    def __init__(self, test_mode: bool, test_dir, write_schedule=False):
         """
         If the simulator is in test mode, create result folder and CSV files
         """
+        self.write_schedule = write_schedule
         self.test_mode = test_mode
         if self.test_mode:
-            self.scheduling_file_name = f"{test_dir}/scheduling.csv"
+            if self.write_schedule:
+                self.scheduling_file_name = f"{test_dir}/scheduling.csv"
             self.placement_file_name = f"{test_dir}/placements.csv"
             self.resources_file_name = f"{test_dir}/resources.csv"
             self.metrics_file_name = f"{test_dir}/metrics.csv"
@@ -30,14 +32,15 @@ class ResultWriter():
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
 
             self.placement_stream = open(self.placement_file_name, 'a+', newline='')
-            self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
             self.resources_stream = open(self.resources_file_name, 'a+', newline='')
             self.metrics_stream = open(self.metrics_file_name, 'a+', newline='')
             self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
 
+            if self.write_schedule:
+                self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
+                self.scheduling_writer = csv.writer(self.scheduleing_stream)
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
-            self.scheduling_writer = csv.writer(self.scheduleing_stream)
             self.resources_writer = csv.writer(self.resources_stream)
             self.metrics_writer = csv.writer(self.metrics_stream)
             self.rl_state_writer = csv.writer(self.rl_state_stream)
@@ -49,7 +52,8 @@ class ResultWriter():
         # Close all writer streams
         if self.test_mode:
             self.placement_stream.close()
-            self.scheduleing_stream.close()
+            if self.write_schedule:
+                self.scheduleing_stream.close()
             self.resources_stream.close()
             self.metrics_stream.close()
             self.rl_state_stream.close()
@@ -60,7 +64,9 @@ class ResultWriter():
         """
 
         # Create CSV headers
-        scheduling_output_header = ['episode', 'time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
+        if self.write_schedule:
+            scheduling_output_header = ['episode', 'time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
+            self.scheduling_writer.writerow(scheduling_output_header)
         placement_output_header = ['episode', 'time', 'node', 'sf']
         resources_output_header = ['episode', 'time', 'node', 'node_capacity', 'used_resources']
         metrics_output_header = ['episode', 'time', 'total_flows', 'successful_flows', 'dropped_flows',
@@ -68,7 +74,6 @@ class ResultWriter():
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
-        self.scheduling_writer.writerow(scheduling_output_header)
         self.resources_writer.writerow(resources_output_header)
         self.metrics_writer.writerow(metrics_output_header)
 
@@ -78,7 +83,6 @@ class ResultWriter():
         """
         if self.test_mode:
             placement = action.placement
-            scheduling = action.scheduling
             placement_output = []
             scheduling_output = []
 
@@ -86,16 +90,17 @@ class ResultWriter():
                 for sf in sfs:
                     placement_output_row = [episode, time, node_id, sf]
                     placement_output.append(placement_output_row)
-
-            for node, sfcs in scheduling.items():
-                for sfc, sfs in sfcs.items():
-                    for sf, scheduling in sfs.items():
-                        for schedule_node, schedule_prob in scheduling.items():
-                            scheduling_output_row = [episode, time, node, sfc, sf, schedule_node, schedule_prob]
-                            scheduling_output.append(scheduling_output_row)
+            if self.write_schedule:
+                scheduling = action.scheduling
+                for node, sfcs in scheduling.items():
+                    for sfc, sfs in sfcs.items():
+                        for sf, scheduling in sfs.items():
+                            for schedule_node, schedule_prob in scheduling.items():
+                                scheduling_output_row = [episode, time, node, sfc, sf, schedule_node, schedule_prob]
+                                scheduling_output.append(scheduling_output_row)
+                self.scheduling_writer.writerows(scheduling_output)
 
             self.placement_writer.writerows(placement_output)
-            self.scheduling_writer.writerows(scheduling_output)
 
     def write_state_results(self, episode, time, state: SimulatorState):
         """
