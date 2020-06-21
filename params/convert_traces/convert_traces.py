@@ -26,7 +26,7 @@ class TraceXMLReader():
                         'WASHng': "pop2"}
 
     def __init__(self, directory, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
-                 node_name_map=node_map_abilene, intermediate_result_filename=None, result_trace_filename=None,
+                 node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
                  ingress_nodes=None, *args, **kwargs):
         self.directory = directory
         self._from = _from
