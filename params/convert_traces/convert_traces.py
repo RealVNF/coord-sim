@@ -28,6 +28,26 @@ class TraceXMLReader():
     def __init__(self, directory, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
                  node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
                  ingress_nodes=None, *args, **kwargs):
+        """
+        Handles all parameters of the reader.
+            directory: str: path to directory (required)
+            _from and to: ints: in function read_all_files_parallel os.listdir(directory)[_from:to] is called to choose
+                                the files
+            scale_factor: float: scale data_rate, applied in function process_df
+            run_duration: int: used to compute the time column, applied in function process_df
+            change_rate: int: number of run_durations the traffic stays constant, used to compute the time column,
+                              applied in function process_df
+            node_name_map: dict or str(path): defines how to rename nodes (from keys to values). If argumnet is None old
+                                              names will be kept. If a node is set to None it will be removed from the
+                                              dataframe. If a node is not in the dict or yaml it will be ignored, the
+                                              name will be kept. Applied in function read_one_file.
+            intermediate_result_filename: str: filename of csv with intermediate results.
+                                               If None result_trace_filename + 'intermediate'
+            result_trace_filename: str: filename of csv with resulting trace.
+                                               If None - f'{directory}_{_from}-{to}_trace.csv'
+            ingress_nodes: list: only this nodes in resulting trace. If None - all nodes will appear in the trace.
+                                 Applied in function process_df.
+        """
         self.directory = directory
         self._from = _from
         self.to = to
@@ -57,6 +77,10 @@ class TraceXMLReader():
                 self.node_name_map = yaml.load(f)
 
     def append_meta(self, meta):
+        """
+        Writes variable meta to a dictionary, which is meant be written to a yaml file, containing meta information of a
+        trace.
+        """
         self.lock_meta.acquire()
         for key, value in meta.items():
             if key in self.meta:
@@ -69,6 +93,16 @@ class TraceXMLReader():
         self.lock_meta.release()
 
     def read_one_file(self, path):
+        """
+        Reads relevant information from one xml file. Function meant for starting a new thread.
+            Args:
+                path: str: path to the file
+            Also there is the object attribute self.node_name_map, which defines, what node names will look like and
+            which nodes should be removed.
+
+            Returns: None, stores it in self.intermediate_result_df
+            Raises: None, Exceptions written to logging.info
+        """
         try:
             tree = etree.parse(path)
             root = tree.getroot()
@@ -100,6 +134,11 @@ class TraceXMLReader():
             logging.info(str(type(e)), str(e), str(path))
 
     def read_files_parallel(self):
+        """
+        Reads xml files from a given directory using os.listdir(self.directory)[self._from:self.to]. Uses function
+        read_one_file() to start threads for every file. Behavior defined by object attributes: self.directory,
+        self._from, self.to, self.node_name_map.
+        """
         files = list(map(lambda file: os.path.join(self.directory, file), os.listdir(self.directory)))
         files = list(filter(os.path.isfile, files))
         logging.info(f"{str(len(files))}  files in directory")
@@ -135,7 +174,15 @@ class TraceXMLReader():
             yaml.dump(self.meta, f)
 
     def process_df(self):
-        # 2 runs == 5min
+        """
+        Processes the df with the intermediate results. Applies the scale_factor and converts the data rate into
+        inter_arrival_mean. Also the choice of ingress nodes (attribute self.ingress_nodes) is applied here and the time
+        axis, which is defined by self.run_duration and self.change_rate is calculated.
+
+        Trace is written to a csv file with the filename self.result_trace_filename.
+
+        Returns dataframe with resulting trace
+        """
         df = self.intermediate_result_df
 
         if self.ingress_nodes:
@@ -164,8 +211,49 @@ class TraceXMLReader():
 
         return df_sums
 
+    def plot_data_rate(self):
+        """
+        Plots data rates from self.intermediate_result_df for all ingress nodes.
+        """
+        fig, ax = plt.subplots()
+        if self.ingress_nodes:  # filter in ingress nodes
+            ingress_nodes = filter(lambda node: node[0] in self.ingress_nodes,
+                                   self.intermediate_result_df.groupby(["node"]))
+        else:  # use all ingress nodes
+            ingress_nodes = self.intermediate_result_df.groupby(["node"])
+        for ing in ingress_nodes:  # # x axis - range(0, last_time_step, time_step_size)
+            ax.plot(range(0, len(list(ing[1]["time"])*self.run_duration*self.change_rate),  # x axis
+                          self.run_duration*self.change_rate),  # x axis time_step_size
+                    ing[1]["demandValue"],  # y axis
+                    label=ing[0])
+        ax.set_xlabel("Time")
+        ax.set_ylabel("demandValue (Data Rate)")
+        plt.legend()
+        return fig, ax
+
+    def plot_inter_arrival_mean(self):
+        """
+        Plots inter_arrival_mean from self.results_trace for all ingress nodes.
+        """
+        fig, ax = plt.subplots()
+        for ing in self.results_trace.groupby(["node"]):
+            ax.plot(ing[1]["time"], ing[1]["inter_arrival_mean"], label=ing[0])
+            ax.set_xlabel("Time")
+            ax.set_ylabel("inter_arrival_mean")
+        fig.legend()
+        return fig, ax
+
 
 def main(config_file=None, only_process=False, **kwargs):
+    """
+    Main function.
+        Args:
+            config_file: dict or str(path to a yaml)
+            only_process: If True - load intermediate results (filename contained or indirectly defined by config)
+                          and call process_df on them
+            kwargs: possible args: {plot: [data_rate, inter_arrival_mean], save_plots: [data_rate, inter_arrival_mean]}
+        Returns dataframe with resulting trace
+    """
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
@@ -186,10 +274,29 @@ def main(config_file=None, only_process=False, **kwargs):
 
     df_result = reader.process_df()
     logging.info("\n" + str(df_result))
-    logging.info(f'inter_arrival_mean range:{min(df_result["inter_arrival_mean"])}, {max(df_result["inter_arrival_mean"])}')
+    logging.info(f'inter_arrival_mean range: {min(df_result["inter_arrival_mean"])}, {max(df_result["inter_arrival_mean"])}')
     logging.info(f'... mean:  {df_result["inter_arrival_mean"].mean()}')
     logging.info(f'... median:  {df_result["inter_arrival_mean"].median()}')
     logging.info(f'... std:  {df_result["inter_arrival_mean"].std()}')
+
+    if kwargs.get("plot", None) or kwargs.get("save_plots", None):
+        fig, ax = reader.plot_data_rate()
+        if 'data_rate' in kwargs.get("save_plots", None):
+            fig.savefig(f"""{os.path.splitext(reader.result_trace_filename)[0]}_data_rate.{
+                kwargs.get('plot_format', 'png')}""")
+        if 'data_rate' in kwargs.get("plot"):
+            plt.show()
+
+        plt.close()
+
+        fig, ax = reader.plot_inter_arrival_mean()
+        if 'inter_arrival_mean' in kwargs.get("save_plots", []):
+            fig.savefig(f"""{os.path.splitext(reader.result_trace_filename)[0]}_inter_arrival_mean.{
+                kwargs.get('plot_format', 'png')}""")
+        if 'inter_arrival_mean' in kwargs.get("plot", []):
+            plt.show()
+
+        plt.close()
 
     return df_result
 
@@ -199,19 +306,15 @@ def parse_args(args=None):
 
     parser.add_argument("config_file", help="Path to config_file")
     parser.add_argument("--only-process", default=False, action="store_true", help="Reuse and intermediate.csv")
-    parser.add_argument("--plot", default=False, action="store_true", help="Plot inter_arrival_mean in the end.")
+    parser.add_argument("--plot", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
+                        help="Plot data_rate or inter_arrival_mean and call plt.show() in the end.")
+    parser.add_argument("--save_plots", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
+                        help="Saves plots inter_arrival_mean in the end.")
+    parser.add_argument("--plot_format", default='png', choices=['pdf', 'png'], help="Plot format to save")
     return vars(parser.parse_args(args))
 
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
     df_result = main(**args)
-
-    if args["plot"]:
-        plt.figure()
-        for ing in df_result.groupby(["node"]):
-            plt.plot(ing[1]["time"], ing[1]["inter_arrival_mean"], label=ing[0])
-            plt.xlabel("Time")
-            plt.ylabel("inter_arrival_mean")
-        plt.legend()
-        plt.show()
