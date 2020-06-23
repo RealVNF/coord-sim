@@ -70,6 +70,7 @@ class TraceXMLReader():
         self.meta_filename = splitext[0] + "_meta.yaml"
         self.lock_meta = threading.Lock()
         self.results_trace = None
+        self.data_rate_sums = None
         if isinstance(node_name_map, dict):
             self.node_name_map = node_name_map
         elif isinstance(node_name_map, str):
@@ -192,6 +193,7 @@ class TraceXMLReader():
                 df = df[mask]
 
         df_sums = df.groupby(["time", "node"]).sum().reset_index()
+        self.data_rate_sums = df_sums
 
         inter_arrival_mean = 1/(df_sums["demandValue"]*self.scale_factor)
         groupby_time = df_sums.groupby(["time"])
@@ -218,9 +220,9 @@ class TraceXMLReader():
         fig, ax = plt.subplots()
         if self.ingress_nodes:  # filter in ingress nodes
             ingress_nodes = filter(lambda node: node[0] in self.ingress_nodes,
-                                   self.intermediate_result_df.groupby(["node"]))
+                                   self.data_rate_sums.groupby(["node"]))
         else:  # use all ingress nodes
-            ingress_nodes = self.intermediate_result_df.groupby(["node"])
+            ingress_nodes = self.data_rate_sums.groupby(["node"])
         for ing in ingress_nodes:  # # x axis - range(0, last_time_step, time_step_size)
             ax.plot(range(0, len(list(ing[1]["time"])*self.run_duration*self.change_rate),  # x axis
                           self.run_duration*self.change_rate),  # x axis time_step_size
