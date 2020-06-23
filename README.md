@@ -99,7 +99,7 @@ See PR https://github.com/RealVNF/coordination-simulation/pull/78 for details.
 
 See [PR 137](https://github.com/RealVNF/coord-sim/pull/137) for details.
 
-### Convertion of real world traffic traces  
+### Conversion of real world traffic traces  
 
 Real World traffic traces are available at [sndlib](http://sndlib.zib.de/) under 'Dynamic traffic' at the left. They contain the data rate for every pair of node in a network for every 5 minutes for a timespan of six months. Available data formats are xml and another "native sndlib format". For usage in the simulator this data has to be converted into inter_arrival_mean. A script for that (which works with the xml files) you find here `coord-sim/params/convert_traces/convert_traces.py`. In the same folder you also find an example configuration for the script and an example data set for the first try.
 ```sh
