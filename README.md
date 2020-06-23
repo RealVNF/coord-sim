@@ -99,6 +99,125 @@ See PR https://github.com/RealVNF/coordination-simulation/pull/78 for details.
 
 See [PR 137](https://github.com/RealVNF/coord-sim/pull/137) for details.
 
+### Convertion of real world traffic traces  
+
+Real World traffic traces are available at [sndlib](http://sndlib.zib.de/) under 'Dynamic traffic' at the left. They contain the data rate for every pair of node in a network for every 5 minutes for a timespan of six months. Available data formats are xml and another "native sndlib format". For usage in the simulator this data has to be converted into inter_arrival_mean. A script for that (which works with the xml files) you find here `coord-sim/params/convert_traces/convert_traces.py`. In the same folder you also find an example configuration for the script and an example data set for the first try.
+```sh
+coord-sim/params/convert_traces$ tree
+.
+├── abilene_node_name_map.yaml
+├── convert_traces.py
+├── directed-abilene-zhang-5min-over-6months-ALL
+│   ├── demandMatrix-abilene-zhang-5min-20040302-1830.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040305-0150.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040411-0520.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040626-0345.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040630-2150.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040704-2020.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040808-0140.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040812-1415.xml
+│   ├── demandMatrix-abilene-zhang-5min-20040819-2305.xml
+│   └── demandMatrix-abilene-zhang-5min-20040907-0905.xml
+└── trace_xml_reader_config.yaml
+```
+
+The folder `directed-abilene-zhang-5min-over-6months-ALL` contains 10 xml files from sndlib each standing for traffic in one 5min timespan.
+The configuration you find in `trace_xml_reader_config.yaml`. It contains:  
+```yaml
+directory: "directed-abilene-zhang-5min-over-6months-ALL"  #  if not set, intermediate csv must be given
+# result_trace_filename: <>  # default  = f'{directory}_{_from}-{to}_trace.csv'
+# intermediate_result_filename: <>  # default  = result_trace_filename + "_intermediate
+# _from: 0 # default 0
+# to: 100  # default None, means slice is [_from:]
+node_name_map: abilene_node_name_map.yaml  # default None, means leave the names
+run_duration: 100  # default 100
+scale_factor: 0.001  # default 0.001
+change_rate: 2  # default 2
+#ingress_nodes:  # default None, means choose all nodes
+#  - pop0
+#  - pop1
+```
+Parameter `directory` points to the folder with the xml files. Execute:  
+```sh
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml
+[...]
+23:20:54: 10  files in directory
+23:20:54: Chosen files: os.listdir(directed-abilene-zhang-5min-over-6months-ALL)[0:]
+[...]
+23:21:00: Written to directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv. Last time step 1800
+[...]
+23:21:00: inter_arrival_mean range: 0.323815912931867, 36.447214465141315
+23:21:00: ... mean:  7.381947818616778
+23:21:00: ... median:  5.646327364198291
+23:21:00: ... std:  5.661472126922231
+```
+The converted trace is written to directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv. Reading the files takes most of the time. That's why the script writes some intermediate data to another csv file (in this case it is named `directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv`). You can reuse it with different parameters by setting the `only_process` parameter. For example we want to include not all ingress nodes:
+`trace_xml_reader_config.yaml`:
+```yaml
+result_trace_filename: ing_pop0_pop1.csv
+[...]
+ingress_nodes:  # default None, means choose all nodes
+  - pop0
+  - pop1
+```
+We also give the resulting trace_file another filename to avoid overwriting. Execute with `--only-process`:
+```sh
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --only-process
+```
+The script will work on the data from the intermediate file. By default filenames are constructed from the directory the arguments `_from` and `to`. You also can assign one particular intermediate file directly:
+`trace_xml_reader_config.yaml`:
+```yaml
+# directory: "directed-abilene-zhang-5min-over-6months-ALL"
+intermediate_result_filename: directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv
+[...]
+```
+In this case the directory does not have to be set.  
+Since a batch from sndlib contains so many files you can choose a sample of them with arguments `_from` and `to`, which defines a slice. The script calls: `os.listdir(directory)[_from:to]`. That way you can limit the number of files to read.  
+The node names in our network files differ from those in sndlib. To change them a yaml file is assigned. In the above config example parameter `node_name_map` was set to `abilene_node_name_map.yaml`, which looks like this:
+```yaml
+# defines how to rename nodes (from keys to values). If a node is set to null it will be removed from the
+# dataframe. If a node is not mentioned in the yaml it will be ignored, the name will be kept.
+ATLAM5: null  # this node is removed and does not appear even in the intermediate
+ATLAng: pop9  # renamed from ATLAng to pop9
+CHINng: pop1
+DNVRng: pop6
+HSTNng: pop8
+IPLSng: pop10
+KSCYng: pop7
+LOSAng: pop5
+NYCMng: pop0
+SNVAng: pop4
+STTLng: pop3
+WASHng: pop2
+```
+Save plots of the `data_rate` or the `inter_arrival_mean`:
+```sh
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --save_plots data_rate inter_arrival_mean
+coord-sim/params/convert_traces$ tree
+.
+├── abilene_node_name_map.yaml
+├── convert_traces.py
+├── directed-abilene-zhang-5min-over-6months-ALL
+│   ├── demandMatrix-abilene-zhang-5min-20040302-1830.xml
+│   ├── [...]
+│   └── demandMatrix-abilene-zhang-5min-20040907-0905.xml
+├── directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv
+├── directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv
+├── directed-abilene-zhang-5min-over-6months-ALL_0-None_trace_data_rate.png            <---
+├── directed-abilene-zhang-5min-over-6months-ALL_0-None_trace_inter_arrival_mean.png   <---
+├── directed-abilene-zhang-5min-over-6months-ALL_0-None_trace_meta.yaml
+└── trace_xml_reader_config.yaml
+```
+Save plots as pdf:
+```sh
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --save_plots data_rate inter_arrival_mean --plot_format pdf
+```
+Show plots in the end of the script by calling plt.show():
+```sh
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --plot data_rate inter_arrival_mean
+```
+For more information look at the doctrings in the script or the comments in the example config.   
+
 ## Tests
 
 ```bash
