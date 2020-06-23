@@ -142,6 +142,7 @@ class TraceXMLReader():
         """
         files = list(map(lambda file: os.path.join(self.directory, file), os.listdir(self.directory)))
         files = list(filter(os.path.isfile, files))
+        files.sort()
         logging.info(f"{str(len(files))}  files in directory")
         if self.to and self.to <= len(files):
             files = files[self._from:self.to]
@@ -284,8 +285,10 @@ def main(config_file, only_process=False, **kwargs):
     if kwargs.get("plot", None) or kwargs.get("save_plots", None):
         fig, ax = reader.plot_data_rate()
         if 'data_rate' in kwargs.get("save_plots", None):
-            fig.savefig(f"""{os.path.splitext(reader.result_trace_filename)[0]}_data_rate.{
-                kwargs.get('plot_format', 'png')}""")
+            plot_filename = f"""{os.path.splitext(reader.result_trace_filename)[0]}_data_rate.{
+                kwargs.get('plot_format', 'png')}"""
+            fig.savefig(plot_filename)
+            logging.info(f"""Saved plot: {plot_filename}""")
         if 'data_rate' in kwargs.get("plot"):
             plt.show()
 
@@ -293,8 +296,10 @@ def main(config_file, only_process=False, **kwargs):
 
         fig, ax = reader.plot_inter_arrival_mean()
         if 'inter_arrival_mean' in kwargs.get("save_plots", []):
-            fig.savefig(f"""{os.path.splitext(reader.result_trace_filename)[0]}_inter_arrival_mean.{
-                kwargs.get('plot_format', 'png')}""")
+            plot_filename = f"""{os.path.splitext(reader.result_trace_filename)[0]}_inter_arrival_mean.{
+                kwargs.get('plot_format', 'png')}"""
+            fig.savefig(plot_filename)
+            logging.info(f"""Saved plot: {plot_filename}""")
         if 'inter_arrival_mean' in kwargs.get("plot", []):
             plt.show()
 
