@@ -42,7 +42,7 @@ class TraceXMLReader():
                                               dataframe. If a node is not in the dict or yaml it will be ignored, the
                                               name will be kept. Applied in function read_one_file.
             intermediate_result_filename: str: filename of csv with intermediate results.
-                                               If None result_trace_filename + 'intermediate'
+                                               If None f'{directory}_{_from}-{to}_intermediate.csv'
             result_trace_filename: str: filename of csv with resulting trace.
                                                If None - f'{directory}_{_from}-{to}_trace.csv'
             ingress_nodes: list: only this nodes in resulting trace. If None - all nodes will appear in the trace.
@@ -58,7 +58,7 @@ class TraceXMLReader():
             self.result_trace_filename = f'{directory}_{_from}-{to}_trace.csv'
         splitext = os.path.splitext(self.result_trace_filename)
         if not intermediate_result_filename:
-            self.intermediate_result_filename = splitext[0] + "_intermediate" + splitext[1]
+            self.intermediate_result_filename = f'{directory}_{_from}-{to}_intermediate.csv'
         else:
             self.intermediate_result_filename = intermediate_result_filename
         self.intermediate_result_df = pd.DataFrame({})
