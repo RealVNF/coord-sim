@@ -25,12 +25,12 @@ class TraceXMLReader():
                         'STTLng': "pop3",
                         'WASHng': "pop2"}
 
-    def __init__(self, directory, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
+    def __init__(self, directory=None, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
                  node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
                  ingress_nodes=None, *args, **kwargs):
         """
         Handles all parameters of the reader.
-            directory: str: path to directory (required)
+            directory: str: path to directory
             _from and to: ints: in function read_all_files_parallel os.listdir(directory)[_from:to] is called to choose
                                 the files
             scale_factor: float: scale data_rate, applied in function process_df
@@ -52,7 +52,7 @@ class TraceXMLReader():
         self._from = _from
         self.to = to
         self._lock = threading.Lock()
-        if not result_trace_filename:
+        if result_trace_filename:
             self.result_trace_filename = result_trace_filename
         else:
             self.result_trace_filename = f'{directory}_{_from}-{to}_trace.csv'
@@ -244,7 +244,7 @@ class TraceXMLReader():
         return fig, ax
 
 
-def main(config_file=None, only_process=False, **kwargs):
+def main(config_file, only_process=False, **kwargs):
     """
     Main function.
         Args:
@@ -304,7 +304,7 @@ def main(config_file=None, only_process=False, **kwargs):
 def parse_args(args=None):
     parser = ArgumentParser()
 
-    parser.add_argument("config_file", help="Path to config_file")
+    parser.add_argument("--config_file", help="Path to config_file")
     parser.add_argument("--only-process", default=False, action="store_true", help="Reuse and intermediate.csv")
     parser.add_argument("--plot", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
                         help="Plot data_rate or inter_arrival_mean and call plt.show() in the end.")
