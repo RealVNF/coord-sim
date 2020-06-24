@@ -1,0 +1,11 @@
+language: python
+python:
+    - "3.6"
+
+install:
+    - pip install -r requirements.txt
+
+script:
+    - flake8 src
+    - nose2
+    - coord-sim -d 20 -n params/networks/triangle.graphml -sf params/services/abc.yaml -sfr params/services/resource_functions -c params/config/sim_config.yaml
