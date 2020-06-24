@@ -1,0 +1,12 @@
+directory: "directed-abilene-zhang-5min-over-6months-ALL"  #  if not set, intermediate csv must be given
+# result_trace_filename: <>  # default  = f'{directory}_{_from}-{to}_trace.csv'
+# intermediate_result_filename: <>  # default  = result_trace_filename + "_intermediate
+# _from: 0 # default 0
+# to: 100  # default None, means slice is [_from:]
+node_name_map: abilene_node_name_map.yaml  # default None, means leave the names
+run_duration: 100  # default 100
+scale_factor: 0.001  # default 0.001
+change_rate: 2  # default 2
+#ingress_nodes:  # default None, means choose all nodes
+#  - pop0
+#  - pop1

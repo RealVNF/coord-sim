@@ -1,0 +1,14 @@
+# defines how to rename nodes (from keys to values). If a node is set to null it will be removed from the
+# dataframe. If a node is not mentioned in the yaml it will be ignored, the name will be kept.
+ATLAM5: null
+ATLAng: pop9
+CHINng: pop1
+DNVRng: pop6
+HSTNng: pop8
+IPLSng: pop10
+KSCYng: pop7
+LOSAng: pop5
+NYCMng: pop0
+SNVAng: pop4
+STTLng: pop3
+WASHng: pop2
