@@ -191,7 +191,7 @@ class TraceXMLReader():
             mask = df["node"] == self.ingress_nodes[0]
             for ing in self.ingress_nodes[1:]:
                 mask = np.logical_or(df["node"] == ing, mask)
-                df = df[mask]
+        df = df[mask]
 
         df_sums = df.groupby(["time", "node"]).sum().reset_index()
         self.data_rate_sums = df_sums
