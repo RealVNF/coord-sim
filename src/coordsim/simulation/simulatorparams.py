@@ -80,9 +80,14 @@ class SimulatorParams:
             self.init_state = config['init_state']
             self.states = config['states']
             if self.in_init_state:
-                self.current_state = self.init_state
-            state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
-            self.update_single_inter_arr_mean(state_inter_arr_mean)
+                # Create the inter_arr_mean dict
+                self.inter_arr_mean = {node_id: 0 for node_id in self.network.nodes}
+                # Initialize the state of all nodes with the init_state
+                self.current_states = {node_id: self.init_state for node_id in self.network.nodes}
+                # If rand_init_state is activated, update states now to generate random states for each node
+                if 'rand_init_state' in config and config['rand_init_state']:
+                    self.update_state(apply=False)
+            self.update_inter_arr_mean()
         else:
             inter_arr_mean = config['inter_arrival_mean']
             self.update_single_inter_arr_mean(inter_arr_mean)
@@ -107,21 +112,37 @@ class SimulatorParams:
         params_str += f"deterministic_size: {self.deterministic_size}\n"
         return params_str
 
-    def update_state(self):
-        switch = [False, True]
-        change_prob = self.states[self.current_state]['switch_p']
-        remain_prob = 1 - change_prob
-        switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
-        if switch_decision:
-            state_names = list(self.states.keys())
-            if self.current_state == state_names[0]:
-                self.current_state = state_names[1]
-            else:
-                self.current_state = state_names[0]
-        state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
-        self.update_single_inter_arr_mean(state_inter_arr_mean)
+    def update_state(self, apply=True):
+        """
+        Change or keep the MMP state for each of the network's node
+        State change decision made based on the switch probability defined with states definition in config.
+
+        :param bool apply: Apply state changes to inter_arr_means. False means update states without applying changes.
+        """
+        for node_id in self.network.nodes:
+            switch = [False, True]
+            current_state = self.current_states[node_id]
+            change_prob = self.states[current_state]['switch_p']
+            remain_prob = 1 - change_prob
+            switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
+            if switch_decision:
+                state_names = list(self.states.keys())
+                if current_state == state_names[0]:
+                    current_state = state_names[1]
+                else:
+                    current_state = state_names[0]
+                self.current_states[node_id] = current_state
+        if apply:
+            self.update_inter_arr_mean()
+
+    def update_inter_arr_mean(self):
+        """Update inter arrival mean for each node based on """
+        for node_id, state in self.current_states.items():
+            inter_arr_mean = self.states[state]['inter_arr_mean']
+            self.inter_arr_mean[node_id] = inter_arr_mean
 
     def update_single_inter_arr_mean(self, new_mean):
+        """Apply a single inter_arr_mean to all nodes"""
         self.inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
 
     def update_single_predicted_inter_arr_mean(self, new_mean):

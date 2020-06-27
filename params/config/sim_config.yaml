@@ -24,8 +24,10 @@ write_schedule: True
 # States (two state markov arrival)
 # Optional param: states: True | False 
 use_states: False
+# Required: init_state
 init_state: state_1
-
+# Optional: Apply random states as init. Still requires init_state to be defined.
+rand_init_state: True 
 states:
   state_1:
     inter_arr_mean: 10.0
