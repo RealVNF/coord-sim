@@ -191,7 +191,7 @@ class TraceXMLReader():
             mask = df["node"] == self.ingress_nodes[0]
             for ing in self.ingress_nodes[1:]:
                 mask = np.logical_or(df["node"] == ing, mask)
-        df = df[mask]
+            df = df[mask]
 
         df_sums = df.groupby(["time", "node"]).sum().reset_index()
         self.data_rate_sums = df_sums
@@ -199,11 +199,9 @@ class TraceXMLReader():
         inter_arrival_mean = 1/(df_sums["demandValue"]*self.scale_factor)
         groupby_time = df_sums.groupby(["time"])
         num_timesteps = len(groupby_time)
-        num_ingress = groupby_time.count()["node"][0]
-        time_col = np.concatenate([np.array([t]*num_ingress)
-                                   for t in np.arange(0,
-                                                      num_timesteps*self.run_duration*self.change_rate,
-                                                      self.run_duration*self.change_rate)])
+        arange = np.arange(0, num_timesteps*self.run_duration*self.change_rate, self.run_duration*self.change_rate)
+
+        time_col = np.concatenate([np.array([i]*len(t[1]["node"])) for t, i in zip(groupby_time, arange)])
         df_sums["time"] = time_col
         df_sums["inter_arrival_mean"] = inter_arrival_mean
         df_sums = df_sums.drop(axis=1, labels=["demandValue"])
