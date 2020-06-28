@@ -82,11 +82,13 @@ class SimulatorParams:
             if self.in_init_state:
                 # Create the inter_arr_mean dict
                 self.inter_arr_mean = {node_id: 0 for node_id in self.network.nodes}
-                # Initialize the state of all nodes with the init_state
-                self.current_states = {node_id: self.init_state for node_id in self.network.nodes}
-                # If rand_init_state is activated, update states now to generate random states for each node
+                # If rand_init_state is activated, randomly select a state for each node
                 if 'rand_init_state' in config and config['rand_init_state']:
-                    self.update_state(apply=False)
+                    self.current_states = {node_id: np.random.choice(
+                        list(self.states.keys())) for node_id in self.network.nodes}
+                else:
+                    # Initialize the state of all nodes with the init_state
+                    self.current_states = {node_id: self.init_state for node_id in self.network.nodes}
             self.update_inter_arr_mean()
         else:
             inter_arr_mean = config['inter_arrival_mean']
@@ -112,12 +114,10 @@ class SimulatorParams:
         params_str += f"deterministic_size: {self.deterministic_size}\n"
         return params_str
 
-    def update_state(self, apply=True):
+    def update_state(self):
         """
         Change or keep the MMP state for each of the network's node
         State change decision made based on the switch probability defined with states definition in config.
-
-        :param bool apply: Apply state changes to inter_arr_means. False means update states without applying changes.
         """
         for node_id in self.network.nodes:
             switch = [False, True]
@@ -132,8 +132,7 @@ class SimulatorParams:
                 else:
                     current_state = state_names[0]
                 self.current_states[node_id] = current_state
-        if apply:
-            self.update_inter_arr_mean()
+        self.update_inter_arr_mean()
 
     def update_inter_arr_mean(self):
         """Update inter arrival mean for each node based on """

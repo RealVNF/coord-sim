@@ -24,9 +24,9 @@ write_schedule: True
 # States (two state markov arrival)
 # Optional param: states: True | False 
 use_states: False
-# Required: init_state
+# Set the init state for nodes
 init_state: state_1
-# Optional: Apply random states as init. Still requires init_state to be defined.
+# Optional: Apply random states as init. Oerrides the state defined in init_state. 
 rand_init_state: True 
 states:
   state_1:
