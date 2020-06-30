@@ -29,7 +29,7 @@ class SimulatorParams:
             self.use_trace = True
 
         self.prediction = prediction  # bool
-        self.predicted_inter_arr_mean = {node_id: config['inter_arrival_mean'] for node_id in self.network.nodes}
+        self.predicted_inter_arr_mean = {node_id[0]: config['inter_arrival_mean'] for node_id in self.ing_nodes}
 
         if schedule is None:
             schedule = {}
@@ -80,9 +80,16 @@ class SimulatorParams:
             self.init_state = config['init_state']
             self.states = config['states']
             if self.in_init_state:
-                self.current_state = self.init_state
-            state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
-            self.update_single_inter_arr_mean(state_inter_arr_mean)
+                # Create the inter_arr_mean dict
+                self.inter_arr_mean = {node_id[0]: 0 for node_id in self.ing_nodes}
+                # If rand_init_state is activated, randomly select a state for each node
+                if 'rand_init_state' in config and config['rand_init_state']:
+                    self.current_states = {node_id[0]: np.random.choice(
+                        list(self.states.keys())) for node_id in self.network.ing_nodes}
+                else:
+                    # Initialize the state of all nodes with the init_state
+                    self.current_states = {node_id[0]: self.init_state for node_id in self.ing_nodes}
+            self.update_inter_arr_mean()
         else:
             inter_arr_mean = config['inter_arrival_mean']
             self.update_single_inter_arr_mean(inter_arr_mean)
@@ -108,24 +115,37 @@ class SimulatorParams:
         return params_str
 
     def update_state(self):
-        switch = [False, True]
-        change_prob = self.states[self.current_state]['switch_p']
-        remain_prob = 1 - change_prob
-        switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
-        if switch_decision:
-            state_names = list(self.states.keys())
-            if self.current_state == state_names[0]:
-                self.current_state = state_names[1]
-            else:
-                self.current_state = state_names[0]
-        state_inter_arr_mean = self.states[self.current_state]['inter_arr_mean']
-        self.update_single_inter_arr_mean(state_inter_arr_mean)
+        """
+        Change or keep the MMP state for each of the network's node
+        State change decision made based on the switch probability defined with states definition in config.
+        """
+        for node_id in self.ing_nodes:
+            switch = [False, True]
+            current_state = self.current_states[node_id[0]]
+            change_prob = self.states[current_state]['switch_p']
+            remain_prob = 1 - change_prob
+            switch_decision = np.random.choice(switch, p=[remain_prob, change_prob])
+            if switch_decision:
+                state_names = list(self.states.keys())
+                if current_state == state_names[0]:
+                    current_state = state_names[1]
+                else:
+                    current_state = state_names[0]
+                self.current_states[node_id[0]] = current_state
+        self.update_inter_arr_mean()
+
+    def update_inter_arr_mean(self):
+        """Update inter arrival mean for each node based on """
+        for node_id, state in self.current_states.items():
+            inter_arr_mean = self.states[state]['inter_arr_mean']
+            self.inter_arr_mean[node_id] = inter_arr_mean
 
     def update_single_inter_arr_mean(self, new_mean):
-        self.inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
+        """Apply a single inter_arr_mean to all nodes"""
+        self.inter_arr_mean = {node_id[0]: new_mean for node_id in self.ing_nodes}
 
     def update_single_predicted_inter_arr_mean(self, new_mean):
-        self.predicted_inter_arr_mean = {node_id: new_mean for node_id in self.network.nodes}
+        self.predicted_inter_arr_mean = {node_id[0]: new_mean for node_id in self.ing_nodes}
 
     def reset_flow_lists(self):
         """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
