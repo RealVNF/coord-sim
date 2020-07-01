@@ -191,7 +191,7 @@ class Simulator(SimulatorInterface):
         # Create a new SimulatorState object to pass to the RL Agent
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
-        self.writer.write_state_results(self.episode, self.env.now, simulator_state, stats)
+        self.writer.write_state_results(self.episode, self.env.now, simulator_state, self.params.metrics.get_metrics())
         logger.debug(f"t={self.env.now}: {simulator_state}")
 
         return simulator_state

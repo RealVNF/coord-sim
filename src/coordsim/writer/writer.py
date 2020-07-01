@@ -127,7 +127,8 @@ class ResultWriter():
                 resource_output_row = [episode, time, node_id, node_cap, used_resources]
                 resource_output.append(resource_output_row)
 
-            run_flows_output = [episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'], metrics['run_generated_flows']]
+            run_flows_output = [episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'],
+                                metrics['run_generated_flows']]
             self.run_flows_writer.writerow(run_flows_output)
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
