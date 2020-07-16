@@ -183,7 +183,7 @@ class SimulatorParams:
                     # heavy-tail flow size
                     flow_size = np.random.pareto(self.flow_size_shape) + 1
                 # Skip flows with negative flow_dr or flow_size values
-                if flow_dr <= 0.00 or flow_size <= 0.00:
+                if flow_dr < 0.00 or flow_size < 0.00:
                     continue
 
                 flow_arrival.append(inter_arr_time)
