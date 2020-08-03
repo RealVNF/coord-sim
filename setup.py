@@ -6,7 +6,8 @@ requirements = [
     'pyyaml>=5.1',
     'numpy',
     'common-utils',
-    'sklearn'
+    'sklearn',
+    'pandas'
 ]
 
 test_requirements = [
