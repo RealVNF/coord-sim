@@ -5,7 +5,8 @@ requirements = [
     'geopy',
     'pyyaml>=5.1',
     'numpy',
-    'common-utils'
+    'common-utils',
+    'sklearn'
 ]
 
 test_requirements = [
@@ -34,6 +35,7 @@ setup(
     entry_points={
         'console_scripts': [
             'coord-sim=coordsim.main:main',
+            'lstm-predict=coordsim.traffic_predictor.lstm_predictor:main'
         ],
     },
 )

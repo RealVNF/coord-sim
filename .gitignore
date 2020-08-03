@@ -1,5 +1,8 @@
 .idea
 
+# Typical LSTM Weights folder
+params/lstm_weights
+
 # VS Code files
 .vscode
 
