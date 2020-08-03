@@ -8,6 +8,7 @@ requirements = [
     'common-utils',
     'sklearn',
     'pandas',
+    'tensorflow',
     'keras'
 ]
 
