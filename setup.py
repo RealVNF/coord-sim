@@ -7,7 +7,8 @@ requirements = [
     'numpy',
     'common-utils',
     'sklearn',
-    'pandas'
+    'pandas',
+    'keras'
 ]
 
 test_requirements = [
