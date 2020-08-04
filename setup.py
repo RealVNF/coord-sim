@@ -4,7 +4,7 @@ requirements = [
     'networkx',
     'geopy',
     'pyyaml>=5.1',
-    'numpy',
+    'numpy<1.19.0',
     'common-utils',
     'sklearn',
     'pandas',
