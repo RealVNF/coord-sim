@@ -97,6 +97,7 @@ class LSTM_Predictor:
 
         if self.weights_dir:
             self.model = load_model(f"{self.weights_dir}/lstm_model.mdl")
+            self.prepare_prediction_model()
 
     def train_model(self):
         """
@@ -105,13 +106,18 @@ class LSTM_Predictor:
         # fit the model
         self.fit_lstm(self.train_scaled, 1, self.nb_epochs, 4)
 
-    def predict_traffic(self):
+    def prepare_prediction_model(self):
         """
-        Returns the predicted traffic rate for the next run
+        Builds the state of the LSTM to allow for one-step predictions
         """
         # forecast the entire training dataset to build up state for forecasting
         train_reshaped = self.train_scaled[:, 0].reshape(len(self.train_scaled), 1, 1)
         self.model.predict(train_reshaped, batch_size=1)
+
+    def predict_traffic(self):
+        """
+        Returns the predicted traffic rate for the next run
+        """
         # make one-step forecast
         X, _ = self.test_scaled[self.last_prediction_index, 0:-1], self.test_scaled[self.last_prediction_index, -1]
         yhat = self.forecast_lstm(self.model, 1, X)
