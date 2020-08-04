@@ -269,15 +269,13 @@ class SimConfig:
 def main():
     # parse CLI args (when using simulator as stand-alone, not triggered through the interface)
     parser = argparse.ArgumentParser(description="Trainer tool for LSTM prediction for Coord-sim simulator")
-    parser.add_argument('-t', '--trace', required=True, dest="trace",
-                        help="The trace file to train the LSTM with.")
     parser.add_argument('-c', '--config', required=True, dest="sim_config",
                         help="The simulator config file")
     args = parser.parse_args()
 
     print("Loading arguments")
     sim_config = reader.get_config(args.sim_config)
-    trace = reader.get_trace(args.trace)
+    trace = reader.get_trace(sim_config['trace_path'])
     dest_dir = sim_config['lstm_weights']
     params = SimConfig(sim_config)
     print(f"Loaded trace with {len(trace)} entries")
