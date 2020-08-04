@@ -4,12 +4,12 @@ requirements = [
     'networkx',
     'geopy',
     'pyyaml>=5.1',
-    'numpy<1.19.0',
+    'numpy==1.16.4',
     'common-utils',
     'sklearn',
     'pandas',
-    'tensorflow',
-    'keras'
+    'tensorflow==1.14.0',
+    'keras==2.2.5',
 ]
 
 test_requirements = [
