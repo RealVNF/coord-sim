@@ -20,7 +20,7 @@ run_duration: 100                  # default: 100
 
 # future_traffic: True
 # lstm_prediction: True
-# lstm_weights: res/lstm_weights
+# lstm_weights: params/lstm_weights
 
 # Optional: Write Scheduling results
 write_schedule: True
