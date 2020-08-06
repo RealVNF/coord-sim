@@ -57,6 +57,8 @@ class Metrics:
     def reset_run_metrics(self):
         """Set/Reset metrics belonging to one run"""
         self.metrics['run_dropped_flows_per_node'] = {v: 0 for v in self.network.nodes.keys()}
+        # Record total dropped flows per run
+        self.metrics['run_dropped_flows'] = 0
 
         self.metrics['run_end2end_delay'] = 0
         self.metrics['run_avg_end2end_delay'] = 0.0
@@ -132,6 +134,7 @@ class Metrics:
         self.metrics['total_active_flows'] -= 1
         self.metrics['dropped_flows_locs'][flow.current_node_id][flow.current_sf] += 1
         self.metrics['run_dropped_flows_per_node'][flow.current_node_id] += 1
+        self.metrics['run_dropped_flows'] += 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
     def add_processing_delay(self, delay):
