@@ -151,7 +151,7 @@ coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_x
 23:21:00: ... median:  5.646327364198291
 23:21:00: ... std:  5.661472126922231
 ```
-The converted trace is written to directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv. Reading the files takes most of the time. That's why the script writes some intermediate data to another csv file (in this case it is named `directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv`). You can reuse it with different parameters by setting the `only_process` parameter. For example we want to include not all ingress nodes:
+The converted trace is written to directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv. Reading the files takes most of the time. That's why the script writes some intermediate data to another csv file (in this case it is named `directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv`). You can reuse it with different parameters by setting the `--process` parameter to `intermediate`. For example we want to include not all ingress nodes:
 `trace_xml_reader_config.yaml`:
 ```yaml
 result_trace_filename: ing_pop0_pop1.csv
@@ -160,7 +160,7 @@ ingress_nodes:  # default None, means choose all nodes
   - pop0
   - pop1
 ```
-We also give the resulting trace_file another filename to avoid overwriting. Execute with `--only-process`:
+We also give the resulting trace_file another filename to avoid overwriting. Execute with `--process intermediate`:
 ```sh
 coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --only-process
 ```
