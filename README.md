@@ -124,7 +124,7 @@ coord-sim/params/convert_traces$ tree
 The folder `directed-abilene-zhang-5min-over-6months-ALL` contains 10 xml files from sndlib each standing for traffic in one 5min timespan.
 The configuration you find in `trace_xml_reader_config.yaml`. It contains:  
 ```yaml
-directory: "directed-abilene-zhang-5min-over-6months-ALL"  #  if not set, intermediate csv must be given
+source: "directed-abilene-zhang-5min-over-6months-ALL"
 # result_trace_filename: <>  # default  = f'{directory}_{_from}-{to}_trace.csv'
 # intermediate_result_filename: <>  # default  = result_trace_filename + "_intermediate
 # _from: 0 # default 0
@@ -137,7 +137,7 @@ change_rate: 2  # default 2
 #  - pop0
 #  - pop1
 ```
-Parameter `directory` points to the folder with the xml files. Execute:  
+Parameter `source` points to the folder with the xml files. Execute:  
 ```sh
 coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml
 [...]
@@ -151,28 +151,29 @@ coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_x
 23:21:00: ... median:  5.646327364198291
 23:21:00: ... std:  5.661472126922231
 ```
-The converted trace is written to directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv. Reading the files takes most of the time. That's why the script writes some intermediate data to another csv file (in this case it is named `directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv`). You can reuse it with different parameters by setting the `only_process` parameter. For example we want to include not all ingress nodes:
+The converted trace is written to `directed-abilene-zhang-5min-over-6months-ALL_0-None_trace.csv`. Reading the files takes most of the time. That's why the script writes some intermediate data to another csv file (in this case it is named `directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv`). You can reuse it with different parameters by setting the `source` parameter to the filename of the intermediate. For example we want to include not all ingress nodes:
 `trace_xml_reader_config.yaml`:
 ```yaml
+source: directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv
 result_trace_filename: ing_pop0_pop1.csv
 [...]
 ingress_nodes:  # default None, means choose all nodes
   - pop0
   - pop1
 ```
-We also give the resulting trace_file another filename to avoid overwriting. Execute with `--only-process`:
+We also give the resulting trace_file another filename to avoid overwriting:
 ```sh
-coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --only-process
+coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml
 ```
-The script will work on the data from the intermediate file. By default filenames are constructed from the directory the arguments `_from` and `to`. You also can assign one particular intermediate file directly:
+The script will work on the data from the intermediate file. By default filenames are constructed from the directory the arguments `_from` and `to`. You also can assign filenames to to the intermediate and the results file:
 `trace_xml_reader_config.yaml`:
 ```yaml
-# directory: "directed-abilene-zhang-5min-over-6months-ALL"
+source: "directed-abilene-zhang-5min-over-6months-ALL"
 intermediate_result_filename: directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv
+result_trace_filename: ing_pop0_pop1.csv
 [...]
-```
-In this case the directory does not have to be set.  
-Since a batch from sndlib contains so many files you can choose a sample of them with arguments `_from` and `to`, which defines a slice. The script calls: `os.listdir(directory)[_from:to]`. That way you can limit the number of files to read.  
+```  
+Since a batch from sndlib contains so many files you can choose a sample of them with arguments `_from` and `to`, which defines a slice. The script calls: `os.listdir(source)[_from:to]` if source is a directory. That way you can limit the number of files to read. If `source` is set to an intermediate file it will be also sliced according to those parameters.  
 The node names in our network files differ from those in sndlib. To change them a yaml file is assigned. In the above config example parameter `node_name_map` was set to `abilene_node_name_map.yaml`, which looks like this:
 ```yaml
 # defines how to rename nodes (from keys to values). If a node is set to null it will be removed from the
@@ -217,6 +218,10 @@ Show plots in the end of the script by calling plt.show():
 coord-sim/params/convert_traces$ python3 convert_traces.py --config_file trace_xml_reader_config.yaml --plot data_rate inter_arrival_mean
 ```
 For more information look at the doctrings in the script or the comments in the example config.   
+
+#### Overall abilene intermediate file
+
+We have an intermediate csv-file [overall_abilene_intermediate.csv](https://github.com/RealVNF/coord-sim/blob/master/params/convert_traces/overall_abilene_intermediate.csv), which contains the whole abilene batch from sndlib with 48 thousand time step. It is recommended to use it for producing traces for the abilenme network by setting the `source` parameter in config to it. 
 
 ## Tests
 
