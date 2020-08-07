@@ -25,12 +25,12 @@ class TraceXMLReader():
                         'STTLng': "pop3",
                         'WASHng': "pop2"}
 
-    def __init__(self, directory=None, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
-                 node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
+    def __init__(self, source=None, _from=0, to=None, scale_factor=0.001, run_duration=100,
+                 change_rate=2, node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
                  ingress_nodes=None, plot_figsize=(20, 10), squash_rate=1, *args, **kwargs):
         """
         Handles all parameters of the reader.
-            directory: str: path to directory
+            source: str: path to directory or to intermediat .csv file
             _from and to: ints: in function read_all_files_parallel os.listdir(directory)[_from:to] is called to choose
                                 the files
             scale_factor: float: scale data_rate, applied in function process_df
@@ -48,17 +48,17 @@ class TraceXMLReader():
             ingress_nodes: list: only this nodes in resulting trace. If None - all nodes will appear in the trace.
                                  Applied in function process_df.
         """
-        self.directory = directory
+        self.source = source
         self._from = _from
         self.to = to
         self._lock = threading.Lock()
         if result_trace_filename:
             self.result_trace_filename = result_trace_filename
         else:
-            self.result_trace_filename = f'{directory}_{_from}-{to}_trace.csv'
+            self.result_trace_filename = f'{source}_{_from}-{to}_trace.csv'
         splitext = os.path.splitext(self.result_trace_filename)
         if not intermediate_result_filename:
-            self.intermediate_result_filename = f'{directory}_{_from}-{to}_intermediate.csv'
+            self.intermediate_result_filename = f'{source}_{_from}-{to}_intermediate.csv'
         else:
             self.intermediate_result_filename = intermediate_result_filename
         self.intermediate_result_df = pd.DataFrame({})
@@ -73,6 +73,7 @@ class TraceXMLReader():
         self.lock_meta = threading.Lock()
         self.results_trace = None
         self.data_rate_sums = None
+        self.data_rate_sums_filename = splitext[0] + "_data_rate_sums.csv"
         self.plot_figsize = plot_figsize
         if isinstance(node_name_map, dict):
             self.node_name_map = node_name_map
@@ -139,22 +140,22 @@ class TraceXMLReader():
 
     def read_files_parallel(self):
         """
-        Reads xml files from a given directory using os.listdir(self.directory)[self._from:self.to]. Uses function
+        Reads xml files from a given directory using os.listdir(self.source)[self._from:self.to]. Uses function
         read_one_file() to start threads for every file. Behavior defined by object attributes: self.directory,
         self._from, self.to, self.node_name_map.
         """
-        files = list(map(lambda file: os.path.join(self.directory, file), os.listdir(self.directory)))
+        files = list(map(lambda file: os.path.join(self.source, file), os.listdir(self.source)))
         files = list(filter(os.path.isfile, files))
         files.sort()
         logging.info(f"{str(len(files))}  files in directory")
         if self.to and self.to <= len(files):
             files = files[self._from:self.to]
-            logging.info(f"Chosen files: os.listdir({self.directory})[{str(self._from)}:{str(self.to)}]")
+            logging.info(f"Chosen files: os.listdir({self.source})[{str(self._from)}:{str(self.to)}]")
         elif self._from <= len(files):
             files = files[self._from:]
-            logging.info(f"Chosen files: os.listdir({self.directory})[{str(self._from)}:]")
+            logging.info(f"Chosen files: os.listdir({self.source})[{str(self._from)}:]")
         else:
-            logging.info(f"Chosen files: os.listdir({self.directory})[:]")
+            logging.info(f"Chosen files: os.listdir({self.source})[:]")
 
         logging.info(f"{str(len(files))}  files chosen in total")
 
@@ -199,6 +200,7 @@ class TraceXMLReader():
         df_sums = df.groupby(["time", "node"]).sum().reset_index()
         df_sums["demandValue"] = df_sums["demandValue"]*self.scale_factor
         self.data_rate_sums = df_sums
+        self.data_rate_sums.to_csv(self.data_rate_sums_filename, index=False)
         if self.squash_rate != 1:
             df_sums = self.squash_sums()
 
@@ -303,13 +305,11 @@ class TraceXMLReader():
         return fig, ax
 
 
-def main(config_file, process="dir", **kwargs):
+def main(config_file, **kwargs):
     """
     Main function.
         Args:
             config_file: dict or str(path to a yaml)
-            only_process: If True - load intermediate results (filename contained or indirectly defined by config)
-                          and call process_df on them
             kwargs: possible args: {plot: [data_rate, inter_arrival_mean], save_plots: [data_rate, inter_arrival_mean]}
         Returns dataframe with resulting trace
     """
@@ -327,13 +327,13 @@ def main(config_file, process="dir", **kwargs):
     reader = TraceXMLReader(**config)
 
     df_result = None
-    if process == "dir":
+    if os.path.isdir(reader.source):
         logging.info("Process directory")
         reader.read_files_parallel()
-        process = "intermediate"
-    if process == "intermediate":
+        reader.source = reader.intermediate_result_filename
+    if os.path.isfile(reader.source):
         logging.info("Process intermediate csv")
-        reader.intermediate_result_df = pd.read_csv(reader.intermediate_result_filename)
+        reader.intermediate_result_df = pd.read_csv(reader.source)
         logging.info("loaded intermediate csv")
         reader.slice_intermediate()
         df_result = reader.process_intermediate()
@@ -374,14 +374,12 @@ def main(config_file, process="dir", **kwargs):
 def parse_args(args=None):
     parser = ArgumentParser()
 
-    parser.add_argument("--config_file", help="Path to config_file")
-    parser.add_argument("--process", default="dir", choices=["dir", "intermediate", "trace"],
-                        help="Reuse and intermediate.csv")
+    parser.add_argument("--config-file", help="Path to config_file")
     parser.add_argument("--plot", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
                         help="Plot data_rate or inter_arrival_mean and call plt.show() in the end.")
-    parser.add_argument("--save_plots", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
+    parser.add_argument("--save-plots", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
                         help="Saves plots inter_arrival_mean in the end.")
-    parser.add_argument("--plot_format", default='png', choices=['pdf', 'png'], help="Plot format to save")
+    parser.add_argument("--plot-format", default='png', choices=['pdf', 'png'], help="Plot format to save")
     return vars(parser.parse_args(args))
 
 

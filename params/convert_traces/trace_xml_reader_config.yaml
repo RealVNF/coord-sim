@@ -1,15 +1,15 @@
-# directory: "directed-abilene-zhang-5min-over-6months-ALL"  #  if not set, intermediate csv must be given
-result_trace_filename: trace_0_None_inpop10_chrate2_scale00005.csv  # default  = f'{directory}_{_from}-{to}_trace.csv'
+source: directed-abilene-zhang-5min-over-6months-ALL
+result_trace_filename: trace_0_5000_pop0_chrate5_scale00004.csv  # default  = f'{directory}_{_from}-{to}_trace.csv'
 intermediate_result_filename: directed-abilene-zhang-5min-over-6months-ALL_0-None_intermediate.csv  # default  = result_trace_filename + "_intermediate
 _from: 0 # default 0
-#to: 12000  # default None, means slice is [_from:]
+to: 5000  # default None, means slice is [_from:]
 node_name_map: abilene_node_name_map.yaml  # default None, means leave the names
 run_duration: 100  # default 100
-scale_factor: 0.0005  # default 0.001
-squash_rate: 1
-change_rate: 2  # default 2
+scale_factor: 0.0004  # default 0.001
+squash_rate: 1  # no effect if == 1
+change_rate: 5  # default 2
 ingress_nodes:  # default None, means choose all nodes
- - pop10
+ - pop0
 plot_figsize:
   - 20
   - 10
