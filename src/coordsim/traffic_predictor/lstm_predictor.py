@@ -51,11 +51,6 @@ class LSTM_Predictor:
         self.gen_training_data()
         self.prepare_model()
 
-        # ax.plot(self.actual_requested_traffic, label="Actual traffic - seed")
-        # ax.plot(self.requested_traffic, label="Actual traffic - mean")
-        # ax.plot(self.predictions, label="predictions")
-        # fig.tightlayout()
-
     def gen_training_data(self):
         self.reset_flow_lists()
         for i in range(len(self.trace)):
@@ -119,8 +114,14 @@ class LSTM_Predictor:
         Returns the predicted traffic rate for the next run
         """
         # make one-step forecast
-        X, _ = self.test_scaled[self.last_prediction_index, 0:-1], self.test_scaled[self.last_prediction_index, -1]
-        yhat = self.forecast_lstm(self.model, 1, X)
+        if self.last_prediction_index == len(self.test_scaled):
+            X, y = self.test_scaled[self.last_prediction_index-1, 0:-1],
+            self.test_scaled[self.last_prediction_index-1, -1]
+            yhat = self.forecast_lstm(self.model, 1, np.array([y]))
+            self.last_prediction_index -= 1
+        else:
+            X, y = self.test_scaled[self.last_prediction_index, 0:-1], self.test_scaled[self.last_prediction_index, -1]
+            yhat = self.forecast_lstm(self.model, 1, X)
         # invert scaling
         yhat = self.invert_scale(self.scaler, X, yhat)
         # invert differencing
