@@ -27,7 +27,7 @@ class TraceXMLReader():
 
     def __init__(self, directory=None, _from=0, to=None, scale_factor=0.001, run_duration=100, change_rate=2,
                  node_name_map=None, intermediate_result_filename=None, result_trace_filename=None,
-                 ingress_nodes=None, *args, **kwargs):
+                 ingress_nodes=None, plot_figsize=(20, 10), squash_rate=1, *args, **kwargs):
         """
         Handles all parameters of the reader.
             directory: str: path to directory
@@ -62,15 +62,18 @@ class TraceXMLReader():
         else:
             self.intermediate_result_filename = intermediate_result_filename
         self.intermediate_result_df = pd.DataFrame({})
+        self.old_trace = pd.DataFrame({})
         self.ingress_nodes = ingress_nodes
         self.scale_factor = scale_factor
         self.run_duration = run_duration
         self.change_rate = change_rate  # in runs
+        self.squash_rate = squash_rate
         self.meta = {}
         self.meta_filename = splitext[0] + "_meta.yaml"
         self.lock_meta = threading.Lock()
         self.results_trace = None
         self.data_rate_sums = None
+        self.plot_figsize = plot_figsize
         if isinstance(node_name_map, dict):
             self.node_name_map = node_name_map
         elif isinstance(node_name_map, str):
@@ -175,7 +178,7 @@ class TraceXMLReader():
         with open(self.meta_filename, "w") as f:
             yaml.dump(self.meta, f)
 
-    def process_df(self):
+    def process_intermediate(self):
         """
         Processes the df with the intermediate results. Applies the scale_factor and converts the data rate into
         inter_arrival_mean. Also the choice of ingress nodes (attribute self.ingress_nodes) is applied here and the time
@@ -191,19 +194,20 @@ class TraceXMLReader():
             mask = df["node"] == self.ingress_nodes[0]
             for ing in self.ingress_nodes[1:]:
                 mask = np.logical_or(df["node"] == ing, mask)
-        df = df[mask]
+            df = df[mask]
 
         df_sums = df.groupby(["time", "node"]).sum().reset_index()
+        df_sums["demandValue"] = df_sums["demandValue"]*self.scale_factor
         self.data_rate_sums = df_sums
+        if self.squash_rate != 1:
+            df_sums = self.squash_sums()
 
-        inter_arrival_mean = 1/(df_sums["demandValue"]*self.scale_factor)
+        inter_arrival_mean = 1/(df_sums["demandValue"])
         groupby_time = df_sums.groupby(["time"])
         num_timesteps = len(groupby_time)
-        num_ingress = groupby_time.count()["node"][0]
-        time_col = np.concatenate([np.array([t]*num_ingress)
-                                   for t in np.arange(0,
-                                                      num_timesteps*self.run_duration*self.change_rate,
-                                                      self.run_duration*self.change_rate)])
+        arange = np.arange(0, num_timesteps*self.run_duration*self.change_rate, self.run_duration*self.change_rate)
+
+        time_col = np.concatenate([np.array([i]*len(t[1]["node"])) for t, i in zip(groupby_time, arange)])
         df_sums["time"] = time_col
         df_sums["inter_arrival_mean"] = inter_arrival_mean
         df_sums = df_sums.drop(axis=1, labels=["demandValue"])
@@ -214,23 +218,73 @@ class TraceXMLReader():
 
         return df_sums
 
+    def squash_sums(self):
+        """
+        Squashes traffic into a smaller time period
+        :return:
+        DataFrame with new trace
+        """
+        df = pd.DataFrame()
+        time_steps = list(self.data_rate_sums.groupby(["time"]).groups.keys())
+        time_steps.sort()
+        time_steps = [time_steps[i:i+self.squash_rate] for i in range(0, len(time_steps), self.squash_rate)]
+        for _time_steps in time_steps:
+            masks = [self.data_rate_sums["time"] == t for t in _time_steps]
+            mask = masks[0]
+            for m in masks[1:]:
+                mask = np.logical_or(m, mask)
+            _df = self.data_rate_sums[mask]
+            _df = _df.groupby(["node"]).sum().reset_index()
+            _df["time"] = [_time_steps[0]]*_df.shape[0]
+            _df["demandValue"] = _df["demandValue"]/self.squash_rate
+            df = df.append(_df)
+        df = df.reset_index()
+        df = df.drop(axis=1, labels=["index"])
+        self.data_rate_sums = df
+        return df
+
+    def slice_intermediate(self):
+        """
+        Slices the intermediate DataFrame, applying self._from and self.to.
+        :return:
+        None
+        DataFrame written to self.intermediate_result_df
+        """
+        groupby = self.intermediate_result_df.groupby(["time"])
+        groups = list(groupby.groups.keys())
+        groups.sort()
+
+        if self.to and self.to <= len(groups):
+            logging.info(f"Chosen trace part: trace[{str(self._from)}:{str(self.to)}]")
+            groups = groups[self._from:self.to]
+        elif self._from <= len(groups):
+            logging.info(f"Chosen trace part: trace[{str(self._from)}:]")
+            groups = groups[self._from:]
+        else:
+            logging.info(f"Chosen trace part: trace[:]")
+
+        self.intermediate_result_df = pd.concat([groupby.get_group(group) for group in groups])
+
     def plot_data_rate(self):
         """
         Plots data rates from self.intermediate_result_df for all ingress nodes.
         """
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=self.plot_figsize)
         if self.ingress_nodes:  # filter in ingress nodes
             ingress_nodes = filter(lambda node: node[0] in self.ingress_nodes,
                                    self.data_rate_sums.groupby(["node"]))
         else:  # use all ingress nodes
             ingress_nodes = self.data_rate_sums.groupby(["node"])
+
         for ing in ingress_nodes:  # # x axis - range(0, last_time_step, time_step_size)
             ax.plot(range(0, len(list(ing[1]["time"])*self.run_duration*self.change_rate),  # x axis
                           self.run_duration*self.change_rate),  # x axis time_step_size
                     ing[1]["demandValue"],  # y axis
                     label=ing[0])
+
         ax.set_xlabel("Time")
         ax.set_ylabel("demandValue (Data Rate)")
+        ax.set_title(f"{str(self.ingress_nodes)}", fontsize=30)
         plt.legend()
         return fig, ax
 
@@ -238,16 +292,18 @@ class TraceXMLReader():
         """
         Plots inter_arrival_mean from self.results_trace for all ingress nodes.
         """
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=self.plot_figsize)
         for ing in self.results_trace.groupby(["node"]):
             ax.plot(ing[1]["time"], ing[1]["inter_arrival_mean"], label=ing[0])
             ax.set_xlabel("Time")
             ax.set_ylabel("inter_arrival_mean")
+
+        ax.set_title(f"{str(self.ingress_nodes)}", fontsize=30)
         fig.legend()
         return fig, ax
 
 
-def main(config_file, only_process=False, **kwargs):
+def main(config_file, process="dir", **kwargs):
     """
     Main function.
         Args:
@@ -270,12 +326,18 @@ def main(config_file, only_process=False, **kwargs):
 
     reader = TraceXMLReader(**config)
 
-    if not only_process:
+    df_result = None
+    if process == "dir":
+        logging.info("Process directory")
         reader.read_files_parallel()
-    else:
+        process = "intermediate"
+    if process == "intermediate":
+        logging.info("Process intermediate csv")
         reader.intermediate_result_df = pd.read_csv(reader.intermediate_result_filename)
+        logging.info("loaded intermediate csv")
+        reader.slice_intermediate()
+        df_result = reader.process_intermediate()
 
-    df_result = reader.process_df()
     logging.info("\n" + str(df_result))
     logging.info(f'inter_arrival_mean range: {min(df_result["inter_arrival_mean"])}, {max(df_result["inter_arrival_mean"])}')
     logging.info(f'... mean:  {df_result["inter_arrival_mean"].mean()}')
@@ -283,16 +345,17 @@ def main(config_file, only_process=False, **kwargs):
     logging.info(f'... std:  {df_result["inter_arrival_mean"].std()}')
 
     if kwargs.get("plot", None) or kwargs.get("save_plots", None):
-        fig, ax = reader.plot_data_rate()
-        if 'data_rate' in kwargs.get("save_plots", None):
-            plot_filename = f"""{os.path.splitext(reader.result_trace_filename)[0]}_data_rate.{
-                kwargs.get('plot_format', 'png')}"""
-            fig.savefig(plot_filename)
-            logging.info(f"""Saved plot: {plot_filename}""")
-        if 'data_rate' in kwargs.get("plot"):
-            plt.show()
+        if not reader.intermediate_result_df.empty:
+            fig, ax = reader.plot_data_rate()
+            if 'data_rate' in kwargs.get("save_plots", None):
+                plot_filename = f"""{os.path.splitext(reader.result_trace_filename)[0]}_data_rate.{
+                    kwargs.get('plot_format', 'png')}"""
+                fig.savefig(plot_filename)
+                logging.info(f"""Saved plot: {plot_filename}""")
+            if 'data_rate' in kwargs.get("plot"):
+                plt.show()
 
-        plt.close()
+            plt.close()
 
         fig, ax = reader.plot_inter_arrival_mean()
         if 'inter_arrival_mean' in kwargs.get("save_plots", []):
@@ -312,7 +375,8 @@ def parse_args(args=None):
     parser = ArgumentParser()
 
     parser.add_argument("--config_file", help="Path to config_file")
-    parser.add_argument("--only-process", default=False, action="store_true", help="Reuse and intermediate.csv")
+    parser.add_argument("--process", default="dir", choices=["dir", "intermediate", "trace"],
+                        help="Reuse and intermediate.csv")
     parser.add_argument("--plot", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
                         help="Plot data_rate or inter_arrival_mean and call plt.show() in the end.")
     parser.add_argument("--save_plots", default=[], choices=['data_rate', 'inter_arrival_mean'], nargs='*',
