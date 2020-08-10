@@ -4,8 +4,12 @@ requirements = [
     'networkx',
     'geopy',
     'pyyaml>=5.1',
-    'numpy',
-    'common-utils'
+    'numpy==1.16.4',
+    'common-utils',
+    'sklearn',
+    'pandas',
+    'tensorflow==1.14.0',
+    'keras==2.2.5',
 ]
 
 test_requirements = [
@@ -34,6 +38,7 @@ setup(
     entry_points={
         'console_scripts': [
             'coord-sim=coordsim.main:main',
+            'lstm-predict=coordsim.traffic_predictor.lstm_predictor:main'
         ],
     },
 )
