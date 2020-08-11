@@ -1,4 +1,5 @@
 from matplotlib.animation import FuncAnimation
+from geopy.distance import distance as dist
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -17,9 +18,11 @@ class PlacementAnime:
         self.rl_state_file = "rl_state.csv"
         self.resources_file = "resources.csv"
         self.net_x = networkx.read_graphml(self.network_file)
+        self.set_linkDelay()
         self.placement = pd.read_csv(self.placement_file)
         self.placement = self.placement.groupby(["time"])
         self.node_pos = self.determine_node_pos()
+        self.edge_pos = self.determine_edge_pos()
         self.extent_offset = 5
         self.axis_extent = self.determine_extent()
 
@@ -29,12 +32,15 @@ class PlacementAnime:
         self.fig, self.ax = plt.subplots()
         self.ln = plt.plot([], [])
         self.draw_network()
+        self.ln.extend(self.plot_capacity())
+        self.ln.extend(self.plot_delay())
 
     def get_filenames(self):
         listdir = os.listdir(self.test_dir)
         self.network_file = filter(lambda f: ".graphml")
 
     def draw_network(self):
+        networkx.draw()
         networkx.draw_networkx(self.net_x, pos=self.node_pos, ax=self.ax)
         #networkx.draw_networkx_labels(self.net_x, self.apply_label_offset(self.node_pos, 1), labels=dict(zip(list(self.node_pos.keys()), ["test"]*11)))
 
@@ -49,10 +55,37 @@ class PlacementAnime:
         else:
             return None
 
+    def determine_edge_pos(self):
+        edge_pos = {}
+        for source, target, data in self.net_x.edges(data=True):
+            edge_pos[(source, target)] = (self.node_pos[source] + self.node_pos[target])/2
+        return edge_pos
+
     def determine_extent(self):
         coordinates = np.array(list(self.node_pos.values()))
         return np.array([[np.min(coordinates[:, 0]) - self.extent_offset, np.max(coordinates[:, 0]) + self.extent_offset],
                          [np.min(coordinates[:, 1]) - self.extent_offset, np.max(coordinates[:, 1]) + self.extent_offset]])
+
+    def set_linkDelay(self):
+        SPEED_OF_LIGHT = 299792458  # meter per second
+        PROPAGATION_FACTOR = 0.77  # https://en.wikipedia.org/wiki/Propagation_delay
+        for e in self.net_x.edges(data=True):
+            link_delay = e[2].get("LinkDelay", None)
+            # As edges are undirectional, only LinkFwdCap determines the available data rate
+            # link_fwd_cap = e[2].get("LinkFwdCap", 1000)
+            delay = 3
+            if link_delay is None:
+                n1 = self.net_x.nodes(data=True)[e[0]]
+                n2 = self.net_x.nodes(data=True)[e[1]]
+                n1_lat, n1_long = n1.get("Latitude", None), n1.get("Longitude", None)
+                n2_lat, n2_long = n2.get("Latitude", None), n2.get("Longitude", None)
+                if not (n1_lat is None or n1_long is None or n2_lat is None or n2_long is None):
+                    distance = dist((n1_lat, n1_long), (n2_lat, n2_long)).meters  # in meters
+                    # round delay to int using np.around for consistency with emulator
+                    delay = int(np.around((distance / SPEED_OF_LIGHT * 1000) * PROPAGATION_FACTOR))  # in milliseconds
+            else:
+                delay = link_delay
+            e[2]["LinkDelay"] = delay
 
     def plot_components(self, frame):
         ln = []
@@ -63,8 +96,19 @@ class PlacementAnime:
                                     color=self.component_colors[component], label=component))
         return ln
 
-    def plot_used_resources_capacity(self):
-        pass
+    def plot_capacity(self):
+        ln = []
+        for node, pos in self.node_pos.items():
+            ln.append(plt.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None), fontdict={"color": "b"}))
+        return ln
+
+    def plot_delay(self):
+        ln = []
+        for edge, pos in self.edge_pos.items():
+            for e in self.net_x.edges(data=True):
+                if edge[0] in e and edge[1] in e:
+                    ln.append(plt.text(*pos, s=e[2].get("LinkDelay", None), fontdict={"color": "r"}))
+        return ln
 
     def init(self):
         self.ax.set_xlim(self.axis_extent[0, :])  # set limits
@@ -89,4 +133,5 @@ im = plt.imread("abilene-rand-cap.jpg", )
 
 pa = PlacementAnime()
 ani = FuncAnimation(pa.fig, pa.update, frames=list(pa.placement.groups), init_func=pa.init, blit=True)
+#ani.save("ani.mp4")
 plt.show()
