@@ -23,7 +23,7 @@ class ResultWriter():
             if self.write_schedule:
                 self.scheduling_file_name = f"{test_dir}/scheduling.csv"
             self.placement_file_name = f"{test_dir}/placements.csv"
-            self.resources_file_name = f"{test_dir}/resources.csv"
+            self.resources_file_name = f"{test_dir}/node_metrics.csv"
             self.metrics_file_name = f"{test_dir}/metrics.csv"
             self.dropped_flows_file_name = f"{test_dir}/dropped_flows.yaml"
             self.rl_state_file_name = f"{test_dir}/rl_state.csv"
@@ -72,7 +72,7 @@ class ResultWriter():
             scheduling_output_header = ['episode', 'time', 'origin_node', 'sfc', 'sf', 'schedule_node', 'schedule_prob']
             self.scheduling_writer.writerow(scheduling_output_header)
         placement_output_header = ['episode', 'time', 'node', 'sf']
-        resources_output_header = ['episode', 'time', 'node', 'node_capacity', 'used_resources']
+        resources_output_header = ['episode', 'time', 'node', 'node_capacity', 'used_resources', 'ingress_traffic']
         metrics_output_header = ['episode', 'time', 'total_flows', 'successful_flows', 'dropped_flows',
                                  'in_network_flows', 'avg_end2end_delay']
         run_flows_output_header = ['episode', 'time', 'successful_flows', 'dropped_flows', 'total_flows']
@@ -124,7 +124,17 @@ class ResultWriter():
                 node_id = node['id']
                 node_cap = node['resource']
                 used_resources = node['used_resources']
-                resource_output_row = [episode, time, node_id, node_cap, used_resources]
+                ingress_traffic = 0
+                # get all sfc
+                sfcs = list(state.sfcs.keys())
+                # iterate over sfcs to get traffic from all sfcs
+                for sfc in sfcs:
+                    ingress_sf = state.sfcs[sfc][0]
+                    ingress_traffic += metrics['run_act_total_requested_traffic'].get(
+                        node_id, {}).get(
+                            sfc, {}).get(
+                                ingress_sf, 0)
+                resource_output_row = [episode, time, node_id, node_cap, used_resources, ingress_traffic]
                 resource_output.append(resource_output_row)
 
             run_flows_output = [episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'],
