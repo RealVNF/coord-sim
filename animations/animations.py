@@ -1,4 +1,4 @@
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, ArtistAnimation
 from geopy.distance import distance as dist
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +13,7 @@ class PlacementAnime:
 
     def __init__(self, test_dir=None):
         self.test_dir = test_dir
-        self.network_file = "abilene-in1-rand-cap0-2.graphml"
+        self.network_file = "line-in1-cap2-delay10.graphml"
         self.placement_file = "placements.csv"
         self.rl_state_file = "rl_state.csv"
         self.resources_file = "resources.csv"
@@ -21,6 +21,9 @@ class PlacementAnime:
         self.set_linkDelay()
         self.placement = pd.read_csv(self.placement_file)
         self.placement = self.placement.groupby(["time"])
+        self.ingress_traffic = pd.read_csv(self.rl_state_file, header=None)
+        self.ingress_traffic.columns = ["episode", "time"]+[f"pop{i}" for i in range(self.net_x.number_of_nodes())]
+        print(self.ingress_traffic)
         self.node_pos = self.determine_node_pos()
         self.edge_pos = self.determine_edge_pos()
         self.extent_offset = 5
@@ -29,20 +32,28 @@ class PlacementAnime:
         self.component_colors = {"a": "b", "b": "y", "c": "g"}
         self.component_offsets = {"a": -1, "b": 0, "c": 1}
         self.component_offsets_y = 1
-        self.fig, self.ax = plt.subplots()
+        self.ingress_node_colors = {"pop0": "b", "pop1": "y", "pop2": "g"}
+        self.last_point = {"pop0": [0, 0], "pop1": [0, 0], "pop2": [0, 0]}
+        self.fig, self.ax = plt.subplots(2, 1)
+        self.ax, self.ing_traffic_ax = self.ax
         self.ln = plt.plot([], [])
-        self.draw_network()
+        self.ln.extend(self.draw_network())
         self.ln.extend(self.plot_capacity())
         self.ln.extend(self.plot_delay())
+        #self.time_label = plt.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, "0")
+        #self.ln.append(self.time_label)
 
     def get_filenames(self):
         listdir = os.listdir(self.test_dir)
         self.network_file = filter(lambda f: ".graphml")
 
     def draw_network(self):
-        networkx.draw()
-        networkx.draw_networkx(self.net_x, pos=self.node_pos, ax=self.ax)
+        ln = plt.plot([], [])
+        ln.append(networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax))  # , ax=self.ax)
+        ln.append(networkx.draw_networkx_edges(self.net_x, pos=self.node_pos, ax=self.ax))
+        #ln.append(networkx.draw_networkx_labels(self.net_x, pos=self.node_pos))
         #networkx.draw_networkx_labels(self.net_x, self.apply_label_offset(self.node_pos, 1), labels=dict(zip(list(self.node_pos.keys()), ["test"]*11)))
+        return ln
 
     def apply_label_offset(self, data, offset):
         return {key: np.array([value[0]+offset, value[1]+offset]) for key, value in data.items()}
@@ -92,14 +103,14 @@ class PlacementAnime:
         for node, data in self.placement.get_group(frame).groupby(["node"]):
             x, y = self.node_pos[node.replace("pop", "")]
             for component in data["sf"]:
-                ln.append(plt.text(x+self.component_offsets[component], y-self.component_offsets_y, component,
+                ln.append(self.ax.text(x+self.component_offsets[component], y-self.component_offsets_y, component,
                                     color=self.component_colors[component], label=component))
         return ln
 
     def plot_capacity(self):
         ln = []
         for node, pos in self.node_pos.items():
-            ln.append(plt.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None), fontdict={"color": "b"}))
+            ln.append(self.ax.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None), fontdict={"color": "b"}))
         return ln
 
     def plot_delay(self):
@@ -107,31 +118,67 @@ class PlacementAnime:
         for edge, pos in self.edge_pos.items():
             for e in self.net_x.edges(data=True):
                 if edge[0] in e and edge[1] in e:
-                    ln.append(plt.text(*pos, s=e[2].get("LinkDelay", None), fontdict={"color": "r"}))
+                    ln.append(self.ax.text(*pos, s=e[2].get("LinkDelay", None), fontdict={"color": "r"}))
+        return ln
+
+    def plot_ingress_traffic(self, frame):
+        ln = plt.plot([], [])
+        for node in self.net_x.nodes:
+            x = np.array([self.last_point[f"pop{node}"][0], frame])
+            y = np.array([self.last_point[f"pop{node}"][1], self.ingress_traffic[f"pop{node}"][self.ingress_traffic["time"] == frame].iloc[0]])
+            #print(frame, y)
+            ln.extend(self.ing_traffic_ax.plot(x, y, color=self.ingress_node_colors[f"pop{node}"]))
+            self.last_point[f"pop{node}"][0] = x[1]
+            self.last_point[f"pop{node}"][1] = y[1]
+            #ln.extend(self.ing_traffic_ax.plot([frame], [y], color=self.ingress_node_colors[node]))
         return ln
 
     def init(self):
         self.ax.set_xlim(self.axis_extent[0, :])  # set limits
         self.ax.set_ylim(self.axis_extent[1, :])
+        self.ing_traffic_ax.set_xlim([self.ingress_traffic["time"][0], self.ingress_traffic["time"][self.ingress_traffic["time"].size - 1]])
+        #self.ing_traffic_ax.set_xlim([0, 15000])
+        self.ing_traffic_ax.set_ylim([0, 0.5])
         return self.ln
 
     def update(self, frame):
         lns = plt.plot([], [])
         ln2 = plt.plot([], [])
-        ln2.append(plt.text(self.axis_extent[0, 0]+1, self.axis_extent[1, 0]+1, str(frame)))
+        #self.time_label._text = str(frame)
+        #print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
+        ln2.append(self.ax.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, str(frame)))
+        self.ln.extend(self.plot_ingress_traffic(frame))
         lns.extend(self.ln)
         lns.extend(ln2)
         return lns
 
+    def create_artists(self):
+        ln = []
+        self.init()
+        for frame in self.placement.groups:
+            ln.append(self.update(frame))
+        return ln
+
+
+
 #print(type(placement.get_group(100)))
 
 
-im = plt.imread("abilene-rand-cap.jpg", )
+#im = plt.imread("abilene-rand-cap.jpg", )
 
 #implot = ax.imshow(im, extent=extent)
 
+Writer = matplotlib.animation.writers['ffmpeg']
+writer = Writer(fps=15, bitrate=1800)
 pa = PlacementAnime()
-ani = FuncAnimation(pa.fig, pa.update, frames=list(pa.placement.groups), init_func=pa.init, blit=True)
-#ani.save("ani.mp4")
+artists = [pa.ln]
+artists.extend(pa.create_artists())
+#ani = FuncAnimation(pa.fig, pa.update, frames=list(pa.placement.groups), init_func=pa.init, blit=True, repeat=False)
+ani = ArtistAnimation(pa.fig, artists)
+
+#ani.save('lines.mp4', writer=writer)
 plt.show()
+"""html = ani.to_html5_video()
+with open('ani.html', 'w') as f:
+    f.write(html)"""
