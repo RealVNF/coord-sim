@@ -20,7 +20,7 @@ class LSTM_Predictor:
     Based on work done here:
     https://machinelearningmastery.com/time-series-forecasting-long-short-term-memory-network-python/
     """
-    def __init__(self, trace, params, training_repeats=10, nb_epochs=10,
+    def __init__(self, trace, params, training_repeats=10, nb_epochs=3000,
                  weights_dir=False, poisson_data=False):
         """
         Initiate the class
@@ -110,7 +110,7 @@ class LSTM_Predictor:
         Train the LSTM model
         """
         # fit the model
-        self.fit_lstm(self.train_scaled, 1, self.nb_epochs, 4)
+        self.fit_lstm(self.train_scaled, 1, self.nb_epochs, 10)
 
     def predict_traffic(self, value):
         """
@@ -173,7 +173,7 @@ class LSTM_Predictor:
 
             # append the sum of the requested data rate for this run to generate training data.
             self.poisson_traffic.append(sum(flow_drs))
-        
+
         # Generate avg flow_dr
         flow_drs = [
             np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev) for _ in range(self.run_duration)
@@ -233,9 +233,10 @@ class LSTM_Predictor:
         self.model.add(Dense(1))
         self.model.compile(loss='mean_squared_error', optimizer='adam')
 
-        for i in range(nb_epoch):
-            self.model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
-            self.model.reset_states()
+        self.model.fit(X, y, epochs=nb_epoch, batch_size=batch_size, verbose=0, shuffle=False)
+        # for i in range(nb_epoch):
+        #     self.model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
+        #     self.model.reset_states()
 
     # make a one-step forecast
     def forecast_lstm(self, model, batch_size, X):
