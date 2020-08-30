@@ -34,6 +34,7 @@ setup(
     entry_points={
         'console_scripts': [
             'coord-sim=coordsim.main:main',
+            'animation=animations.animations:main'
         ],
     },
 )
