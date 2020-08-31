@@ -10,6 +10,7 @@ requirements = [
     'pandas',
     'tensorflow==1.14.0',
     'keras==2.2.5',
+    'matplotlib',
 ]
 
 test_requirements = [
