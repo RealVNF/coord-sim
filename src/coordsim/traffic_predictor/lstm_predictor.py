@@ -9,6 +9,8 @@ import random
 from pickle import load, dump
 import os
 import argparse
+import matplotlib
+from matplotlib import pyplot
 
 
 class LSTM_Predictor:
@@ -18,7 +20,7 @@ class LSTM_Predictor:
     Based on work done here:
     https://machinelearningmastery.com/time-series-forecasting-long-short-term-memory-network-python/
     """
-    def __init__(self, trace, params, training_repeats=10, nb_epochs=10,
+    def __init__(self, trace, params, training_repeats=10, nb_epochs=3000,
                  weights_dir=False, poisson_data=False):
         """
         Initiate the class
@@ -39,13 +41,18 @@ class LSTM_Predictor:
         self.nb_epochs = nb_epochs
         self.run_duration = self.params.run_duration
         self.weights_dir = weights_dir
+        self.training_mode = True
         if weights_dir:
+            self.training_mode = False
             self.weights_dir = os.path.join(os.getcwd(), weights_dir)
-        self.poisson_data = poisson_data
+        self.gen_poisson_data = poisson_data
 
-        self.requested_traffic = []  # empty array that will hold training data for the LSTM NN
+        # array initialized with 0 that will hold training data for the LSTM NN
+        # zero is the traffic for the init run of the simulator.
+        self.requested_traffic = [0]
         self.training_data = None  # Placeholder for pandas DataFrame to hold training data
         self.predictions = []
+        self.poisson_traffic = [0]
         self.last_prediction_index = 0  # Index to keep track of position in testing data
 
         self.gen_training_data()
@@ -67,28 +74,32 @@ class LSTM_Predictor:
                 self.gen_run_data(cur_time, inter_arr_mean)
         self.training_data = pd.DataFrame(self.requested_traffic, columns=['requested_data_rate'])
 
+    def prepare_prediction_model(self):
+        """
+        Builds the state of the LSTM to allow for one-step predictions
+        """
+        # forecast the entire training dataset to build up state for forecasting
+        train_reshaped = self.train_scaled[:, 0].reshape(len(self.train_scaled), 1, 1)
+        self.model.predict(train_reshaped, batch_size=1)
+
     def prepare_model(self):
         """
         Prepare training and testing data
         """
         # transform data to be stationary
         self.raw_values = self.training_data.values
-        self.diff_values = self.difference(self.raw_values, 1)
 
         # transform data to be supervised learning
-        supervised = self.timeseries_to_supervised(self.diff_values, 1)
+        supervised = self.timeseries_to_supervised(self.raw_values, 1)
         supervised_values = supervised.values
 
         # split data into train and test-sets
-        # data_len = len(supervised_values)
-        # split_train_test = np.ceil(0.75 * data_len)
-        # train, test = supervised_values[0:split_train_test], supervised_values[split_train_test:]
-
-        # train and testing data are the same for now
-        self.train, self.test = supervised_values[0:], supervised_values[0:]
+        data_len = len(supervised_values)
+        split_train_test = int(np.ceil(0.90 * data_len))
+        self.train, self.test = supervised_values[0:split_train_test], supervised_values[split_train_test:]
 
         # transform the scale of the data
-        self.scaler, self.train_scaled, self.test_scaled = self.scale(self.train, self.test)
+        self.scaler, self.train_scaled = self.scale_training_data(self.train)
 
         if self.weights_dir:
             self.model = load_model(f"{self.weights_dir}/lstm_model.mdl")
@@ -99,37 +110,20 @@ class LSTM_Predictor:
         Train the LSTM model
         """
         # fit the model
-        self.fit_lstm(self.train_scaled, 1, self.nb_epochs, 4)
+        self.fit_lstm(self.train_scaled, 1, self.nb_epochs, 10)
 
-    def prepare_prediction_model(self):
+    def predict_traffic(self, value):
         """
-        Builds the state of the LSTM to allow for one-step predictions
+        Returns the predicted traffic rate for the next run based on input traffic
         """
-        # forecast the entire training dataset to build up state for forecasting
-        train_reshaped = self.train_scaled[:, 0].reshape(len(self.train_scaled), 1, 1)
-        self.model.predict(train_reshaped, batch_size=1)
-
-    def predict_traffic(self):
-        """
-        Returns the predicted traffic rate for the next run
-        """
-        # make one-step forecast
-        if self.last_prediction_index == len(self.test_scaled):
-            X, y = self.test_scaled[self.last_prediction_index-1, 0:-1],
-            self.test_scaled[self.last_prediction_index-1, -1]
-            yhat = self.forecast_lstm(self.model, 1, np.array([y]))
-            self.last_prediction_index -= 1
-        else:
-            X, y = self.test_scaled[self.last_prediction_index, 0:-1], self.test_scaled[self.last_prediction_index, -1]
-            yhat = self.forecast_lstm(self.model, 1, X)
+        scaled_value = self.scale_value(self.scaler, value)
+        yhat = self.forecast_lstm(self.model, 1, scaled_value)
         # invert scaling
-        yhat = self.invert_scale(self.scaler, X, yhat)
-        # invert differencing
-        yhat = self.inverse_difference(self.raw_values, yhat, len(self.test_scaled)+1-self.last_prediction_index)
-        # store forecast
+        yhat = self.invert_scale(self.scaler, yhat)
+        # store predictions
         self.predictions.append(yhat)
         self.last_prediction_index += 1
-        return yhat[0]
+        return yhat
 
     def reset_flow_lists(self):
         """Reset and re-init flow data lists and index. Called at the beginning of each new episode."""
@@ -145,7 +139,7 @@ class LSTM_Predictor:
         """
         Generate and append dicts of lists of flow arrival, size, dr for the run duration
         """
-        if self.poisson_data:
+        if self.gen_poisson_data:
             flow_arrival = []
             flow_sizes = []
             flow_drs = []
@@ -178,14 +172,14 @@ class LSTM_Predictor:
             self.generated_flows = flow_drs
 
             # append the sum of the requested data rate for this run to generate training data.
-            self.requested_traffic.append(sum(flow_drs))
-        else:
-            # Generate avg flow_dr
-            flow_drs = [
-                np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev) for _ in range(self.run_duration)
-                ]
-            mean_flow_dr = np.mean(flow_drs)
-            self.requested_traffic.append((self.run_duration / inter_arr_mean) * mean_flow_dr)
+            self.poisson_traffic.append(sum(flow_drs))
+
+        # Generate avg flow_dr
+        flow_drs = [
+            np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev) for _ in range(self.run_duration)
+            ]
+        mean_flow_dr = np.mean(flow_drs)
+        self.requested_traffic.append((self.run_duration / inter_arr_mean) * mean_flow_dr)
 
     # frame a sequence as a supervised learning problem
     def timeseries_to_supervised(self, data, lag=1):
@@ -193,23 +187,11 @@ class LSTM_Predictor:
         columns = [df.shift(i) for i in range(1, lag+1)]
         columns.append(df)
         df = pd.concat(columns, axis=1)
-        df.fillna(0, inplace=True)
+        df.fillna(-1, inplace=True)
         return df
 
-    # create a differenced series
-    def difference(self, dataset, interval=1):
-        diff = list()
-        for i in range(interval, len(dataset)):
-            value = dataset[i] - dataset[i - interval]
-            diff.append(value)
-        return pd.Series(diff)
-
-    # invert differenced value
-    def inverse_difference(self, history, yhat, interval=1):
-        return yhat + history[-interval]
-
     # scale train and test data to [-1, 1]
-    def scale(self, train, test):
+    def scale_training_data(self, train):
         if self.weights_dir:
             # load scaler from file
             scaler = load(open(f"{self.weights_dir}/scaler.pkl", "rb"))
@@ -221,17 +203,26 @@ class LSTM_Predictor:
         train = train.reshape(train.shape[0], train.shape[1])
         train_scaled = scaler.transform(train)
         # transform test
-        test = test.reshape(test.shape[0], test.shape[1])
-        test_scaled = scaler.transform(test)
-        return scaler, train_scaled, test_scaled
+        # test = test.reshape(test.shape[0], test.shape[1])
+        # test_scaled = scaler.transform(test)
+        return scaler, train_scaled
+
+    # Scale a single value
+    def scale_value(self, scaler, value):
+        # Create a shaped array containing the value and a dummy value
+        # Dummy value is required to create the correct shape
+        array = np.array([[value], [0]])
+        array = array.reshape(1, len(array))
+        scaled = scaler.transform(array)
+        return np.array([scaled[0, 0]])
 
     # inverse scaling for a forecasted value
-    def invert_scale(self, scaler, X, value):
-        new_row = [x for x in X] + [value]
-        array = np.array(new_row)
+    def invert_scale(self, scaler, value):
+        # Add zero here just to satisfy scaler shape requirements, not interested in the inverse scaled version
+        array = np.array([[value], [0]])
         array = array.reshape(1, len(array))
         inverted = scaler.inverse_transform(array)
-        return inverted[0, -1]
+        return inverted[0, 0]
 
     # fit an LSTM network to training data
     def fit_lstm(self, train, batch_size, nb_epoch, neurons):
@@ -242,9 +233,10 @@ class LSTM_Predictor:
         self.model.add(Dense(1))
         self.model.compile(loss='mean_squared_error', optimizer='adam')
 
-        for i in range(nb_epoch):
-            self.model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
-            self.model.reset_states()
+        self.model.fit(X, y, epochs=nb_epoch, batch_size=batch_size, verbose=0, shuffle=False)
+        # for i in range(nb_epoch):
+        #     self.model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
+        #     self.model.reset_states()
 
     # make a one-step forecast
     def forecast_lstm(self, model, batch_size, X):
@@ -278,6 +270,7 @@ def main():
     parser = argparse.ArgumentParser(description="Trainer tool for LSTM prediction for Coord-sim simulator")
     parser.add_argument('-c', '--config', required=True, dest="sim_config",
                         help="The simulator config file")
+    parser.add_argument('-p', '--plot', action="store_true")
     args = parser.parse_args()
 
     print("Loading arguments")
@@ -298,7 +291,18 @@ def main():
 
     print("Load weights to test prediction")
     predictor = LSTM_Predictor(trace, params=params, weights_dir=dest_dir)
-    print(f"Prediction made from loading weights: {predictor.predict_traffic()}")
+
+    predictions = []
+    for test in predictor.requested_traffic:
+        value = test
+        predictions.append(predictor.predict_traffic(value))
+
+    if args.plot:
+        matplotlib.use('TkAgg')
+        pyplot.plot(predictor.requested_traffic, label="Traffic data")
+        pyplot.plot(predictions, label="Predictions")
+        pyplot.legend()
+        pyplot.show()
 
     print("Done with no errors!")
 
