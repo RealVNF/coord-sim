@@ -19,7 +19,7 @@ class TrafficPredictor():
         self.last_flow_idx = {ing[0]: 0 for ing in self.params.ing_nodes}
         self.last_arrival_sum = {ing[0]: 0 for ing in self.params.ing_nodes}
 
-    def predict_traffic(self, now):
+    def predict_traffic(self, now, current_traffic=None):
         """
         Calculates the upcoming traffic at ingress nodes based on the current inter_arrival_mean
         Currently supports single SFC
@@ -50,7 +50,7 @@ class TrafficPredictor():
             else:
                 # Predict traffic using LSTM
                 assert len(self.params.ing_nodes) == 1
-                flow_dr = self.lstm_predictor.predict_traffic()
+                flow_dr = self.lstm_predictor.predict_traffic(current_traffic)
 
             # Update ingress traffic in metrics module
             self.params.metrics.metrics['run_total_requested_traffic'][node_id][sfc][ingress_sf] = flow_dr
