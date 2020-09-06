@@ -13,6 +13,7 @@ from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
 from coordsim.traffic_predictor.traffic_predictor import TrafficPredictor
+from coordsim.traffic_predictor.lstm_predictor import LSTM_Predictor
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,15 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
         self.episode = 0
+        # Load trace file
+        if 'trace_path' in self.config:
+            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
+            self.trace = reader.get_trace(trace_path)
+
+        self.lstm_predictor = None
+        if 'lstm_prediction' in self.config and self.config['lstm_prediction']:
+            self.lstm_predictor = LSTM_Predictor(self.trace, params=self.params,
+                                                 weights_dir=self.config['lstm_weights'])
 
     def __del__(self):
         # write dropped flow locs to yaml
@@ -58,7 +68,7 @@ class Simulator(SimulatorInterface):
     def init(self, seed):
         # Reset predictor class at beginning of every init
         if self.prediction:
-            self.predictor = TrafficPredictor(self.params)
+            self.predictor = TrafficPredictor(self.params, self.lstm_predictor)
         # increment episode count
         self.episode += 1
         # reset network caps and available SFs:
@@ -97,9 +107,7 @@ class Simulator(SimulatorInterface):
 
         # Trace handling
         if 'trace_path' in self.config:
-            trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
-            trace = reader.get_trace(trace_path)
-            TraceProcessor(self.params, self.env, trace, self.simulator)
+            TraceProcessor(self.params, self.env, self.trace, self.simulator)
 
         # Start the simulator
         self.simulator.start()
@@ -118,7 +126,8 @@ class Simulator(SimulatorInterface):
         self.params.metrics.running_time(self.start_time, self.end_time)
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic(self.env.now)
+            requested_traffic = self.get_current_ingress_traffic()
+            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
@@ -185,7 +194,8 @@ class Simulator(SimulatorInterface):
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
-            self.predictor.predict_traffic(self.env.now)
+            requested_traffic = self.get_current_ingress_traffic()
+            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
             stats = self.params.metrics.get_metrics()
             self.traffic = stats['run_total_requested_traffic']
         # Create a new SimulatorState object to pass to the RL Agent
@@ -195,6 +205,18 @@ class Simulator(SimulatorInterface):
         logger.debug(f"t={self.env.now}: {simulator_state}")
 
         return simulator_state
+
+    def get_current_ingress_traffic(self) -> float:
+        """
+        Get current ingress traffic for the LSTM module
+        Current limitation: works for 1 SFC and 1 ingress node
+        """
+        # Get name of ingress SF from first SFC
+        first_sfc = list(self.sfc_list.keys())[0]
+        ingress_sf = self.params.sfc_list[first_sfc][0]
+        ingress_node = self.params.ing_nodes[0][0]
+        ingress_traffic = self.metrics.metrics['run_total_requested_traffic'][ingress_node][first_sfc][ingress_sf]
+        return ingress_traffic
 
     def parse_network(self) -> dict:
         """
