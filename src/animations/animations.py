@@ -8,6 +8,7 @@ import matplotlib
 import networkx
 import pandas as pd
 import os
+import matplotlib.gridspec as gridspec
 matplotlib.use('TkAgg')
 
 
@@ -28,6 +29,8 @@ class PlacementAnime:
         else:
             self.video_filename = "animation_video"
 
+        self.resources = pd.read_csv(self.resources_file).groupby(["time"])
+
         self.net_x = networkx.read_graphml(self.network_file)
         self.set_linkDelay()  # compute LinkDelay from nodes positions and write it to the networkx object
         self.placement = pd.read_csv(self.placement_file)
@@ -41,6 +44,8 @@ class PlacementAnime:
         self.edge_pos = self.determine_edge_pos()
         self.extent_offset = 5
         self.axis_extent = self.determine_extent()  # axis limits of the plot
+        self.node_colors = [(0, 0, 1) for i in self.net_x.nodes]
+        self.node_load_cmap = plt.cm.get_cmap("RdYlGn_r", 10)
 
         self.component_colors = {"a": "b", "b": "y", "c": "g"}
         # component placement marks offset on x axis in relation to the node position
@@ -70,9 +75,8 @@ class PlacementAnime:
         return os.path.join(self.test_dir, list(filter(lambda f: ".graphml" in f, listdir))[0])
 
     def draw_network(self):
-        ln = plt.plot([], [])
-        ln.append(networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax))
-        ln.append(networkx.draw_networkx_edges(self.net_x, pos=self.node_pos, ax=self.ax))
+        ln = [#networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax),
+              networkx.draw_networkx_edges(self.net_x, pos=self.node_pos, ax=self.ax)]
         return ln
 
     def apply_label_offset(self, data, offset):
@@ -154,6 +158,29 @@ class PlacementAnime:
                                    fontdict={"color": "b"}))
         return ln
 
+    def plot_node_load(self, frame):
+        """
+        Plots node_load in the format <used_resources>/<node_capacity>
+        :param frame:
+        :return: axis
+        """
+        ln = []
+        node_colors = [(0.0, 0.0, 0.0, 1.0)]*self.net_x.number_of_nodes()
+        for node, data in self.resources.get_group(frame).groupby(["node"]):
+            x, y = self.node_pos[node.replace("pop", "")] + 1
+            capacity = data['node_capacity'].iloc[0]
+            if capacity != 0:
+                node_load = data['used_resources'].iloc[0]/capacity
+                node_color = self.node_load_cmap(node_load)
+            else:
+                node_load = 0
+                node_color = (0.0, 0.0, 0.0, 1.0)
+            node_colors[int(node.replace("pop", ""))] = node_color
+            ln.append(self.ax.text(x, y, f"{data['used_resources'].iloc[0]}/{data['node_capacity'].iloc[0]}",
+                                   color=node_color))
+        ln.append(networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax, node_color=node_colors))
+        return ln
+
     def plot_delay(self):
         """
         plots delay on the edges
@@ -164,6 +191,12 @@ class PlacementAnime:
             for e in self.net_x.edges(data=True):
                 if edge[0] in e and edge[1] in e:
                     ln.append(self.ax.text(*pos, s=e[2].get("LinkDelay", None), fontdict={"color": "r"}))
+        return ln
+
+    def plot_node_ids(self):
+        ln = []
+        for node, pos in self.node_pos.items():
+            ln.append(self.ax.text(*(pos-0.2), s=str(node)))
         return ln
 
     def plot_ingress_traffic(self, frame):
@@ -197,7 +230,8 @@ class PlacementAnime:
         self.ing_traffic_ax.set_xlim([self.ingress_traffic["time"][0],
                                       self.ingress_traffic["time"][self.ingress_traffic["time"].size - 1]])
         columns = [col for col in self.ingress_traffic.columns if "pop" in col]
-        self.ing_traffic_ax.set_ylim([0, np.max(np.max(self.ingress_traffic[columns])) + 1])
+        ing_max = np.max(np.max(self.ingress_traffic[columns]))
+        self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
         return self.ln
 
     def plot_moment(self, frame):
@@ -230,6 +264,10 @@ class PlacementAnime:
         # self.time_label._text = str(frame)
         # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
+        if frame == 0:
+            pass
+        else:
+            ln2.extend(self.plot_node_load(frame))
 
         # plot the point in time as text: 1 point from the left lower corner
         ln2.append(self.ax.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, str(frame)))
@@ -255,17 +293,41 @@ class PlacementAnime:
         :return: None
         """
         self.fig = plt.figure()
-        self.ax, self.ing_traffic_ax = self.fig.add_subplot(211), self.fig.add_subplot(212)
+        gs = self.fig.add_gridspec(10, 1)
+        self.ax, self.ing_traffic_ax = self.fig.add_subplot(gs[:-1, 0]), self.fig.add_subplot(gs[-1, 0])
         self.init()
 
         self.ln = plt.plot([], [])
         self.ln.extend(self.draw_network())
-        self.ln.extend(self.plot_capacity())
+        # self.plot_node_ids()
+        # self.ln.extend(self.plot_capacity())
         self.ln.extend(self.plot_delay())
 
         self.artists = [self.ln]
         self.artists.extend(self.create_artists())
         self.animation = ArtistAnimation(self.fig, self.artists, interval=100, repeat=False)
+
+    def save_animation(self, mode, VIDEO_DIR="."):
+        """
+        Create and save matplotlib animation
+        :param mode: How to save the animation. Options: 'video' (=html5) or 'gif' (requires ImageMagick)
+        """
+
+        # save html5 video
+        if mode == 'html' or mode == 'both':
+            html = self.animation.to_html5_video()
+            with open(f'{VIDEO_DIR}/{self.video_filename}.html', 'w') as f:
+                f.write(html)
+            # self.log.info('Video saved', path=f'{VIDEO_DIR}/{self.result_filename}.html')
+
+        # save gif; requires external dependency ImageMagick
+        if mode == 'gif' or mode == 'both':
+            try:
+                self.animation.save(f'{VIDEO_DIR}/{self.video_filename}.gif', writer='imagemagick')
+                # self.log.info('Gif saved', path=f'{VIDEO_DIR}/{self.result_filename}.gif')
+            except TypeError as e:
+                # self.log.error('ImageMagick needs to be installed for saving gifs.')
+                print(type(e), e)
 
 
 class PlacementAnimesManager:
@@ -298,8 +360,8 @@ def parse_args(args=None):
     # parser.add_argument("-a", "--timestamp_seed_agent", default=None, dest="timestamp_seed_agent")
     # parser.add_argument("-t", "--timestamp_seed_test", default=None, dest="timestamp_seed_test")
     parser.add_argument("-st", "--show_tests", default=False, action="store_true", dest="show_tests")
-    parser.add_argument("--show", default=False, action="store_true")
-    parser.add_argument("--save", default=False, action="store_true")
+    parser.add_argument("--show", default=False, action="store_true",)
+    parser.add_argument("--save", default=None, choices=["html", "gif", "both"])
     return vars(parser.parse_args(args))
 
 
@@ -337,18 +399,19 @@ def main(args=None):
         if args["show"]:
             plt.show()
         if args["save"]:
-            print(f'{pa.video_filename}.html')
-            html = pa.animation.to_html5_video()
-            with open(f'{pa.video_filename}.html', 'w') as f:
-                f.write(html)
+            pa.save_animation(args["save"])
+            if args["save"] == "both":
+                print(f'{pa.video_filename}.html', " and ", f'{pa.video_filename}.gif')
+            else:
+                print(f'{pa.video_filename}.{args["save"]}')
 
     # plt.show()
     # list(pam.animes.values())[0].fig.show()
 
 
 if __name__ == "__main__":
-    # main(["--test_dir", ".", "--show"])
-    main()
+    main(["--results_dir", "w-prediction", "--show"])
+    #main()
     """pa = PlacementAnime()
     artists = [pa.ln]
     artists.extend(pa.create_artists())
