@@ -343,11 +343,11 @@ def main(args=None):
                 f.write(html)
 
     # plt.show()
-    #list(pam.animes.values())[0].fig.show()
+    # list(pam.animes.values())[0].fig.show()
 
 
 if __name__ == "__main__":
-    #main(["--test_dir", ".", "--show"])
+    # main(["--test_dir", ".", "--show"])
     main()
     """pa = PlacementAnime()
     artists = [pa.ln]
