@@ -13,12 +13,13 @@ class TrafficPredictor():
     Updates traffic dict in metrics module to show upcoming traffic at ingress node.
     """
 
-    def __init__(self, params: SimulatorParams):
+    def __init__(self, params: SimulatorParams, lstm_predictor=None):
         self.params = params
+        self.lstm_predictor = lstm_predictor
         self.last_flow_idx = {ing[0]: 0 for ing in self.params.ing_nodes}
         self.last_arrival_sum = {ing[0]: 0 for ing in self.params.ing_nodes}
 
-    def predict_traffic(self, now):
+    def predict_traffic(self, now, current_traffic=None):
         """
         Calculates the upcoming traffic at ingress nodes based on the current inter_arrival_mean
         Currently supports single SFC
@@ -37,15 +38,19 @@ class TrafficPredictor():
             sfc = sfc_ids[0]
             ingress_sf = self.params.sfc_list[sfc][0]
             flow_dr = 0
-
-            # check for each flow if it will arrive before run_end; if so, add it to the prediction
-            run_end = now + self.params.run_duration
-            # Check to see if next flow arrival is before end of run
-            while self.last_arrival_sum[node_id] < run_end:
-                flow_dr += self.params.flow_dr_list[node_id][self.last_flow_idx[node_id]]
-                self.last_arrival_sum[node_id] += self.params.flow_arrival_list[
-                    node_id][self.last_flow_idx[node_id]]
-                self.last_flow_idx[node_id] += 1
+            if self.lstm_predictor is None:
+                # check for each flow if it will arrive before run_end; if so, add it to the prediction
+                run_end = now + self.params.run_duration
+                # Check to see if next flow arrival is before end of run
+                while self.last_arrival_sum[node_id] < run_end:
+                    flow_dr += self.params.flow_dr_list[node_id][self.last_flow_idx[node_id]]
+                    self.last_arrival_sum[node_id] += self.params.flow_arrival_list[
+                        node_id][self.last_flow_idx[node_id]]
+                    self.last_flow_idx[node_id] += 1
+            else:
+                # Predict traffic using LSTM
+                assert len(self.params.ing_nodes) == 1
+                flow_dr = self.lstm_predictor.predict_traffic(current_traffic)
 
             # Update ingress traffic in metrics module
             self.params.metrics.metrics['run_total_requested_traffic'][node_id][sfc][ingress_sf] = flow_dr
