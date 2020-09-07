@@ -224,6 +224,21 @@ For more information look at the doctrings in the script or the comments in the 
 
 We have an intermediate csv-file [overall_abilene_intermediate.csv](https://github.com/RealVNF/coord-sim/blob/master/params/convert_traces/overall_abilene_intermediate.csv), which contains the whole abilene batch from sndlib with 48 thousand time step. It is recommended to use it for producing traces for the abilenme network by setting the `source` parameter in config to it. 
 
+## Create Episode Animations  
+  
+To show all available test directories in a results directory: `animation --results_dir <> --show_tests`  
+Create animation from test directory: `animation --test_dir <>`  
+Show animation in the end (by calling plt.show()): `animation --test_dir <> --show`  
+Save animation as html video: `--test_dir <> --save`  
+  
+```py
+pa = PlacementAnime(test_dir)
+pa.create_animation()
+pa.animation # animation object
+pa.fig # figure object
+pa.ax # Axis object (network, placement etc)
+pa.ingress_traffic_ax # Axis object (ingress_traffic)
+```
 
 ## LSTM Traffic Prediction
 
