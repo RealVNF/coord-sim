@@ -1,6 +1,5 @@
-from matplotlib.animation import FuncAnimation, ArtistAnimation
+from matplotlib.animation import ArtistAnimation
 from geopy.distance import distance as dist
-from matplotlib.widgets import Slider
 from argparse import ArgumentParser
 from pprint import pprint
 import matplotlib.pyplot as plt
@@ -44,19 +43,21 @@ class PlacementAnime:
         self.axis_extent = self.determine_extent()  # axis limits of the plot
 
         self.component_colors = {"a": "b", "b": "y", "c": "g"}
-        self.component_offsets = {"a": -1, "b": 0, "c": 1}  # component placement marks offset on x axis in relation to the node position
+        # component placement marks offset on x axis in relation to the node position
+        self.component_offsets = {"a": -1, "b": 0, "c": 1}
         self.component_offsets_y = 1  # same for the y axis
         cm = plt.cm.get_cmap("hsv", self.net_x.number_of_nodes())
-        self.ingress_node_colors = {f"pop{i}": cm(i) for i in range(self.net_x.number_of_nodes())}  # curve color in the ingress traffic plot
+        # curve color in the ingress traffic plot
+        self.ingress_node_colors = {f"pop{i}": cm(i) for i in range(self.net_x.number_of_nodes())}
         self.last_point = {f"pop{i}": [0, 0] for i in range(self.net_x.number_of_nodes())}
 
         # object variables for plot object, set in function create_animation and other
         self.fig = None
-        #self.ax = plt.subplots(2, 1)
+        # self.ax = plt.subplots(2, 1)
         self.ax, self.ing_traffic_ax = None, None
         self.ln = None  # contains static parts of the plot
-        #self.time_label = plt.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, "0")
-        #self.ln.append(self.time_label)
+        # self.time_label = plt.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, "0")
+        # self.ln.append(self.time_label)
         self.artists = []  # list of artists to pass to the ArtistAnimation object
         self.animation = None  # animation object
 
@@ -70,10 +71,8 @@ class PlacementAnime:
 
     def draw_network(self):
         ln = plt.plot([], [])
-        ln.append(networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax))  # , ax=self.ax)
+        ln.append(networkx.draw_networkx_nodes(self.net_x, pos=self.node_pos, ax=self.ax))
         ln.append(networkx.draw_networkx_edges(self.net_x, pos=self.node_pos, ax=self.ax))
-        #ln.append(networkx.draw_networkx_labels(self.net_x, pos=self.node_pos))
-        #networkx.draw_networkx_labels(self.net_x, self.apply_label_offset(self.node_pos, 1), labels=dict(zip(list(self.node_pos.keys()), ["test"]*11)))
         return ln
 
     def apply_label_offset(self, data, offset):
@@ -104,8 +103,10 @@ class PlacementAnime:
     def determine_extent(self):
         # used for xlim and ylim plot properties: outmost node position + extent_offset
         coordinates = np.array(list(self.node_pos.values()))
-        return np.array([[np.min(coordinates[:, 0]) - self.extent_offset, np.max(coordinates[:, 0]) + self.extent_offset],
-                         [np.min(coordinates[:, 1]) - self.extent_offset, np.max(coordinates[:, 1]) + self.extent_offset]])
+        return np.array(
+            [[np.min(coordinates[:, 0]) - self.extent_offset, np.max(coordinates[:, 0]) + self.extent_offset],
+             [np.min(coordinates[:, 1]) - self.extent_offset, np.max(coordinates[:, 1]) + self.extent_offset]]
+        )
 
     def set_linkDelay(self):
         SPEED_OF_LIGHT = 299792458  # meter per second
@@ -149,7 +150,8 @@ class PlacementAnime:
         """
         ln = []
         for node, pos in self.node_pos.items():
-            ln.append(self.ax.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None), fontdict={"color": "b"}))
+            ln.append(self.ax.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None),
+                                   fontdict={"color": "b"}))
         return ln
 
     def plot_delay(self):
@@ -173,13 +175,14 @@ class PlacementAnime:
         ln = plt.plot([], [])
         for node in self.net_x.nodes:
             x = np.array([self.last_point[f"pop{node}"][0], frame])
-            y = np.array([self.last_point[f"pop{node}"][1], self.ingress_traffic[f"pop{node}"][self.ingress_traffic["time"] == frame].iloc[0]])
+            y = np.array([self.last_point[f"pop{node}"][1],
+                          self.ingress_traffic[f"pop{node}"][self.ingress_traffic["time"] == frame].iloc[0]])
 
             ln.extend(self.ing_traffic_ax.plot(x, y, color=self.ingress_node_colors[f"pop{node}"]))
 
             self.last_point[f"pop{node}"][0] = x[1]
             self.last_point[f"pop{node}"][1] = y[1]
-            #ln.extend(self.ing_traffic_ax.plot([frame], [y], color=self.ingress_node_colors[node]))
+            # ln.extend(self.ing_traffic_ax.plot([frame], [y], color=self.ingress_node_colors[node]))
         return ln
 
     def init(self):
@@ -191,8 +194,8 @@ class PlacementAnime:
         self.ax.set_ylim(self.axis_extent[1, :])
 
         # xlim = [first point in time, last point in time]
-        self.ing_traffic_ax.set_xlim([self.ingress_traffic["time"][0], self.ingress_traffic["time"][self.ingress_traffic["time"].size - 1]])
-        #self.ing_traffic_ax.set_xlim([0, 15000])
+        self.ing_traffic_ax.set_xlim([self.ingress_traffic["time"][0],
+                                      self.ingress_traffic["time"][self.ingress_traffic["time"].size - 1]])
         columns = [col for col in self.ingress_traffic.columns if "pop" in col]
         self.ing_traffic_ax.set_ylim([0, np.max(np.max(self.ingress_traffic[columns])) + 1])
         return self.ln
@@ -204,8 +207,8 @@ class PlacementAnime:
         # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
         ln2.append(self.ax.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, str(frame)))
-        #self.ln_ingress.extend(self.plot_ingress_traffic(frame))
-        #ln2.extend(self.ln_ingress)
+        # self.ln_ingress.extend(self.plot_ingress_traffic(frame))
+        # ln2.extend(self.ln_ingress)
         return ln2
 
     def create_moments(self):
@@ -224,8 +227,8 @@ class PlacementAnime:
         """
         lns = plt.plot([], [])
         ln2 = plt.plot([], [])
-        #self.time_label._text = str(frame)
-        #print("changed: ", self.time_label)
+        # self.time_label._text = str(frame)
+        # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
 
         # plot the point in time as text: 1 point from the left lower corner
@@ -292,8 +295,8 @@ def parse_args(args=None):
     parser = ArgumentParser()
     parser.add_argument("--results_dir", default=None)
     parser.add_argument("--test_dir", default=None)
-    #parser.add_argument("-a", "--timestamp_seed_agent", default=None, dest="timestamp_seed_agent")
-    #parser.add_argument("-t", "--timestamp_seed_test", default=None, dest="timestamp_seed_test")
+    # parser.add_argument("-a", "--timestamp_seed_agent", default=None, dest="timestamp_seed_agent")
+    # parser.add_argument("-t", "--timestamp_seed_test", default=None, dest="timestamp_seed_test")
     parser.add_argument("-st", "--show_tests", default=False, action="store_true", dest="show_tests")
     parser.add_argument("--show", default=False, action="store_true")
     parser.add_argument("--save", default=False, action="store_true")
