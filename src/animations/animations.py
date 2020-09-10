@@ -15,9 +15,12 @@ matplotlib.use('TkAgg')
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
 # Sum of the min & max of (a, b, c)
 def hilo(a, b, c):
-    if c < b: b, c = c, b
-    if b < a: a, b = b, a
-    if c < b: b, c = c, b
+    if c < b:
+        b, c = c, b
+    if b < a:
+        a, b = b, a
+    if c < b:
+        b, c = c, b
     return a + c
 
 
@@ -364,7 +367,7 @@ class PlacementAnime:
             ing_max = np.max(np.max(self.rl_state[columns]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
             for i, items in enumerate(self.ingress_node_colors.items()):
-                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1)%7), s=items[0],
+                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
                                          color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
@@ -570,14 +573,11 @@ def main(**kwargs):
             else:
                 print(f'{pa.video_filename}.{kwargs["save"]}')
 
-    # plt.show()
-    # list(pam.animes.values())[0].fig.show()
-
 
 if __name__ == "__main__":
     kwargs = parse_args(["--results_dir", "w-prediction", "--show"])
     main(**kwargs)
-    #main()
+    # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
     artists.extend(pa.create_artists())
