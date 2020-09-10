@@ -61,9 +61,14 @@ class PlacementAnime:
         self.placement = pd.read_csv(self.placement_file)
         self.placement = self.placement.groupby(["time"])
         if "dropped_flows" in additional_subplots:
-            self.run_flows = pd.read_csv(self.run_flows_file)
-            self.set_total_flows()
-            self.dropped_flows_last_point = {"successful_flows": [0, 0], "dropped_flows": [0, 0], "total_flows": [0, 0]}
+            if os.path.split(self.run_flows_file)[1] in os.listdir(self.test_dir):
+                self.run_flows = pd.read_csv(self.run_flows_file)
+                self.set_total_flows()
+                self.dropped_flows_last_point = {"successful_flows": [0, 0],
+                                                 "dropped_flows": [0, 0],
+                                                 "total_flows": [0, 0]}
+            else:
+                self.additional_subplots.remove("dropped_flows")
 
         # positions in the format for networkx plot function
         # position dictionaries related to networkx objects have keys "0", "1", "2" etc. not "pop0", "pop1", "pop2" etc.
@@ -99,12 +104,20 @@ class PlacementAnime:
         self.ln_ingress = []
 
     def set_total_flows(self):
+        """
+        Sets the column 'total flows' to successful_flows + dropped_flows.
+        :return: None
+        """
         total_flows = []
         for i, row in self.run_flows.iterrows():
             total_flows.append(row["successful_flows"] + row["dropped_flows"])
         self.run_flows["total_flows"] = total_flows
 
     def get_ingress_and_resources_files(self):
+        """
+        Reads node_metrics.csv or resources.csv and rl_state.csv resolving the different cases.
+        :return: None
+        """
         if os.path.split(self.node_metrics_file)[1] in os.listdir(self.test_dir):
             self.node_metrics = pd.read_csv(self.node_metrics_file)
         else:
@@ -113,8 +126,16 @@ class PlacementAnime:
             if os.path.split(self.rl_state_file)[1] in os.listdir(self.test_dir):
                 self.rl_state = pd.read_csv(self.rl_state_file, header=None)
                 self.rl_state.columns = ["episode", "time"] + [f"pop{i}" for i in range(self.net_x.number_of_nodes())]
+            else:
+                self.additional_subplots.remove("ingress_traffic")
 
     def get_ingress_traffic(self, node, frame):
+        """
+        Reads ingress_traffic either from node_metrics DataFrame or the rl_state DataFrame.
+        :param node: str
+        :param frame: int
+        :return: float
+        """
         if self.node_metrics is not None:
             ret = self.node_metrics["ingress_traffic"][self.node_metrics["time"] == frame]
             return ret[self.node_metrics["node"] == node].iloc[0]
@@ -125,6 +146,10 @@ class PlacementAnime:
 
     @property
     def resources(self):
+        """
+        Returns Groupby object either of node_metrics or resources
+        :return:
+        """
         if self.node_metrics is not None:
             return self.node_metrics.groupby(["time"])
         else:
@@ -135,6 +160,10 @@ class PlacementAnime:
         return os.path.join(self.test_dir, list(filter(lambda f: ".graphml" in f, listdir))[0])
 
     def draw_network(self):
+        """
+        Draws network edges.
+        :return:
+        """
         ln = [networkx.draw_networkx_edges(self.net_x, pos=self.node_pos, ax=self.ax)]
         return ln
 
@@ -261,6 +290,10 @@ class PlacementAnime:
         return ln
 
     def plot_node_ids(self):
+        """
+        Plots the node ID labes on the nodes.
+        :return:
+        """
         ln = []
         for node, pos in self.node_pos.items():
             if self.net_x.nodes[node]["NodeType"] == "Ingress":
@@ -290,6 +323,11 @@ class PlacementAnime:
         return ln
 
     def plot_dropped_flows(self, frame):
+        """
+        Plots successful, dropped and total number of flows over time.
+        :param frame: int
+        :return:
+        """
         ln = []
         for col in self.dropped_flows_last_point.keys():
             x = np.array([self.dropped_flows_last_point[col][0], frame])
@@ -320,11 +358,14 @@ class PlacementAnime:
             ing_max = np.max(np.max(self.node_metrics["ingress_traffic"]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
         else:
-            self.ing_traffic_ax.set_xlim([self.rl_state["time"][0],
-                                          self.rl_state["time"][self.rl_state["time"].size - 1]])
+            x_max = self.rl_state["time"][self.rl_state["time"].size - 1]
+            self.ing_traffic_ax.set_xlim([self.rl_state["time"][0], x_max])
             columns = [col for col in self.rl_state.columns if "pop" in col]
             ing_max = np.max(np.max(self.rl_state[columns]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
+            for i, items in enumerate(self.ingress_node_colors.items()):
+                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1)%7), s=items[0],
+                                         color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
@@ -337,7 +378,7 @@ class PlacementAnime:
 
     def plot_moment(self, frame):
         # for the slider attempt
-        ln2 = plt.plot([], [])
+        ln2 = []
         # self.time_label._text = str(frame)
         # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
@@ -360,8 +401,8 @@ class PlacementAnime:
         :param frame: int
         :return: axis
         """
-        lns = plt.plot([], [])
-        ln2 = plt.plot([], [])
+        lns = []
+        ln2 = []
         # self.time_label._text = str(frame)
         # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
@@ -410,7 +451,7 @@ class PlacementAnime:
             self.dropped_flows_ax = self.fig.add_subplot(gs[-add_ax_position, 0])
             self.init_dropped_flows_ax()
 
-        self.ln = plt.plot([], [])
+        self.ln = []
         self.ln.extend(self.draw_network())
         self.ln.extend(self.plot_node_ids())
         self.ln.extend(self.plot_delay())
@@ -474,7 +515,6 @@ def parse_args(args=None):
     parser.add_argument("-st", "--show_tests", default=False, action="store_true", dest="show_tests")
     parser.add_argument("--show", default=False, action="store_true",)
     parser.add_argument("--save", default=None, choices=["html", "gif", "both"])
-    parser.add_argument("--config", default=None)
     return vars(parser.parse_args(args))
 
 
@@ -516,10 +556,7 @@ def main(**kwargs):
         if not kwargs["test_dir"]:
             kwargs["test_dir"] = tests[0]
         print("Creating PlacementAnime object...")
-        if kwargs["config"]:
-            pa = PlacementAnime(kwargs["test_dir"], **load_config(kwargs["config"]))
-        else:
-            pa = PlacementAnime(kwargs["test_dir"])
+        pa = PlacementAnime(kwargs["test_dir"])
         print("Creating animation...")
         pa.create_animation()
         if kwargs["show"]:
@@ -538,7 +575,7 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    kwargs = parse_args(["--test_dir", "line-results-w-prediction/det-arrival10_det-size001_duration100_traffic_prediction/best/2020-07-22_21-33-21_seed3327/test-2020-07-22_21-48-07_seed2564", "--save", "both"])
+    kwargs = parse_args(["--results_dir", "w-prediction", "--show"])
     main(**kwargs)
     #main()
     """pa = PlacementAnime()
