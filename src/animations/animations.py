@@ -126,13 +126,12 @@ class PlacementAnime:
     @property
     def resources(self):
         if self.node_metrics is not None:
-            return self.node_metrics
+            return self.node_metrics.groupby(["time"])
         else:
             return self._resources
 
     def get_network_filename(self):
         listdir = os.listdir(self.test_dir)
-        print(os.path.join(self.test_dir, list(filter(lambda f: ".graphml" in f, listdir))[0]))
         return os.path.join(self.test_dir, list(filter(lambda f: ".graphml" in f, listdir))[0])
 
     def draw_network(self):
@@ -265,10 +264,10 @@ class PlacementAnime:
         ln = []
         for node, pos in self.node_pos.items():
             if self.net_x.nodes[node]["NodeType"] == "Ingress":
-                self.id_labels[node] = self.ax.text(*(pos-0.2), s=str(node), color="white",
+                self.id_labels[node] = self.ax.text(*(pos-0.1), s=str(node), color="white",
                                                     bbox=dict(boxstyle="circle", fill=False, color="white"))
             else:
-                self.id_labels[node] = self.ax.text(*(pos - 0.2), s=str(node), color="white")
+                self.id_labels[node] = self.ax.text(*(pos - 0.1), s=str(node), color="white")
             ln.append(self.id_labels[node])
         return ln
 
@@ -318,7 +317,7 @@ class PlacementAnime:
         if self.node_metrics is not None:
             self.ing_traffic_ax.set_xlim([self.node_metrics["time"][0],
                                           self.node_metrics["time"][self.node_metrics["time"].size - 1]])
-            ing_max = np.max(np.max(self.rl_state["node"]))
+            ing_max = np.max(np.max(self.node_metrics["ingress_traffic"]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
         else:
             self.ing_traffic_ax.set_xlim([self.rl_state["time"][0],
@@ -329,10 +328,12 @@ class PlacementAnime:
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
-        self.dropped_flows_ax.set_xlim([self.run_flows["time"][0],
-                                        self.run_flows["time"][self.run_flows["time"].size - 1]])
+        x_max = self.run_flows["time"][self.run_flows["time"].size - 1]
+        self.dropped_flows_ax.set_xlim([self.run_flows["time"][0], x_max])
         ing_max = np.max(np.max(self.run_flows[list(self.run_flows_colors.keys())]))
         self.dropped_flows_ax.set_ylim([0, ing_max * 1.01])
+        for i, items in enumerate(self.run_flows_colors.items()):
+            self.dropped_flows_ax.text(x_max - x_max*0.1, ing_max - ing_max*0.3*(i+1), s=items[0], color=items[1])
 
     def plot_moment(self, frame):
         # for the slider attempt
@@ -368,14 +369,13 @@ class PlacementAnime:
             pass
         else:
             ln2.extend(self.plot_node_load(frame))
+            if "ingress_traffic" in self.additional_subplots:
+                self.ln.extend(self.plot_ingress_traffic(frame))
             if "dropped_flows" in self.additional_subplots:
                 self.ln.extend(self.plot_dropped_flows(frame))
 
         # plot the point in time as text: 1 point from the left lower corner
         ln2.append(self.ax.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, str(frame)))
-
-        if "ingress_traffic" in self.additional_subplots:
-            self.ln.extend(self.plot_ingress_traffic(frame))
 
         lns.extend(self.ln)
         lns.extend(ln2)
@@ -515,14 +515,18 @@ def main(**kwargs):
     else:
         if not kwargs["test_dir"]:
             kwargs["test_dir"] = tests[0]
+        print("Creating PlacementAnime object...")
         if kwargs["config"]:
             pa = PlacementAnime(kwargs["test_dir"], **load_config(kwargs["config"]))
         else:
             pa = PlacementAnime(kwargs["test_dir"])
+        print("Creating animation...")
         pa.create_animation()
         if kwargs["show"]:
+            print("Showing...")
             plt.show()
         if kwargs["save"]:
+            print("Saving animation...")
             pa.save_animation(kwargs["save"])
             if kwargs["save"] == "both":
                 print(f'{pa.video_filename}.html', " and ", f'{pa.video_filename}.gif')
@@ -534,7 +538,7 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    kwargs = parse_args(["--results_dir", "w-prediction", "--show", "--config", "cinf.yaml"])
+    kwargs = parse_args(["--test_dir", "line-results-w-prediction/det-arrival10_det-size001_duration100_traffic_prediction/best/2020-07-22_21-33-21_seed3327/test-2020-07-22_21-48-07_seed2564", "--save", "both"])
     main(**kwargs)
     #main()
     """pa = PlacementAnime()
