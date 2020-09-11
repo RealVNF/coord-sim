@@ -39,7 +39,7 @@ setup(
     entry_points={
         'console_scripts': [
             'coord-sim=coordsim.main:main',
-            'animation=animations.animations:main'
+            'animation=animations.animations:main',
             'lstm-predict=coordsim.traffic_predictor.lstm_predictor:main'
         ],
     },
