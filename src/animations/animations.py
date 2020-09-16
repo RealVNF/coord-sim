@@ -332,10 +332,13 @@ class PlacementAnime:
         :return:
         """
         ln = []
-        for col in self.dropped_flows_last_point.keys():
+        for col in ["successful_flows", "dropped_flows"]:
+            total_flows = self.run_flows[self.run_flows["time"] == frame]["total_flows"].iloc[0]
+            if total_flows == 0:
+                total_flows = 1
             x = np.array([self.dropped_flows_last_point[col][0], frame])
             y = np.array([self.dropped_flows_last_point[col][1],
-                          self.run_flows[self.run_flows["time"] == frame][col].iloc[0]])
+                          self.run_flows[self.run_flows["time"] == frame][col].iloc[0] / total_flows])
 
             ln.extend(self.dropped_flows_ax.plot(x, y, color=self.run_flows_colors[col]))
 
@@ -360,27 +363,24 @@ class PlacementAnime:
             self.ing_traffic_ax.set_xlim([self.node_metrics["time"][0], x_max])
             ing_max = np.max(np.max(self.node_metrics["ingress_traffic"]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
-            for i, items in enumerate(self.ingress_node_colors.items()):
-                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
-                                         color=items[1], size="smaller")
         else:
             x_max = self.rl_state["time"][self.rl_state["time"].size - 1]
             self.ing_traffic_ax.set_xlim([self.rl_state["time"][0], x_max])
             columns = [col for col in self.rl_state.columns if "pop" in col]
             ing_max = np.max(np.max(self.rl_state[columns]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
-            for i, items in enumerate(self.ingress_node_colors.items()):
-                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
+        for i, items in enumerate(self.ingress_node_colors.items()):
+            self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
                                          color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
         x_max = self.run_flows["time"][self.run_flows["time"].size - 1]
         self.dropped_flows_ax.set_xlim([self.run_flows["time"][0], x_max])
-        ing_max = np.max(np.max(self.run_flows[list(self.run_flows_colors.keys())]))
-        self.dropped_flows_ax.set_ylim([0, ing_max * 1.01])
-        for i, items in enumerate(self.run_flows_colors.items()):
-            self.dropped_flows_ax.text(x_max - x_max*0.1, ing_max - ing_max*0.3*(i+1), s=items[0], color=items[1])
+        self.dropped_flows_ax.set_ylim([0, 1.01])
+        for i, col in enumerate(["successful_flows", "dropped_flows"]):
+            self.dropped_flows_ax.text(x_max - x_max * 0.1, 1.01 - 1.01 * 0.3 * (i + 1),
+                                       s=col, color=self.run_flows_colors[col])
 
     def plot_moment(self, frame):
         # for the slider attempt
@@ -600,7 +600,7 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    main(["--results_dir", "in4", "--show"])
+    main(["--results_dir", "line-results-w-prediction", "--show"])
     # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
