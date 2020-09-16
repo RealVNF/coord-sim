@@ -564,14 +564,13 @@ def load_config(filename):
     return config
 
 
-def main(args=None, **kwargs):
+def main(args=None):
     """
     Main function
     :param args:
     :return:
     """
-    if kwargs == {}:
-        kwargs = parse_args(args)
+    kwargs = parse_args(args)
     tests = None
     if kwargs["results_dir"]:
         tests = list_tests(kwargs["results_dir"])
@@ -598,8 +597,7 @@ def main(args=None, **kwargs):
 
 
 if __name__ == "__main__":
-    kwargs = parse_args(["--results_dir", "w-prediction", "--show"])
-    main(**kwargs)
+    main(["--results_dir", "w-prediction", "--show"])
     # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
