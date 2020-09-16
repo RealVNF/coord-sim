@@ -435,11 +435,7 @@ class PlacementAnime:
             ln.append(self.update(frame))
         return ln
 
-    def create_animation(self):
-        """
-        Upper function. Calls other functions and creates the animation object
-        :return: None
-        """
+    def init_subplots(self):
         self.fig = plt.figure()
         gs = self.fig.add_gridspec(10, 1)
         self.ax = self.fig.add_subplot(gs[:-len(self.additional_subplots), 0])
@@ -453,6 +449,13 @@ class PlacementAnime:
         if "dropped_flows" in self.additional_subplots:
             self.dropped_flows_ax = self.fig.add_subplot(gs[-add_ax_position, 0])
             self.init_dropped_flows_ax()
+
+    def create_animation(self):
+        """
+        Upper function. Calls other functions and creates the animation object
+        :return: None
+        """
+        self.init_subplots()
 
         self.ln = []
         self.ln.extend(self.draw_network())
@@ -484,6 +487,24 @@ class PlacementAnime:
             except TypeError as e:
                 # self.log.error('ImageMagick needs to be installed for saving gifs.')
                 print(type(e), e)
+
+
+class PlacementFuncAnime(PlacementAnime):
+
+    def __init__(self, *args, **kwargs):
+        super(PlacementFuncAnime, self).__init__(*args, **kwargs)
+
+        self.component_labels = {node: {sf: [pos[0]+offset, pos[1]+self.component_offsets_y]
+                                        for sf, offset in self.component_offsets.items()}
+                                 for node, pos in self.node_pos.items()}
+
+    def create_animation(self):
+        self.init_subplots()
+
+    def allocate_labels(self):
+        for node, d in self.component_labels.items():
+            for sf in d:
+                d[sf] = self.ax.text(*(d[sf]), s=sf, color=self.component_colors[sf], label="sf")
 
 
 class PlacementAnimesManager:
@@ -543,12 +564,13 @@ def load_config(filename):
     return config
 
 
-def main(**kwargs):
+def main(args=None):
     """
     Main function
     :param args:
     :return:
     """
+    kwargs = parse_args(args)
     tests = None
     if kwargs["results_dir"]:
         tests = list_tests(kwargs["results_dir"])
@@ -575,8 +597,7 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    kwargs = parse_args(["--results_dir", "w-prediction", "--show"])
-    main(**kwargs)
+    main(["--results_dir", "w-prediction", "--show"])
     # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
