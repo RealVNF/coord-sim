@@ -356,10 +356,13 @@ class PlacementAnime:
     def init_ing_traffic_ax(self):
         # xlim = [first point in time, last point in time]
         if self.node_metrics is not None:
-            self.ing_traffic_ax.set_xlim([self.node_metrics["time"][0],
-                                          self.node_metrics["time"][self.node_metrics["time"].size - 1]])
+            x_max = self.node_metrics["time"][self.node_metrics["time"].size - 1]
+            self.ing_traffic_ax.set_xlim([self.node_metrics["time"][0], x_max])
             ing_max = np.max(np.max(self.node_metrics["ingress_traffic"]))
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
+            for i, items in enumerate(self.ingress_node_colors.items()):
+                self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
+                                         color=items[1], size="smaller")
         else:
             x_max = self.rl_state["time"][self.rl_state["time"].size - 1]
             self.ing_traffic_ax.set_xlim([self.rl_state["time"][0], x_max])
@@ -597,7 +600,7 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    main(["--results_dir", "w-prediction", "--show"])
+    main(["--results_dir", "in4", "--show"])
     # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
