@@ -4,12 +4,10 @@ from argparse import ArgumentParser
 from pprint import pprint
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
 import networkx
 import pandas as pd
 import os
 import yaml
-#matplotlib.use('TkAgg')
 
 
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
