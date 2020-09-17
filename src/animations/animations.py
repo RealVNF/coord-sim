@@ -9,7 +9,7 @@ import networkx
 import pandas as pd
 import os
 import yaml
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 
 
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
@@ -370,7 +370,7 @@ class PlacementAnime:
             self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
         for i, items in enumerate(self.ingress_node_colors.items()):
             self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
-                                         color=items[1], size="smaller")
+                                     color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
