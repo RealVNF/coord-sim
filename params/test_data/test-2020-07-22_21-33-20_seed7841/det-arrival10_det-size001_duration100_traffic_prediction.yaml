@@ -1,0 +1,18 @@
+# module for configuring the simulator
+# configuration parameters are loaded and used both when using the simulator via the CLI and via the interface
+# all parameters are required, defaults are in comments
+
+inter_arrival_mean: 10.0           # default: 10.0
+deterministic_arrival: True
+flow_dr_mean: 1.0                  # default: 1.0
+flow_dr_stdev: 0.0                 # default: 0.0
+flow_size_shape: 0.0             # default: 0.001
+deterministic_size: True
+run_duration: 100                   # default: 100
+
+# Optional: Trace file trace relative to the CWD.
+# Until values start in the trace file, the defaults from this file are used
+trace_path: res/traces/scenario_traffic_prediction.csv
+
+# Optional: Enable passing future traffic at ingress nodes
+future_traffic: True
