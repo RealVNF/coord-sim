@@ -1,0 +1,49 @@
+# module for configuring the RL agent
+# configuration parameters are loaded and used both when using the agent via the CLI and via the interface
+# all parameters are required, defaults are in comments
+
+# observation_space = ['ingress_traffic', 'node_load']
+observation_space:
+  - ingress_traffic
+
+# shuffle the order of nodes in state and action. slower but should be more effective. default = False
+shuffle_nodes: False
+
+# Setting episode steps
+episode_steps: 1000
+
+# Agent type: SAC or DDPG
+agent_type: "DDPG"
+
+# NN Config for actor and critic
+actor_hidden_layer_nodes: [64] # Array with nodes for each layer
+actor_hidden_layer_activation: "relu"
+critic_hidden_layer_nodes: [64] # Array with nodes for each layer
+critic_hidden_layer_activation: "relu"
+
+# Reward weights
+flow_reward_weight: 0.75
+delay_reward_weight: 0.25
+
+# Memory Config
+mem_limit: 10000
+mem_window_length: 1
+
+# Agent params
+rand_theta: 0.15 # for random process, for exploration
+rand_mu: 0.0 # Random mean of the noise; should be 0
+# sigma: variance of the random noise. too high -> jumpy actions & rewards; too low -> may get stuck at bad solution
+rand_sigma: 0.2 # 0.2 - 0.3 seem to work well here
+
+# overall steps (not within an episode) in which experiences are recorded but no training happens
+nb_steps_warmup_critic: 200
+nb_steps_warmup_actor: 200
+
+# for discounted return, when calculating the Q values and training the critic
+gamma: 0.01 # default 0.99
+# tau: for speed soft update of target actor and critic networks (higher is faster)
+target_model_update: 0.0001 # default 0.001
+
+# learning rate alpha: size of update steps during learning (too low -> slow convergence, too high -> divergence)
+learning_rate: 0.01 # default 0.001
+learning_rate_decay: 0.001 # default 0.0

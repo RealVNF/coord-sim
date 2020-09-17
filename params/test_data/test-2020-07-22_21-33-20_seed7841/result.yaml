@@ -1,0 +1,49 @@
+agent_config:
+  episode_steps: 1000
+env_config:
+  network_file: ./results/agent_obs1_f075d025reward_64a_64c_099gam_00001tau_001alp_0001dec/line-in1-cap2-delay10/abc/det-arrival10_det-size001_duration100_traffic_prediction/2020-07-22_21-33-20_seed7841/line-in1-cap2-delay10.graphml
+  reward_fnc: |2
+        def calculate_reward(self, simulator_state: SimulatorState) -> float:
+            """ The reward function calculates the reward based on the current network/simulator state
+
+            This is a key part of the RL algorithm.
+
+            Parameters
+            ----------
+            simulator_state (SimulatorState)
+
+            Returns
+            -------
+            reward (float)
+            """
+            cur_succ_flow = simulator_state.network_stats['successful_flows']
+            cur_drop_flow = simulator_state.network_stats['dropped_flows']
+            cur_gen_flow = simulator_state.network_stats['total_flows']
+
+            # flow reward
+            flow_reward = self.flow_reward(cur_succ_flow, cur_drop_flow, cur_gen_flow)
+
+            # delay reward
+            delay = simulator_state.network_stats['run_avg_end2end_delay']
+            delay_reward = self.delay_reward(delay)
+
+            flow_reward_weight = self.agent_config['flow_reward_weight']
+            delay_reward_weight = self.agent_config['delay_reward_weight']
+            reward = flow_reward_weight * flow_reward + delay_reward_weight * delay_reward
+
+            # debug output
+            logger.debug(f"Number of runs (applied actions): {self.run_count}")
+            logger.debug(f"Avg e2e delay: {delay}")
+            logger.debug(f"Rewards: flow: {flow_reward}, delay: {delay_reward}, weighted total: {reward}")
+
+            return reward
+  seed: 7841
+  service_file: ./results/agent_obs1_f075d025reward_64a_64c_099gam_00001tau_001alp_0001dec/line-in1-cap2-delay10/abc/det-arrival10_det-size001_duration100_traffic_prediction/2020-07-22_21-33-20_seed7841/abc.yaml
+  sim-seed: null
+  sim_config_file: ./results/agent_obs1_f075d025reward_64a_64c_099gam_00001tau_001alp_0001dec/line-in1-cap2-delay10/abc/det-arrival10_det-size001_duration100_traffic_prediction/2020-07-22_21-33-20_seed7841/det-arrival10_det-size001_duration100_traffic_prediction.yaml
+  simulator_cls: siminterface.Simulator
+episodes: 1
+id: 2020-07-22_21-33-20_seed7841
+log_file: ./results/agent_obs1_f075d025reward_64a_64c_099gam_00001tau_001alp_0001dec/line-in1-cap2-delay10/abc/det-arrival10_det-size001_duration100_traffic_prediction/2020-07-22_21-33-20_seed7841/test-2020-07-22_21-33-20_seed7841/test.log
+runtime_process: 15.62829443999999
+runtime_walltime: 15.976298056542873
