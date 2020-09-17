@@ -344,7 +344,6 @@ class PlacementAnime:
 
             self.dropped_flows_last_point[col][0] = x[1]
             self.dropped_flows_last_point[col][1] = y[1]
-        # ln.extend(self.ing_traffic_ax.plot([frame], [y], color=self.ingress_node_colors[node]))
         return ln
 
     def init(self):
