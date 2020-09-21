@@ -51,6 +51,7 @@ class Simulator(SimulatorInterface):
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
         self.episode = 0
+        self.last_apply_time = None
         # Load trace file
         if 'trace_path' in self.config:
             trace_path = os.path.join(os.getcwd(), self.config['trace_path'])
@@ -133,6 +134,8 @@ class Simulator(SimulatorInterface):
         simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
                                          self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
+        # set time stamp to calculate runtime of next apply call
+        self.last_apply_time = time.time()
         # Check to see if init called in warmup, if so, set warmup to false
         # This is to allow for better prediction and better overall control
         # in the future
@@ -140,8 +143,12 @@ class Simulator(SimulatorInterface):
 
     def apply(self, actions: SimulatorAction):
 
-        self.writer.write_action_result(self.episode, self.env.now, actions)
         logger.debug(f"t={self.env.now}: {actions}")
+
+        # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
+        alg_runtime = time.time() - self.last_apply_time
+        self.writer.write_runtime(self.run_times, alg_runtime)
+        self.writer.write_action_result(self.episode, self.env.now, actions)
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
@@ -203,7 +210,8 @@ class Simulator(SimulatorInterface):
                                          self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.episode, self.env.now, simulator_state, self.params.metrics.get_metrics())
         logger.debug(f"t={self.env.now}: {simulator_state}")
-
+        # set time stamp to calculate runtime of next apply call
+        self.last_apply_time = time.time()
         return simulator_state
 
     def get_current_ingress_traffic(self) -> float:
