@@ -8,6 +8,8 @@ import networkx
 import pandas as pd
 import os
 import yaml
+import matplotlib
+matplotlib.use("TkAgg")
 
 
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
@@ -184,7 +186,7 @@ class PlacementAnime:
             return {node: np.array([data.get("Longitude", None), data.get("Latitude", None)])
                     for node, data in list(self.net_x.nodes(data=True))}  # format for networkx plot functions
         else:
-            return None
+            return networkx.spring_layout(self.net_x)
 
     def determine_edge_pos(self):
         # same format as for the nodes, but not used anymore
