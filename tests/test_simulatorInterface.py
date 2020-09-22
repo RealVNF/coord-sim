@@ -249,7 +249,7 @@ class TestSimulatorInterface(TestCase):
             }
         """
         network_stats = simulator_state.network_stats
-        self.assertIs(len(network_stats), 11)
+        self.assertTrue(len(network_stats) >= 11)
         self.assertIn('total_flows', network_stats)
         self.assertIn('successful_flows', network_stats)
         self.assertIn('dropped_flows', network_stats)
