@@ -181,9 +181,9 @@ triangle_schedule = {
     'pop0': {
         'sfc_1': {
             'a': {
-                'pop0': 1,
-                'pop1': 0,
-                'pop2': 0
+                'pop0': 0.6,
+                'pop1': 0.3,
+                'pop2': 0.1
             },
             'b': {
                 'pop0': 0,
