@@ -266,13 +266,15 @@ class Simulator(SimulatorInterface):
             'total_flows': stats['generated_flows'],
             'successful_flows': stats['processed_flows'],
             'dropped_flows': stats['dropped_flows'],
+            'run_successful_flows': stats['run_processed_flows'],
+            'run_dropped_flows': stats['run_dropped_flows'],
+            'run_dropped_flows_per_node': stats['run_dropped_flows_per_node'],
             'in_network_flows': stats['total_active_flows'],
             'avg_end2end_delay': stats['avg_end2end_delay'],
             'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
             'run_max_end2end_delay': stats['run_max_end2end_delay'],
             'run_avg_path_delay': stats['run_avg_path_delay'],
-            'run_total_processed_traffic': stats['run_total_processed_traffic'],
-            'run_dropped_flows_per_node': stats['run_dropped_flows_per_node']
+            'run_total_processed_traffic': stats['run_total_processed_traffic']
         }
 
     def get_active_ingress_nodes(self):
