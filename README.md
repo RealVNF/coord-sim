@@ -244,6 +244,8 @@ pa.ax # Axis object (network, placement etc)
 pa.ingress_traffic_ax # Axis object (ingress_traffic)
 ```
 
+Maybe you will need the tkinter module installed for that: `sudo apt install python3-tk`
+
 ## LSTM Traffic Prediction
 
 The simulator has an LSTM module to predict traffic based on the traffic traces mentioned above. 
