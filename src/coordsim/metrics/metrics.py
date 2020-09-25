@@ -82,6 +82,11 @@ class Metrics:
         # total processed traffic (aggregated data rate) per node per SF within one run
         self.metrics['run_total_processed_traffic'] = defaultdict(lambda: defaultdict(float))
 
+        # per-run flow counter for all destination nodes for all src nodes, sfcs, sfs in the scheduling table
+        # only relevant for weighted round robin scheduling
+        self.metrics['run_flow_counts'] = \
+            defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
+
     def calc_max_node_usage(self, node_id, current_usage):
         """
         Calculate the run's max node usage

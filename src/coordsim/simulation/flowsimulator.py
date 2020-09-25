@@ -129,17 +129,42 @@ class FlowSimulator:
 
     def get_next_node(self, flow, sf):
         """
-        Get next node using weighted probabilites from the scheduler
+        Get next node using weighted probabilities from the scheduler
         """
         schedule = self.params.schedule
         # Check if scheduling rule exists
         if (flow.current_node_id in schedule) and flow.sfc in schedule[flow.current_node_id]:
-            schedule_node = schedule[flow.current_node_id]
-            schedule_sf = schedule_node[flow.sfc][sf]
-            sf_nodes = [sch_sf for sch_sf in schedule_sf.keys()]
-            sf_probability = [prob for name, prob in schedule_sf.items()]
+            local_schedule = schedule[flow.current_node_id][flow.sfc][sf]
+            dest_nodes = [sch_sf for sch_sf in local_schedule.keys()]
+            dest_prob = [prob for name, prob in local_schedule.items()]
             try:
-                next_node = np.random.choice(sf_nodes, p=sf_probability)
+                # select next node randomly according to the given probabilities
+                # next_node = np.random.choice(sf_nodes, p=sf_probability)
+
+                # select next node based on weighted RR according to the scheduling weights/probabilities
+                # get current flow counts per possible destination node
+                flow_counts = self.params.metrics.metrics['run_flow_counts'][flow.current_node_id][flow.sfc][sf]
+                flow_sum = sum(flow_counts.values())
+                # calculate the current ratios of flows sent to the different destination nodes
+                if flow_sum > 0:
+                    dest_ratios = [flow_counts[v]/flow_sum for v in dest_nodes]
+                else:
+                    dest_ratios = [0 for v in dest_nodes]
+
+                # calculate the difference from the scheduling weight
+                # for nodes with 0 probability/weight, set the diff to be negative so they are not selected
+                # otherwise all diffs may be 0 if ratio = probability and a node with probability 0 could be selected
+                assert len(dest_nodes) == len(dest_prob) == len(dest_ratios)
+                ratio_diffs = [dest_prob[i] - dest_ratios[i] if dest_prob[i] > 0
+                               else -1 for i in range(len(dest_nodes))]
+
+                # select the node that farthest away from its weight, ie, has the highest diff
+                max_idx = np.argmax(ratio_diffs)
+                next_node = dest_nodes[max_idx]
+
+                # increase counter for selected node
+                self.params.metrics.metrics['run_flow_counts'][flow.current_node_id][flow.sfc][sf][next_node] += 1
+
                 return next_node
 
             except Exception as ex:
