@@ -35,7 +35,8 @@ class PlacementAnime:
 
     def __init__(self, test_dir=".", placement_file="placements.csv", rl_state_file="rl_state.csv",
                  resources_file="resources.csv", node_metrics_file="node_metrics.csv",
-                 run_flows_file="run_flows.csv", video_filename=None, additional_subplots=additional_subplots):
+                 run_flows_file="run_flows.csv", video_filename=None, additional_subplots=additional_subplots,
+                 place_per_axis=2):
         # directories for the source files
         self.test_dir = test_dir
         self.network_file = self.get_network_filename()
@@ -55,6 +56,7 @@ class PlacementAnime:
         self._resources = None
         self.rl_state = None
         self.additional_subplots = additional_subplots
+        self.place_per_axis = place_per_axis
 
         self.net_x = networkx.read_graphml(self.network_file)
         self.set_linkDelay()  # compute LinkDelay from nodes positions and write it to the networkx object
@@ -86,7 +88,7 @@ class PlacementAnime:
         # component placement marks offset on x axis in relation to the node position
         self.component_offsets = {"a": -1, "b": 0, "c": 1}
         self.component_offsets_y = 1  # same for the y axis
-        cm = plt.cm.get_cmap("hsv", self.net_x.number_of_nodes())
+        cm = plt.cm.get_cmap("gist_rainbow", self.net_x.number_of_nodes())
         # curve color in the ingress traffic plot
         self.ingress_node_colors = {f"pop{i}": cm(i) for i in range(self.net_x.number_of_nodes())}
         self.last_point = {f"pop{i}": [0, 0] for i in range(self.net_x.number_of_nodes())}
@@ -359,24 +361,24 @@ class PlacementAnime:
             x_max = self.node_metrics["time"][self.node_metrics["time"].size - 1]
             self.ing_traffic_ax.set_xlim([self.node_metrics["time"][0], x_max])
             ing_max = np.max(np.max(self.node_metrics["ingress_traffic"]))
-            self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
+            self.ing_traffic_ax.set_ylim([ing_max * 0.1, ing_max * 1.2])
         else:
             x_max = self.rl_state["time"][self.rl_state["time"].size - 1]
             self.ing_traffic_ax.set_xlim([self.rl_state["time"][0], x_max])
             columns = [col for col in self.rl_state.columns if "pop" in col]
             ing_max = np.max(np.max(self.rl_state[columns]))
-            self.ing_traffic_ax.set_ylim([0, ing_max * 1.01])
+            self.ing_traffic_ax.set_ylim([ing_max * 0.1, ing_max * 1.2])
         for i, items in enumerate(self.ingress_node_colors.items()):
-            self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.15*((i+1) % 7), s=items[0],
+            self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.3*(i % 7), s=items[0],
                                      color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
         x_max = self.run_flows["time"][self.run_flows["time"].size - 1]
         self.dropped_flows_ax.set_xlim([self.run_flows["time"][0], x_max])
-        self.dropped_flows_ax.set_ylim([0, 1.01])
+        self.dropped_flows_ax.set_ylim([-0.1, 1.2])
         for i, col in enumerate(["successful_flows", "dropped_flows"]):
-            self.dropped_flows_ax.text(x_max - x_max * 0.1, 1.01 - 1.01 * 0.3 * (i + 1),
+            self.dropped_flows_ax.text(x_max - x_max * 0.1, 1.01 - 1.1 * 0.3 * (i + 1),
                                        s=col, color=self.run_flows_colors[col])
 
     def plot_moment(self, frame):
@@ -438,16 +440,16 @@ class PlacementAnime:
     def init_subplots(self):
         self.fig = plt.figure()
         gs = self.fig.add_gridspec(10, 1)
-        self.ax = self.fig.add_subplot(gs[:-len(self.additional_subplots), 0])
+        self.ax = self.fig.add_subplot(gs[:-len(self.additional_subplots)*self.place_per_axis, 0])
         self.init()
 
-        add_ax_position = len(self.additional_subplots)
+        add_ax_position = len(self.additional_subplots) * self.place_per_axis
         if "ingress_traffic" in self.additional_subplots:
-            self.ing_traffic_ax = self.fig.add_subplot(gs[-add_ax_position, 0])
+            self.ing_traffic_ax = self.fig.add_subplot(gs[-add_ax_position:-(add_ax_position-self.place_per_axis), 0])
             self.init_ing_traffic_ax()
-            add_ax_position -= 1
+            add_ax_position -= self.place_per_axis
         if "dropped_flows" in self.additional_subplots:
-            self.dropped_flows_ax = self.fig.add_subplot(gs[-add_ax_position, 0])
+            self.dropped_flows_ax = self.fig.add_subplot(gs[-add_ax_position:, 0])
             self.init_dropped_flows_ax()
 
     def create_animation(self):
