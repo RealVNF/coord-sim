@@ -36,7 +36,7 @@ class PlacementAnime:
     def __init__(self, test_dir=".", placement_file="placements.csv", rl_state_file="rl_state.csv",
                  resources_file="resources.csv", node_metrics_file="node_metrics.csv",
                  run_flows_file="run_flows.csv", video_filename=None, additional_subplots=additional_subplots,
-                 place_per_axis=2):
+                 place_per_axis=2, sample_rate=1, interval=100):
         # directories for the source files
         self.test_dir = test_dir
         self.network_file = self.get_network_filename()
@@ -47,10 +47,13 @@ class PlacementAnime:
         self.run_flows_file = os.path.join(test_dir, run_flows_file)
         if video_filename:
             self.video_filename = video_filename
-        if not test_dir == ".":
+        elif not test_dir == ".":
             self.video_filename = os.path.basename(os.path.dirname(test_dir))
         else:
             self.video_filename = "animation_video"
+
+        self.sample_rate = sample_rate
+        self.interval = interval
 
         self.node_metrics = None
         self._resources = None
@@ -63,6 +66,7 @@ class PlacementAnime:
         self.get_ingress_and_resources_files()
         self.placement = pd.read_csv(self.placement_file)
         self.placement = self.placement.groupby(["time"])
+        self.run_duration = int(np.mean(np.diff(list(self.placement.groups.keys()))))
         if "dropped_flows" in additional_subplots:
             if os.path.split(self.run_flows_file)[1] in os.listdir(self.test_dir):
                 self.run_flows = pd.read_csv(self.run_flows_file)
@@ -98,13 +102,13 @@ class PlacementAnime:
         # self.ax = plt.subplots(2, 1)
         self.ax, self.ing_traffic_ax, self.dropped_flows_ax = None, None, None
         self.ln = None  # contains static parts of the plot
+        self.online_ln = []
         # self.time_label = plt.text(self.axis_extent[0, 0] + 1, self.axis_extent[1, 0] + 1, "0")
         # self.ln.append(self.time_label)
         self.artists = []  # list of artists to pass to the ArtistAnimation object
         self.animation = None  # animation object
 
         self.moments = []  # for the slider attempt
-        self.ln_ingress = []
 
     def set_total_flows(self):
         """
@@ -307,6 +311,9 @@ class PlacementAnime:
             ln.append(self.id_labels[node])
         return ln
 
+    def previous_frame(self, frame):
+        return frame - self.run_duration * self.sample_rate
+
     def plot_ingress_traffic(self, frame):
         """
         plots a line from the previous point self.last_point[node]==[frame-1, value] to the current point (frame, value)
@@ -315,14 +322,16 @@ class PlacementAnime:
         """
         ln = []
         for node in self.net_x.nodes:
-            x = np.array([self.last_point[f"pop{node}"][0], frame])
-            y = np.array([self.last_point[f"pop{node}"][1], self.get_ingress_traffic(f"pop{node}", frame)])
+            x = np.array([self.previous_frame(frame), frame])
+            y = np.array([self.get_ingress_traffic(f"pop{node}", self.previous_frame(frame)),
+                          self.get_ingress_traffic(f"pop{node}", frame)])
 
-            ln.extend(self.ing_traffic_ax.plot(x, y, color=self.ingress_node_colors[f"pop{node}"]))
+            # ln.extend(self.ing_traffic_ax.plot(x, y, "o", color=self.ingress_node_colors[f"pop{node}"]))
 
             self.last_point[f"pop{node}"][0] = x[1]
             self.last_point[f"pop{node}"][1] = y[1]
-            # ln.extend(self.ing_traffic_ax.plot([frame], [y], color=self.ingress_node_colors[node]))
+            ln_element = self.ing_traffic_ax.plot(frame, y[1], marker=".", color=self.ingress_node_colors[f"pop{node}"])
+            ln.extend(ln_element)
         return ln
 
     def plot_dropped_flows(self, frame):
@@ -336,11 +345,14 @@ class PlacementAnime:
             total_flows = self.run_flows[self.run_flows["time"] == frame]["total_flows"].iloc[0]
             if total_flows == 0:
                 total_flows = 1
-            x = np.array([self.dropped_flows_last_point[col][0], frame])
-            y = np.array([self.dropped_flows_last_point[col][1],
+            x = np.array([self.previous_frame(frame), frame])
+            y = np.array([self.run_flows[self.run_flows["time"] ==
+                                         self.previous_frame(frame)][col].iloc[0] / total_flows,
                           self.run_flows[self.run_flows["time"] == frame][col].iloc[0] / total_flows])
 
-            ln.extend(self.dropped_flows_ax.plot(x, y, color=self.run_flows_colors[col]))
+            # ln.extend(self.dropped_flows_ax.plot(x, y, "o", color=self.run_flows_colors[col]))
+            ln_element = self.dropped_flows_ax.plot(x[1], y[1], ".", color=self.run_flows_colors[col])
+            ln.extend(ln_element)
 
             self.dropped_flows_last_point[col][0] = x[1]
             self.dropped_flows_last_point[col][1] = y[1]
@@ -400,7 +412,7 @@ class PlacementAnime:
             ln.append(self.plot_moment(frame))
         self.moments.extend(ln)
 
-    def update(self, frame):
+    def update(self, frame, thread=False, index=None):
         """
         Creates plots for one single frame==point in time
         :param frame: int
@@ -411,7 +423,7 @@ class PlacementAnime:
         # self.time_label._text = str(frame)
         # print("changed: ", self.time_label)
         ln2.extend(self.plot_components(frame))
-        if frame == 0:
+        if frame == 0 or self.previous_frame(frame) <= 0:
             pass
         else:
             ln2.extend(self.plot_node_load(frame))
@@ -425,15 +437,21 @@ class PlacementAnime:
 
         lns.extend(self.ln)
         lns.extend(ln2)
-        return lns
+        if thread:
+            self.online_ln[index].extend(lns)
+        else:
+            return lns
 
     def create_artists(self):
         """
         Creates artists
         :return: axis
         """
+        groups = list(self.placement.groups)
+        groups.sort()
+        groups = groups[::self.sample_rate]
         ln = []
-        for frame in self.placement.groups:
+        for frame in groups[::self.sample_rate]:
             ln.append(self.update(frame))
         return ln
 
@@ -466,7 +484,7 @@ class PlacementAnime:
 
         self.artists = [self.ln]
         self.artists.extend(self.create_artists())
-        self.animation = ArtistAnimation(self.fig, self.artists, interval=100, repeat=False)
+        self.animation = ArtistAnimation(self.fig, self.artists, interval=self.interval, repeat=False)
 
     def save_animation(self, mode, VIDEO_DIR="."):
         """
@@ -541,6 +559,9 @@ def parse_args(args=None):
     parser.add_argument("-st", "--show_tests", default=False, action="store_true", dest="show_tests")
     parser.add_argument("--show", default=False, action="store_true",)
     parser.add_argument("--save", default=None, choices=["html", "gif", "both"])
+    parser.add_argument("--sample_rate", default=1, type=int)
+    parser.add_argument("--interval", default=100, type=int)
+    parser.add_argument("--anime_filename", default=None)
     return vars(parser.parse_args(args))
 
 
@@ -583,7 +604,8 @@ def main(args=None):
         if not kwargs["test_dir"]:
             kwargs["test_dir"] = tests[0]
         print("Creating PlacementAnime object...")
-        pa = PlacementAnime(kwargs["test_dir"])
+        pa = PlacementAnime(kwargs["test_dir"], sample_rate=kwargs["sample_rate"], interval=kwargs["interval"],
+                            video_filename=kwargs["anime_filename"])
         print("Creating animation...")
         pa.create_animation()
         if kwargs["show"]:
@@ -599,7 +621,7 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    main(["--results_dir", "line-results-w-prediction", "--show"])
+    main(["--results_dir", "line-results-w-prediction", "--show", "--sample_rate", "2"])
     # main()
     """pa = PlacementAnime()
     artists = [pa.ln]
