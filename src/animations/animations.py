@@ -9,6 +9,7 @@ import pandas as pd
 import os
 import yaml
 
+
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
 # Sum of the min & max of (a, b, c)
 def hilo(a, b, c):
@@ -325,7 +326,7 @@ class PlacementAnime:
             y = np.array([self.get_ingress_traffic(f"pop{node}", self.previous_frame(frame)),
                           self.get_ingress_traffic(f"pop{node}", frame)])
 
-            #ln.extend(self.ing_traffic_ax.plot(x, y, "o", color=self.ingress_node_colors[f"pop{node}"]))
+            # ln.extend(self.ing_traffic_ax.plot(x, y, "o", color=self.ingress_node_colors[f"pop{node}"]))
 
             self.last_point[f"pop{node}"][0] = x[1]
             self.last_point[f"pop{node}"][1] = y[1]
