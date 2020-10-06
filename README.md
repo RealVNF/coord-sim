@@ -232,7 +232,10 @@ Create animation from the first test directory from a results directory: `animat
 To show all available test directories in a results directory: `animation --results_dir <> --show_tests`  
 Create animation from test directory: `animation --test_dir <>`  
 Show animation in the end (by calling plt.show()): `animation --test_dir <> --show`  
-Save animation as html video: `--test_dir <> --save <possible values: html, git, both>`  
+Save animation as html video: `animation --test_dir <> --save <possible values: html, git, both>`  
+You can limit the amount of data to process by setting `--sample_rate`: `animation --test_dir <> --sample_rate 5`  Default is 1
+Thus for example every fifth point in time will be taken into the animation. Resolution will be worse, of course. But it is useful if the scenario is to big
+Set interval between frames: `animation --test_dir <> --interval 100`  Default is 100
   
 Create an animation not from cli, but as python code with the PlacementAnime class:  
 ```py
