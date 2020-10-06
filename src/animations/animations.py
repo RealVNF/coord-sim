@@ -9,7 +9,6 @@ import pandas as pd
 import os
 import yaml
 import matplotlib
-matplotlib.use("TkAgg")
 
 # https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
 # Sum of the min & max of (a, b, c)
