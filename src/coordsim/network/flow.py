@@ -34,5 +34,8 @@ class Flow:
         self.current_position = current_position
         # End to end delay of the flow, used for metrics
         self.end2end_delay = end2end_delay
-        # FLow creation time
+        # Flow creation time
         self.creation_time = creation_time
+        # Flag whether the flow departed
+        self.departed = False
+        self.forward_to_eg = False

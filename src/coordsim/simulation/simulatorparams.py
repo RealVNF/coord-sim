@@ -23,6 +23,17 @@ class SimulatorParams:
         self.sfc_list = sfc_list
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)
         self.sf_list = sf_list
+        # Set sim config
+        self.config: dict = config
+        # Get the flow generator class and set defaults
+        self.flow_generator_class = self.config.get('flow_generator_class', 'DefaultFlowGenerator')
+        # Get the flow forwarder class and set defaults
+        self.flow_forwarder_class = self.config.get('flow_forwarder_class', 'DefaultFlowForwarder')
+        # Get the flow processor class and set defaults
+        self.flow_processor_class = self.config.get('flow_processor_class', 'DefaultFlowProcessor')
+        # Get the decision maker class and set defaults
+        self.decision_maker_class = self.config.get('decision_maker_class', 'DefaultDecisionMaker')
+
         self.metrics = metrics
         self.use_trace = False
         if 'trace_path' in config:
