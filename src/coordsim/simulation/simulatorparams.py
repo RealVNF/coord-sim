@@ -184,7 +184,7 @@ class SimulatorParams:
                 if self.deterministic_arrival:
                     inter_arr_time = self.inter_arr_mean[ing]
                 else:
-                    inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
+                    inter_arr_time = random.expovariate(lambd=1.0 / self.inter_arr_mean[ing])
                 # Generate flow dr
                 flow_dr = np.random.normal(self.flow_dr_mean, self.flow_dr_stdev)
                 # generate flow sizes

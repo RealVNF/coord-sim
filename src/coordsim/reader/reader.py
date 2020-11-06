@@ -79,7 +79,10 @@ def get_sf(sf_file, resource_functions_path=''):
     # Configurable default mean and stddev defaults
     default_processing_delay_mean = 1.0
     default_processing_delay_stdev = 1.0
-    def default_resource_function(x): return x
+
+    def default_resource_function(x):
+        return x
+
     sf_list = defaultdict(None)
     for sf_name, sf_details in sf_data['sf_list'].items():
         sf_list[sf_name] = sf_details

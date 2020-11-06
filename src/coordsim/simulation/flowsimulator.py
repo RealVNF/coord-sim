@@ -76,11 +76,20 @@ class FlowSimulator:
         while not flow.departed:
             next_node = self.DecisionMaker.decide_next_node(flow)
             if next_node is not None:
-                yield self.FlowForwarder.forward_flow(flow, next_node)
-            if not flow.forward_to_eg:
-                log.info("Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
-                         .format(flow.flow_id, flow.current_node_id, self.env.now))
-                yield self.env.process(self.FlowProcessor.process_flow(flow))
+                flow_forwarded = yield self.FlowForwarder.forward_flow(flow, next_node)
+                if not flow_forwarded:
+                    # Flow was dropped: terminate loop
+                    break
+                if not flow.forward_to_eg:
+                    log.info("Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
+                             .format(flow.flow_id, flow.current_node_id, self.env.now))
+                    flow_processed = yield self.env.process(self.FlowProcessor.process_flow(flow))
+                    if not flow_processed:
+                        # Flow was dropped: terminate loop
+                        break
+            else:
+                # No next node: terminate loop
+                break
 
     def depart_flow(self, flow, remove_active_flow=True):
         """
