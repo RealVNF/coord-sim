@@ -52,7 +52,7 @@ def main():
         trace_path = os.path.join(os.getcwd(), config['trace_path'])
         trace = reader.get_trace(trace_path)
         TraceProcessor(params, env, trace)
-        log.info("Using trace "+config['trace_path'])
+        log.info("Using trace " + config['trace_path'])
     # Create a FlowSimulator object, pass the SimPy environment and params objects
     simulator = FlowSimulator(env, params)
 
