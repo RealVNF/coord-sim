@@ -19,7 +19,11 @@ class DefaultDecisionMaker(BaseDecisionMaker):
         """ Load balance the flows according to the scheduling tables """
         # If flow is to be forwarded to egress, always return egress node as "next node"
         if flow.forward_to_eg:
+            if flow.egress_node_id is None:
+                # If flow has no egress node: set current node_id to egress node_id
+                flow.egress_node_id = flow.current_node_id
             return flow.egress_node_id
+
         sf = self.params.sfc_list[flow.sfc][flow.current_position]
         flow.current_sf = sf
         self.params.metrics.add_requesting_flow(flow)
@@ -36,7 +40,7 @@ class DefaultDecisionMaker(BaseDecisionMaker):
                 flow_sum = sum(flow_counts.values())
                 # calculate the current ratios of flows sent to the different destination nodes
                 if flow_sum > 0:
-                    dest_ratios = [flow_counts[v]/flow_sum for v in dest_nodes]
+                    dest_ratios = [flow_counts[v] / flow_sum for v in dest_nodes]
                 else:
                     dest_ratios = [0 for v in dest_nodes]
 
