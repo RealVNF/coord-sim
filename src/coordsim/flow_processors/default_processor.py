@@ -22,26 +22,28 @@ class DefaultFlowProcessor(BaseFlowProcessor):
         sf = sfc[flow.current_position]
         flow.current_sf = sf
 
-        log.info("Flow {} STARTED PROCESSING at node {} for processing. Time: {}"
-                 .format(flow.flow_id, flow.current_node_id, self.env.now))
+        self.params.logger.info(
+            "Flow {} STARTED PROCESSING at node {} for processing. Time: {}"
+            .format(flow.flow_id, flow.current_node_id, self.env.now))
 
         if sf in self.params.sf_placement[current_node_id]:
 
-            processing_delay = self.add_processing_delay(flow, sf)
+            processing_delay = self.get_processing_delay(flow, sf)
 
             resources_available = self.request_resources(flow, current_node_id, sf)
             if resources_available:
                 # Resources are available: wait processing_delay
                 yield self.env.timeout(processing_delay)
-                log.info("Flow {} started departing sf {} at node {}. Time {}"
-                         .format(flow.flow_id, sf, current_node_id, self.env.now))
+                self.params.logger.info(
+                    "Flow {} started departing sf {} at node {}. Time {}"
+                    .format(flow.flow_id, sf, current_node_id, self.env.now))
                 # Create a simpy process to cleanup used resources after flow duration passed
-                self.env.process(self.cleanup_resources(flow, current_node_id, sf))
+                self.env.process(self.finish_processing(flow, current_node_id, sf))
                 return True
             else:
                 return False
 
         else:
-            log.info(f"SF {sf} was not found at {current_node_id}. Dropping flow {flow.flow_id}")
+            self.params.logger.info(f"SF {sf} was not found at {current_node_id}. Dropping flow {flow.flow_id}")
             self.params.metrics.dropped_flow(flow)
             return False
