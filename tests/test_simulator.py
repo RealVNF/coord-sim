@@ -6,6 +6,7 @@ from coordsim.reader import reader
 import simpy
 import logging
 from coordsim.metrics.metrics import Metrics
+log = logging.getLogger(__name__)
 
 NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/abc.yaml"
@@ -38,8 +39,9 @@ class TestFlowSimulator(TestCase):
         schedule = dummy_data.triangle_schedule
 
         # Initialize Simulator and SimulatoParams objects
-        self.simulator_params = SimulatorParams(network, ing_nodes, eg_nodes, sfc_list, sf_list, config, self.metrics,
-                                                sf_placement=sf_placement, schedule=schedule)
+        self.simulator_params = SimulatorParams(
+            log, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, self.metrics,
+            sf_placement=sf_placement, schedule=schedule)
         self.flow_simulator = FlowSimulator(self.env, self.simulator_params)
         self.flow_simulator.start()
         self.env.run(until=SIMULATION_DURATION)

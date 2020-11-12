@@ -44,7 +44,7 @@ def main():
     metrics = Metrics(network, sf_list)
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics,
+    params = SimulatorParams(log, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics,
                              sf_placement=sf_placement, schedule=schedule)
     log.info(params)
 
