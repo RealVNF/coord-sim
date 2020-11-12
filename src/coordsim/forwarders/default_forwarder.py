@@ -21,7 +21,7 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         The delay is simulated by timing out for the delay amount of duration
         """
         if next_node is None:
-            log.info(f"No node to forward flow {flow.flow_id} to. Dropping it")
+            self.params.logger.info(f"No node to forward flow {flow.flow_id} to. Dropping it")
             # Update metrics for the dropped flow
             self.params.metrics.dropped_flow(flow)
             return False
@@ -35,10 +35,15 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         flow.end2end_delay += path_delay
         if flow.current_node_id == next_node:
             assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
-            log.info("Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, self.env.now))
+            self.params.logger.info(
+                "Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, self.env.now))
         else:
-            log.info("Flow {} will leave node {} towards node {}. Time {}"
-                     .format(flow.flow_id, flow.current_node_id, next_node, self.env.now))
+            self.params.logger.info(
+                "Flow {} will leave node {} towards node {}. Time {}"
+                .format(flow.flow_id, flow.current_node_id, next_node, self.env.now))
             yield self.env.timeout(path_delay)
             flow.current_node_id = next_node
+
+        if flow.current_node_id == flow.egress_node_id:
+            flow.departed = True
         return True
