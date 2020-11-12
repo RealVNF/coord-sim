@@ -3,7 +3,6 @@ import numpy as np
 from coordsim.network.flow import Flow
 from coordsim.simulation.simulatorparams import SimulatorParams
 from coordsim.decision_maker import BaseDecisionMaker
-log = logging.getLogger(__name__)
 
 
 class DefaultDecisionMaker(BaseDecisionMaker):
@@ -63,13 +62,16 @@ class DefaultDecisionMaker(BaseDecisionMaker):
             except Exception as ex:
 
                 # Scheduling rule does not exist: drop flow
-                log.warning(f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
-                            f'Dropping flow!')
-                log.warning(ex)
+                self.params.loogger.warning(
+                    f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
+                    f'Dropping flow!')
+                self.params.logger.warning(ex)
                 self.params.metrics.dropped_flow(flow)
                 return None
         else:
             # Scheduling rule does not exist: drop flow
-            log.warning(f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!')
+            self.params.logger.warning(
+                f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!'
+            )
             self.params.metrics.dropped_flow(flow)
             return None
