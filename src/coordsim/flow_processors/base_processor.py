@@ -54,8 +54,9 @@ class BaseFlowProcessor:
         node_remaining_cap = self.params.network.nodes[node_id]["remaining_cap"]
         assert node_remaining_cap >= 0, "Remaining node capacity cannot be less than 0 (zero)!"
         if demanded_total_capacity <= node_cap:
-            log.info("Flow {} started processing at sf {} at node {}. Time: {}"
-                     .format(flow.flow_id, sf, node_id, self.env.now))
+            self.params.logger.info(
+                "Flow {} started processing at sf {} at node {}. Time: {}"
+                .format(flow.flow_id, sf, node_id, self.env.now))
 
             # Metrics: Add active flow to the SF once the flow has begun processing.
             self.params.metrics.add_active_flow(flow, node_id, sf)
@@ -70,17 +71,21 @@ class BaseFlowProcessor:
             node_remaining_cap = self.params.network.nodes[node_id]["remaining_cap"]
             return True
         else:
-            log.info(f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
+            self.params.logger.info(
+                f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
             # Update metrics for the dropped flow
             self.params.metrics.dropped_flow(flow)
             return False
 
-    def cleanup_resources(self, flow: Flow, node_id: str, sf: str) -> bool:
+    def finish_processing(self, flow: Flow, node_id: str, sf: str) -> bool:
         """ Simpy process to cleanup used resources after a flow has finished processing """
-        # Remove the active flow from the node
-        self.params.metrics.remove_active_flow(flow, node_id, sf)
+        flow.current_position += 1
+        if flow.current_position == len(self.params.sfc_list[flow.sfc]):
+            flow.forward_to_eg = True
         # Wait flow duration for flow to fully process
         yield self.env.timeout(flow.duration)
+        # Remove the active flow from the node
+        self.params.metrics.remove_active_flow(flow, node_id, sf)
         # Remove flow's load from sf
         self.params.network.nodes[node_id]['available_sf'][sf]['load'] -= flow.dr
         assert self.params.network.nodes[node_id]['available_sf'][sf]['load'] >= 0, \
