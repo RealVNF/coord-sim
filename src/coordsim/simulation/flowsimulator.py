@@ -69,20 +69,21 @@ class FlowSimulator:
         """
         Handles the flow operations
         """
-        log.info(
+        self.params.logger.info(
             "Flow {} generated. arrived at node {} Requesting {} - flow duration: {}ms, "
             "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
                                            self.env.now))
         while not flow.departed:
             next_node = self.DecisionMaker.decide_next_node(flow)
             if next_node is not None:
-                flow_forwarded = yield self.FlowForwarder.forward_flow(flow, next_node)
+                flow_forwarded = yield self.env.process(self.FlowForwarder.forward_flow(flow, next_node))
                 if not flow_forwarded:
                     # Flow was dropped: terminate loop
                     break
                 if not flow.forward_to_eg:
-                    log.info("Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
-                             .format(flow.flow_id, flow.current_node_id, self.env.now))
+                    self.params.logger.info(
+                        "Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
+                        .format(flow.flow_id, flow.current_node_id, self.env.now))
                     flow_processed = yield self.env.process(self.FlowProcessor.process_flow(flow))
                     if not flow_processed:
                         # Flow was dropped: terminate loop
@@ -90,15 +91,16 @@ class FlowSimulator:
             else:
                 # No next node: terminate loop
                 break
+        if flow.departed:
+            self.depart_flow(flow)
 
-    def depart_flow(self, flow, remove_active_flow=True):
+    def depart_flow(self, flow):
         """
         Process the flow at the requested SF of the current node.
         """
         # Update metrics for the processed flow
         self.params.metrics.completed_flow()
         self.params.metrics.add_end2end_delay(flow.end2end_delay)
-        if remove_active_flow:
-            self.params.metrics.remove_active_flow(flow, flow.current_node_id, flow.current_sf)
-        log.info("Flow {} was processed and departed the network from {}. Time {}"
-                 .format(flow.flow_id, flow.current_node_id, self.env.now))
+        self.params.logger.info(
+            "Flow {} was processed and departed the network from {}. Time {}"
+            .format(flow.flow_id, flow.current_node_id, self.env.now))

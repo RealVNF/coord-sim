@@ -43,7 +43,7 @@ class Simulator(SimulatorInterface):
         # Check if future ingress traffic setting is enabled
         if 'future_traffic' in self.config and self.config['future_traffic']:
             self.prediction = True
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
+        self.params = SimulatorParams(logger, self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
                                       self.config, self.metrics, prediction=self.prediction)
         write_schedule = False
         if 'write_schedule' in self.config and self.config['write_schedule']:
