@@ -40,6 +40,7 @@ class BaseFlowProcessor:
         processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
         self.params.metrics.add_processing_delay(processing_delay)
         flow.end2end_delay += processing_delay
+        flow.ttl -= processing_delay
 
         return processing_delay
 

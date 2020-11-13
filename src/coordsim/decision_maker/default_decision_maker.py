@@ -16,6 +16,10 @@ class DefaultDecisionMaker(BaseDecisionMaker):
 
     def decide_next_node(self, flow: Flow):
         """ Load balance the flows according to the scheduling tables """
+        # Check flow TTL and drop if zero or less
+        if flow.ttl <= 0:
+            self.params.metrics.dropped_flow(flow)
+            return None
         # If flow is to be forwarded to egress, always return egress node as "next node"
         if flow.forward_to_eg:
             if flow.egress_node_id is None:

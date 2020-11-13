@@ -55,6 +55,7 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             # Only add the full delay if flow passed the link fully
             self.params.metrics.add_path_delay(path_delay)
             flow.end2end_delay += path_delay
+            flow.ttl -= path_delay
 
         if flow.current_node_id == flow.egress_node_id:
             flow.departed = True
