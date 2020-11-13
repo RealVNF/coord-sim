@@ -28,8 +28,10 @@ class DefaultFlowGenerator(BaseFlowGenerator):
         if self.params.eg_nodes:
             flow_egress_node = random.choice(self.params.eg_nodes)
         # Generate flow based on given params
+        ttl = random.choice(self.params.ttl_choices)
+        # Generate flow based on given params
         flow = Flow(str(flow_id), flow_sfc, flow_dr, flow_size, creation_time,
-                    current_node_id=node_id, egress_node_id=flow_egress_node)
+                    current_node_id=node_id, egress_node_id=flow_egress_node, ttl=ttl)
         # Update metrics for the generated flow
         self.params.metrics.generated_flow(flow, node_id)
 
