@@ -31,8 +31,6 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
 
         # Metrics calculation for path delay. Flow's end2end delay is also incremented.
-        self.params.metrics.add_path_delay(path_delay)
-        flow.end2end_delay += path_delay
         if flow.current_node_id == next_node:
             assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
             self.params.logger.info(
@@ -41,9 +39,60 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             self.params.logger.info(
                 "Flow {} will leave node {} towards node {}. Time {}"
                 .format(flow.flow_id, flow.current_node_id, next_node, self.env.now))
-            yield self.env.timeout(path_delay)
-            flow.current_node_id = next_node
+            path_to_next_node = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][0]
+            # Get the path starting from next node
+            for next_hop in path_to_next_node[1:]:
+                # Get edges resources
+                deduct_resources = self.deduct_link_resources(flow, flow.current_node_id, next_hop)
+                if not deduct_resources:
+                    # Not enough resources, flow dropped
+                    return False
+                hop_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_hop)][1]
+                yield self.env.timeout(hop_delay)
+                self.env.process(self.return_link_resources(flow, flow.current_node_id, next_hop))
+                flow.current_node_id = next_hop
+
+            # Only add the full delay if flow passed the link fully
+            self.params.metrics.add_path_delay(path_delay)
+            flow.end2end_delay += path_delay
 
         if flow.current_node_id == flow.egress_node_id:
             flow.departed = True
+        # Return true only after all hops have been traverssed successfully
         return True
+
+    def deduct_link_resources(self, flow, source_node_id, dest_node_id):
+        """
+        Deduct the flow's dr from the link resources
+        """
+        # Get edges resources
+        edge_rem_cap = self.params.network.edges[(flow.current_node_id, dest_node_id)]['remaining_cap']
+        # calculate new remaining cap
+        new_rem_cap = edge_rem_cap - flow.dr
+        if new_rem_cap >= 0:
+            # There is enoough capacity on the edge: send the flow
+            log.info(f"Flow {flow.flow_id} started travelling on edge ({flow.current_node_id}, {dest_node_id})")
+            self.params.network.edges[(flow.current_node_id, dest_node_id)]['remaining_cap'] -= flow.dr
+            return True
+        else:
+            # Not enough capacity on the edge: drop the flow
+            log.info(f"No cap on edge ({flow.current_node_id}, {dest_node_id}) to handle {flow.flow_id}.\
+            Dropping it")
+            # Update metrics for the dropped flow
+            self.params.metrics.dropped_flow(flow)
+            return False
+
+    def return_link_resources(self, flow, source_node_id, dest_node_id):
+        """
+        Simpy process: wait flow.duration then cleanup link
+        Used only when flow is forwarding to egress node and no flow processing done
+        """
+        # Wait flow duration
+        yield self.env.timeout(flow.duration)
+
+        # return the used capacity to the edge
+        # Add the used cap back to the edge
+        self.params.network.edges[(source_node_id, dest_node_id)]['remaining_cap'] += flow.dr
+        remaining_edge_cap = self.params.network.edges[(source_node_id, dest_node_id)]['remaining_cap']
+        edge_cap = self.params.network.edges[(source_node_id, dest_node_id)]['cap']
+        assert remaining_edge_cap <= edge_cap, "Edge rem. cap can't be > actual cap"
