@@ -162,7 +162,12 @@ class Simulator(SimulatorInterface):
                     available[sf] = sf_data
             # Add all SFs which are in the placement
             for sf in placed_sf_list:
-                available[sf] = available.get(sf, {'load': 0.0})
+                if sf not in available.keys():
+                    available[sf] = available.get(sf, {
+                        'load': 0.0,
+                        'last_active': self.env.now,
+                        'startup_time': self.env.now
+                    })
             self.simulator.params.network.nodes[node_id]['available_sf'] = available
 
         # Get the new schedule from the SimulatorAction

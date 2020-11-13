@@ -70,6 +70,19 @@ class BaseFlowProcessor:
             self.params.metrics.calc_max_node_usage(node_id, demanded_total_capacity)
             # Just for the sake of keeping lines small, the node_remaining_cap is updated again.
             node_remaining_cap = self.params.network.nodes[node_id]["remaining_cap"]
+
+            # Check if startup is done
+            startup_time = self.params.network.nodes[node_id]['available_sf'][sf]['startup_time']
+            startup_delay = self.params.sf_list[sf]["startup_delay"]
+            startup_done = True if (startup_time + startup_delay) <= self.env.now else False
+
+            if not startup_done:
+                # Startup is not done: wait the remaining startup time
+                startup_time_remaining = (startup_time + startup_delay) - self.env.now
+                flow.end2end_delay += startup_time_remaining
+                flow.ttl -= startup_time_remaining
+                yield self.env.timeout(startup_time_remaining)
+
             return True
         else:
             self.params.logger.info(

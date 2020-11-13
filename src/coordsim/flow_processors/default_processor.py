@@ -30,7 +30,7 @@ class DefaultFlowProcessor(BaseFlowProcessor):
 
             processing_delay = self.get_processing_delay(flow, sf)
 
-            resources_available = self.request_resources(flow, current_node_id, sf)
+            resources_available = yield self.env.process(self.request_resources(flow, current_node_id, sf))
             if resources_available:
                 # Resources are available: wait processing_delay
                 yield self.env.timeout(processing_delay)
