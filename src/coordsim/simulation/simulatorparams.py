@@ -60,7 +60,10 @@ class SimulatorParams:
         for node_id, placed_sf_list in sf_placement.items():
             for sf in placed_sf_list:
                 self.network.nodes[node_id]['available_sf'][sf] = self.network.nodes[node_id]['available_sf'].get(sf, {
-                    'load': 0.0})
+                    'load': 0.0,
+                    'startup_time': 0.0,
+                    'last_active': 0.0
+                })
 
         # Flow data rate normal distribution mean: float
         self.flow_dr_mean = config['flow_dr_mean']
@@ -215,6 +218,9 @@ class SimulatorParams:
 
     def get_next_flow_data(self, ing):
         """Return next flow data for given ingress from list of generated arrival times."""
+        if self.flow_list_idx is None:
+            self.reset_flow_lists()
+            self.generate_flow_lists()
         idx = self.flow_list_idx[ing]
         assert idx < len(self.flow_arrival_list[ing])
         inter_arrival_time = self.flow_arrival_list[ing][idx]

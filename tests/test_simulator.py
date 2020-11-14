@@ -12,7 +12,7 @@ NETWORK_FILE = "params/networks/triangle.graphml"
 SERVICE_FUNCTIONS_FILE = "params/services/abc.yaml"
 RESOURCE_FUNCTION_PATH = "params/services/resource_functions"
 CONFIG_FILE = "params/config/sim_config.yaml"
-SIMULATION_DURATION = 1000
+SIMULATION_DURATION = 100
 SEED = 1234
 
 
