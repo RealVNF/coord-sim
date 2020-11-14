@@ -65,7 +65,7 @@ class FlowSimulator:
             self.env.process(self.handle_flow(flow))
             yield self.env.timeout(inter_arr_time)
 
-    def handle_flow(self, flow: Flow):
+    def handle_flow(self, flow: Flow, decision=False):
         """
         Handles the flow operations
         """
@@ -74,7 +74,15 @@ class FlowSimulator:
             "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
                                            self.env.now))
         while not flow.departed:
-            next_node = self.DecisionMaker.decide_next_node(flow)
+            if not decision:
+                next_node = self.DecisionMaker.decide_next_node(flow)
+                if next_node == "External":
+                    # If decision maker asked for external decisions from the algo directly
+                    # Then exit this simpy process. The runner module will be responsible to call
+                    # `handle_flow` again with a decision.
+                    return
+            else:
+                next_node = decision
             if next_node is not None:
                 flow_forwarded = yield self.env.process(self.FlowForwarder.forward_flow(flow, next_node))
                 if not flow_forwarded:
