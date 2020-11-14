@@ -84,6 +84,7 @@ class FlowSimulator:
             else:
                 next_node = decision
             if next_node is not None:
+                # TODO: Record decision for every flow here. Add to CSV file
                 flow_forwarded = yield self.env.process(self.FlowForwarder.forward_flow(flow, next_node))
                 if not flow_forwarded:
                     # Flow was dropped: terminate loop
