@@ -34,10 +34,14 @@ class SimulatorParams:
         self.flow_processor_class = self.config.get('flow_processor_class', 'DefaultFlowProcessor')
         # Get the decision maker class and set defaults
         self.decision_maker_class = self.config.get('decision_maker_class', 'DefaultDecisionMaker')
+        # Get the decision maker class and set defaults
+        self.controller_class = self.config.get('controller_class', 'DurationController')
         # TTL choices: the list of TTLs to select for flows arriving at the network. default to 50 if not defined
         self.ttl_choices = config.get('ttl_choices', [50])
         # VNF Timeout: How much time to allow a VNF to be inactive before removing it
         self.vnf_timeout = config.get('vnf_timeout', 100)
+
+        self.flow_trigger = None
 
         self.metrics = metrics
         self.use_trace = False

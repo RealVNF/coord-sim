@@ -25,6 +25,7 @@ class FlowSimulator:
         self.env = env
         self.params = params
         self.total_flow_count = 0
+        self.params.flow_trigger = self.env.event()
         flow_generator_cls = eval(self.params.flow_generator_class)
         self.FlowGenerator = flow_generator_cls(self.env, self.params)
         assert isinstance(self.FlowGenerator, BaseFlowGenerator)
