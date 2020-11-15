@@ -14,7 +14,11 @@ class BaseController:
         self.env = env
         self.params = params
 
-    def apply_action(self, action, init=False):
+    def get_init_state(self):
+        """ Return the init state """
+        raise NotImplementedError
+
+    def get_next_state(self, action=None):
         """
         Apply the action from the control algorithm
         Returns:
