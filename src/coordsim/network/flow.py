@@ -41,3 +41,6 @@ class Flow:
         # Flag whether the flow departed
         self.departed = False
         self.forward_to_eg = False
+        # Flow success and dropped flags
+        self.success = False
+        self.dropped = False

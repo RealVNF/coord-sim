@@ -135,6 +135,7 @@ class Metrics:
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
     def dropped_flow(self, flow):
+        flow.dropped = True
         self.metrics['dropped_flows'] += 1
         self.metrics['total_active_flows'] -= 1
         self.metrics['dropped_flows_locs'][flow.current_node_id][flow.current_sf] += 1
