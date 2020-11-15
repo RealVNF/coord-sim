@@ -14,6 +14,7 @@ from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
 from coordsim.traffic_predictor.traffic_predictor import TrafficPredictor
 from coordsim.traffic_predictor.lstm_predictor import LSTM_Predictor
+from coordsim.controller import *
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,9 @@ class Simulator(SimulatorInterface):
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
 
+        # TODO: Create runner here
+        controller_cls = eval(self.params.controller_class)
+        self.controller = controller_cls(self.env, self.params)
         self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
@@ -93,7 +97,7 @@ class Simulator(SimulatorInterface):
             else:
                 self.params.update_state()
 
-        self.duration = self.params.run_duration
+        # self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
@@ -113,26 +117,27 @@ class Simulator(SimulatorInterface):
         # Start the simulator
         self.simulator.start()
 
-        # Run the environment for one step to get initial stats.
-        self.env.step()
+        # # Run the environment for one step to get initial stats.
+        # self.env.step()
 
-        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
-        # for changing node remaining capacities.
-        # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
+        # # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # # for changing node remaining capacities.
+        # # Also, parse the network stats and prepare it in SimulatorState format.
+        # self.parse_network()
+        # self.network_metrics()
 
         # Record end time and running time metrics
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
+        simulator_state = self.controller.get_init_state()
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
+        # if self.prediction:
+        #     requested_traffic = self.get_current_ingress_traffic()
+        #     self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+        #     stats = self.params.metrics.get_metrics()
+        #     self.traffic = stats['run_total_requested_traffic']
+        # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+        #                                  self.sf_list, self.traffic, self.network_stats)
         logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
         self.last_apply_time = time.time()
@@ -148,31 +153,31 @@ class Simulator(SimulatorInterface):
         # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
         alg_runtime = time.time() - self.last_apply_time
         self.writer.write_runtime(self.run_times, alg_runtime)
-        self.writer.write_action_result(self.episode, self.env.now, actions)
+        # self.writer.write_action_result(self.episode, self.env.now, actions)
 
-        # Get the new placement from the action passed by the RL agent
-        # Modify and set the placement parameter of the instantiated simulator object.
-        self.simulator.params.sf_placement = actions.placement
+        # # Get the new placement from the action passed by the RL agent
+        # # Modify and set the placement parameter of the instantiated simulator object.
+        # self.simulator.params.sf_placement = actions.placement
         # Update which sf is available at which node
-        for node_id, placed_sf_list in actions.placement.items():
-            available = {}
-            # Keep only SFs which still process
-            for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
-                if sf_data['load'] != 0:
-                    available[sf] = sf_data
-            # Add all SFs which are in the placement
-            for sf in placed_sf_list:
-                if sf not in available.keys():
-                    available[sf] = available.get(sf, {
-                        'load': 0.0,
-                        'last_active': self.env.now,
-                        'startup_time': self.env.now
-                    })
-            self.simulator.params.network.nodes[node_id]['available_sf'] = available
+        # for node_id, placed_sf_list in actions.placement.items():
+        #     available = {}
+        #     # Keep only SFs which still process
+        #     for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
+        #         if sf_data['load'] != 0:
+        #             available[sf] = sf_data
+        #     # Add all SFs which are in the placement
+        #     for sf in placed_sf_list:
+        #         if sf not in available.keys():
+        #             available[sf] = available.get(sf, {
+        #                 'load': 0.0,
+        #                 'last_active': self.env.now,
+        #                 'startup_time': self.env.now
+        #             })
+        #     self.simulator.params.network.nodes[node_id]['available_sf'] = available
 
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
-        self.simulator.params.schedule = actions.scheduling
+        # self.simulator.params.schedule = actions.scheduling
 
         # reset metrics for steps
         self.params.metrics.reset_run_metrics()

@@ -15,11 +15,61 @@ class DurationController(BaseController):
     def __init__(self, env, params):
         super().__init__(env, params)
         self.episode = 0
+        self.duration = self.params.run_duration
 
-    def apply_action(self, action: SimulatorAction, init=False) -> SimulatorState:
+    def get_init_state(self):
+        # Run the environment for one step to get initial stats.
+        self.env.step()
+
+        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # for changing node remaining capacities.
+        # Also, parse the network stats and prepare it in SimulatorState format.
+        self.parse_network()
+        self.network_metrics()
+        if self.prediction:
+            requested_traffic = self.get_current_ingress_traffic()
+            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+            stats = self.params.metrics.get_metrics()
+            self.traffic = stats['run_total_requested_traffic']
+        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+                                         self.sf_list, self.traffic, self.network_stats)
+        return simulator_state
+
+    def get_next_state(self, action: SimulatorAction) -> SimulatorState:
         """ Apply a decision and run until a specified duration has finished
         If init, create initial state
         """
+
+        # self.writer.write_action_result(self.episode, self.env.now, action)
+
+        # Get the new placement from the action passed by the RL agent
+        # Modify and set the placement parameter of the instantiated simulator object.
+        self.simulator.params.sf_placement = action.placement
+        # Update which sf is available at which node
+        for node_id, placed_sf_list in action.placement.items():
+            available = {}
+            # Keep only SFs which still process
+            for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
+                if sf_data['load'] != 0:
+                    available[sf] = sf_data
+            # Add all SFs which are in the placement
+            for sf in placed_sf_list:
+                if sf not in available.keys():
+                    available[sf] = available.get(sf, {
+                        'load': 0.0,
+                        'last_active': self.env.now,
+                        'startup_time': self.env.now
+                    })
+            self.simulator.params.network.nodes[node_id]['available_sf'] = available
+
+        # Get the new schedule from the SimulatorAction
+        # Set it in the params of the instantiated simulator object.
+        self.simulator.params.schedule = action.scheduling
+
+        runtime_steps = self.duration * self.run_times
+        self.params.logger.debug("Running simulator until time step %s", runtime_steps)
+        self.env.run(until=runtime_steps)
+
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
         if self.prediction:
             requested_traffic = self.get_current_ingress_traffic()
