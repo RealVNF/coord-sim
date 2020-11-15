@@ -9,7 +9,8 @@ class BaseDecisionMaker:
     All decision maker classes must inherit this class
     """
     def __init__(self, env: Environment, params: SimulatorParams):
-        pass
+        self.env = env
+        self.params: SimulatorParams = params
 
     def decide_next_node(self, flow: Flow) -> Union[None, str]:
         """ Decide next node for a flow
@@ -17,4 +18,4 @@ class BaseDecisionMaker:
             - None if destination cannot be decided or unavailable
             - str: node_id of next node.
         """
-        pass
+        raise NotImplementedError

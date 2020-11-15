@@ -11,8 +11,9 @@ class DefaultDecisionMaker(BaseDecisionMaker):
     """
 
     def __init__(self, env, params):
-        self.env = env
-        self.params: SimulatorParams = params
+        super().__init__(env, params)
+        # TODO: Implement this properly using Enums or sth similar
+        self.decision_type = "Aggregate"
 
     def decide_next_node(self, flow: Flow):
         """ Load balance the flows according to the scheduling tables """
