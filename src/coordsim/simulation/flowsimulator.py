@@ -85,6 +85,12 @@ class FlowSimulator:
                 next_node = decision
             if next_node is not None:
                 # TODO: Record decision for every flow here. Add to CSV file
+                decision_type = self.DecisionMaker.decision_type
+                if (decision_type != "PerFlow") or (decision_type == "PerFlow" and next_node == flow.current_node_id):
+                    process = True
+                else:
+                    process = False
+
                 flow_forwarded = yield self.env.process(self.FlowForwarder.forward_flow(flow, next_node))
                 if not flow_forwarded:
                     # Flow was dropped: terminate loop
@@ -93,10 +99,11 @@ class FlowSimulator:
                     self.params.logger.info(
                         "Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
                         .format(flow.flow_id, flow.current_node_id, self.env.now))
-                    flow_processed = yield self.env.process(self.FlowProcessor.process_flow(flow))
-                    if not flow_processed:
-                        # Flow was dropped: terminate loop
-                        break
+                    if process:
+                        flow_processed = yield self.env.process(self.FlowProcessor.process_flow(flow))
+                        if not flow_processed:
+                            # Flow was dropped: terminate loop
+                            break
             else:
                 # No next node: terminate loop
                 break
