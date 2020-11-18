@@ -26,13 +26,10 @@ class DurationController(BaseController):
         # Also, parse the network stats and prepare it in SimulatorState format.
         self.parse_network()
         self.network_metrics()
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
+        if self.params.prediction:
+            self.update_prediction()
+        simulator_state = SimulatorState(self.network_dict, self.params.sf_placement, self.params.sfc_list,
+                                         self.params.sf_list, self.traffic, self.network_stats)
         return simulator_state
 
     def get_next_state(self, action: SimulatorAction) -> SimulatorState:
@@ -44,12 +41,12 @@ class DurationController(BaseController):
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
-        self.simulator.params.sf_placement = action.placement
+        self.params.sf_placement = action.placement
         # Update which sf is available at which node
         for node_id, placed_sf_list in action.placement.items():
             available = {}
             # Keep only SFs which still process
-            for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
+            for sf, sf_data in self.params.network.nodes[node_id]['available_sf'].items():
                 if sf_data['load'] != 0:
                     available[sf] = sf_data
             # Add all SFs which are in the placement
@@ -60,26 +57,30 @@ class DurationController(BaseController):
                         'last_active': self.env.now,
                         'startup_time': self.env.now
                     })
-            self.simulator.params.network.nodes[node_id]['available_sf'] = available
+            self.params.network.nodes[node_id]['available_sf'] = available
 
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
-        self.simulator.params.schedule = action.scheduling
+        self.params.schedule = action.scheduling
 
-        runtime_steps = self.duration * self.run_times
+        runtime_steps = self.duration * self.params.run_times
         self.params.logger.debug("Running simulator until time step %s", runtime_steps)
         self.env.run(until=runtime_steps)
-
+        self.parse_network()
+        self.network_metrics()
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
+        if self.params.prediction:
+            self.update_prediction()
         # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
+        simulator_state = SimulatorState(self.network_dict, self.params.sf_placement, self.params.sfc_list,
+                                         self.params.sf_list, self.traffic, self.network_stats)
         return simulator_state
+
+    def update_prediction(self):
+        requested_traffic = self.get_current_ingress_traffic()
+        self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+        stats = self.params.metrics.get_metrics()
+        self.traffic = stats['run_total_requested_traffic']
 
     def parse_network(self) -> dict:
         """
@@ -93,7 +94,7 @@ class DurationController(BaseController):
             # 'used_resources' here is the max usage for the run.
             self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap,
                                                'used_resources': run_max_node_usage})
-        for edge in self.network.edges(data=True):
+        for edge in self.params.network.edges(data=True):
             edge_src = edge[0]
             edge_dest = edge[1]
             edge_delay = edge[2]['delay']
@@ -116,7 +117,7 @@ class DurationController(BaseController):
         Current limitation: works for 1 SFC and 1 ingress node
         """
         # Get name of ingress SF from first SFC
-        first_sfc = list(self.sfc_list.keys())[0]
+        first_sfc = list(self.params.sfc_list.keys())[0]
         ingress_sf = self.params.sfc_list[first_sfc][0]
         ingress_node = self.params.ing_nodes[0][0]
         ingress_traffic = self.metrics.metrics['run_total_requested_traffic'][ingress_node][first_sfc][ingress_sf]

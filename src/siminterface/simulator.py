@@ -24,7 +24,6 @@ class Simulator(SimulatorInterface):
                  test_dir=None):
         super().__init__(test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
-        self.run_times = int(1)
         self.network_file = network_file
         self.test_dir = test_dir
         # init network, sfc, sf, and config files
@@ -76,7 +75,7 @@ class Simulator(SimulatorInterface):
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
-        self.run_times = int(1)
+        self.params.run_times = int(1)
         self.start_time = time.time()
 
         # Generate SimPy simulation environment
@@ -97,7 +96,7 @@ class Simulator(SimulatorInterface):
             else:
                 self.params.update_state()
 
-        # self.duration = self.params.run_duration
+        self.duration = self.params.run_duration
         # Get and plant random seed
         self.seed = seed
         random.seed(self.seed)
@@ -138,7 +137,7 @@ class Simulator(SimulatorInterface):
         #     self.traffic = stats['run_total_requested_traffic']
         # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
         #                                  self.sf_list, self.traffic, self.network_stats)
-        logger.debug(f"t={self.env.now}: {simulator_state}")
+        # logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
         self.last_apply_time = time.time()
         # Check to see if init called in warmup, if so, set warmup to false
@@ -152,7 +151,8 @@ class Simulator(SimulatorInterface):
 
         # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
         alg_runtime = time.time() - self.last_apply_time
-        self.writer.write_runtime(self.run_times, alg_runtime)
+        self.writer.write_runtime(self.params.run_times, alg_runtime)
+        simulator_state = self.controller.get_next_state(actions)
         # self.writer.write_action_result(self.episode, self.env.now, actions)
 
         # # Get the new placement from the action passed by the RL agent
@@ -186,18 +186,18 @@ class Simulator(SimulatorInterface):
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
         # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
-        runtime_steps = self.duration * self.run_times
-        logger.debug("Running simulator until time step %s", runtime_steps)
-        self.env.run(until=runtime_steps)
+        # runtime_steps = self.duration * self.params.run_times
+        # logger.debug("Running simulator until time step %s", runtime_steps)
+        # self.env.run(until=runtime_steps)
 
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.
         # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
+        # self.parse_network()
+        # self.network_metrics()
 
         # Increment the run times variable
-        self.run_times += 1
+        self.params.run_times += 1
 
         # Record end time of the apply round, doesn't change start time to show the running time of the entire
         # simulation at the end of the simulation.
@@ -210,14 +210,14 @@ class Simulator(SimulatorInterface):
         self.params.generate_flow_lists(now=self.env.now)
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
-        # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
+        # if self.prediction:
+        #     requested_traffic = self.get_current_ingress_traffic()
+        #     self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+        #     stats = self.params.metrics.get_metrics()
+        #     self.traffic = stats['run_total_requested_traffic']
+        # # Create a new SimulatorState object to pass to the RL Agent
+        # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+        #                                  self.sf_list, self.traffic, self.network_stats)
         self.writer.write_state_results(self.episode, self.env.now, simulator_state, self.params.metrics.get_metrics())
         logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
@@ -235,57 +235,6 @@ class Simulator(SimulatorInterface):
         ingress_node = self.params.ing_nodes[0][0]
         ingress_traffic = self.metrics.metrics['run_total_requested_traffic'][ingress_node][first_sfc][ingress_sf]
         return ingress_traffic
-
-    def parse_network(self) -> dict:
-        """
-        Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
-        """
-        max_node_usage = self.params.metrics.get_metrics()['run_max_node_usage']
-        self.network_dict = {'nodes': [], 'edges': []}
-        for node in self.params.network.nodes(data=True):
-            node_cap = node[1]['cap']
-            run_max_node_usage = max_node_usage[node[0]]
-            # 'used_resources' here is the max usage for the run.
-            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap,
-                                               'used_resources': run_max_node_usage})
-        for edge in self.network.edges(data=True):
-            edge_src = edge[0]
-            edge_dest = edge[1]
-            edge_delay = edge[2]['delay']
-            edge_dr = edge[2]['cap']
-            # We use a fixed user data rate for the edges here as the functionality is not yet incorporated in the
-            # simulator.
-            # TODO: Implement used edge data rates in the simulator.
-            edge_used_dr = 0
-            self.network_dict['edges'].append({
-                'src': edge_src,
-                'dst': edge_dest,
-                'delay': edge_delay,
-                'data_rate': edge_dr,
-                'used_data_rate': edge_used_dr
-            })
-
-    def network_metrics(self):
-        """
-        Processes the metrics and parses them in a format specified in the SimulatorState class.
-        """
-        stats = self.params.metrics.get_metrics()
-        self.traffic = stats['run_total_requested_traffic']
-        self.network_stats = {
-            'processed_traffic': stats['run_total_processed_traffic'],
-            'total_flows': stats['generated_flows'],
-            'successful_flows': stats['processed_flows'],
-            'dropped_flows': stats['dropped_flows'],
-            'run_successful_flows': stats['run_processed_flows'],
-            'run_dropped_flows': stats['run_dropped_flows'],
-            'run_dropped_flows_per_node': stats['run_dropped_flows_per_node'],
-            'in_network_flows': stats['total_active_flows'],
-            'avg_end2end_delay': stats['avg_end2end_delay'],
-            'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
-            'run_max_end2end_delay': stats['run_max_end2end_delay'],
-            'run_avg_path_delay': stats['run_avg_path_delay'],
-            'run_total_processed_traffic': stats['run_total_processed_traffic']
-        }
 
     def get_active_ingress_nodes(self):
         """Return names of all ingress nodes that are currently active, ie, produce flows."""

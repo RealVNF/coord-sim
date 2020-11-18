@@ -1,6 +1,6 @@
 import logging
 from coordsim.forwarders import BaseFlowForwarder
-log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 
 
 class DefaultFlowForwarder(BaseFlowForwarder):
@@ -72,12 +72,13 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         new_rem_cap = edge_rem_cap - flow.dr
         if new_rem_cap >= 0:
             # There is enoough capacity on the edge: send the flow
-            log.info(f"Flow {flow.flow_id} started travelling on edge ({flow.current_node_id}, {dest_node_id})")
+            self.params.logger.info(
+                f"Flow {flow.flow_id} started travelling on edge ({flow.current_node_id}, {dest_node_id})")
             self.params.network.edges[(flow.current_node_id, dest_node_id)]['remaining_cap'] -= flow.dr
             return True
         else:
             # Not enough capacity on the edge: drop the flow
-            log.info(f"No cap on edge ({flow.current_node_id}, {dest_node_id}) to handle {flow.flow_id}.\
+            self.params.logger.info(f"No cap on edge ({flow.current_node_id}, {dest_node_id}) to handle {flow.flow_id}.\
             Dropping it")
             # Update metrics for the dropped flow
             self.params.metrics.dropped_flow(flow)

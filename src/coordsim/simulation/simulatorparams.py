@@ -42,7 +42,7 @@ class SimulatorParams:
         self.vnf_timeout = config.get('vnf_timeout', 100)
 
         self.flow_trigger = None
-
+        self.run_times = None
         self.metrics = metrics
         self.use_trace = False
         if 'trace_path' in config:
