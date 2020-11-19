@@ -36,6 +36,7 @@ class Flow:
         self.end2end_delay = end2end_delay
         # Specify a flow TTL
         self.ttl = ttl
+        self.original_ttl = ttl
         # Flow creation time
         self.creation_time = creation_time
         # Flag whether the flow departed

@@ -30,6 +30,11 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         if flow.current_node_id != next_node:
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
 
+        # TODO: Put this in a better place. Maybe in the perflow controller. For later
+        if flow.current_node_id == flow.egress_node_id and flow.forward_to_eg:
+            # TODO: Make sure this is correct
+            flow.departed = True
+            flow.success = True
         # Metrics calculation for path delay. Flow's end2end delay is also incremented.
         if flow.current_node_id == next_node:
             assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
@@ -48,6 +53,11 @@ class DefaultFlowForwarder(BaseFlowForwarder):
                     # Not enough resources, flow dropped
                     return False
                 hop_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_hop)][1]
+                if next_hop == flow.egress_node_id and flow.forward_to_eg:
+                    # TODO: Make sure this is correct
+                    # Flow destiny must be known before any simpy timeouts occur. Necessary for SPR
+                    flow.departed = True
+                    flow.success = True
                 yield self.env.timeout(hop_delay)
                 self.env.process(self.return_link_resources(flow, flow.current_node_id, next_hop))
                 flow.current_node_id = next_hop
@@ -57,8 +67,6 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             flow.end2end_delay += path_delay
             flow.ttl -= path_delay
 
-        if flow.current_node_id == flow.egress_node_id:
-            flow.departed = True
         # Return true only after all hops have been traverssed successfully
         return True
 

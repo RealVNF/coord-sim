@@ -50,7 +50,9 @@ class Simulator(SimulatorInterface):
             write_schedule = True
         # Create CSV writer
         self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
+        self.params.writer = self.writer
         self.episode = 0
+        self.params.episode = 0
         self.last_apply_time = None
         # Load trace file
         if 'trace_path' in self.config:
@@ -72,6 +74,7 @@ class Simulator(SimulatorInterface):
             self.predictor = TrafficPredictor(self.params, self.lstm_predictor)
         # increment episode count
         self.episode += 1
+        self.params.episode += 1
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
@@ -80,10 +83,8 @@ class Simulator(SimulatorInterface):
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
+        self.env.process(self.writer.begin_writing(self.env, self.params))
 
-        # TODO: Create runner here
-        controller_cls = eval(self.params.controller_class)
-        self.controller = controller_cls(self.env, self.params)
         self.params.metrics.reset_metrics()
 
         # Instantiate the parameter object for the simulator.
@@ -93,8 +94,8 @@ class Simulator(SimulatorInterface):
         if self.params.use_states:
             if self.params.in_init_state:
                 self.params.in_init_state = False
-            else:
-                self.params.update_state()
+            # else:
+            self.env.process(self.params.start_mmpp(self.env))
 
         self.duration = self.params.run_duration
         # Get and plant random seed
@@ -116,6 +117,9 @@ class Simulator(SimulatorInterface):
         # Start the simulator
         self.simulator.start()
 
+        # TODO: Create runner here
+        controller_cls = eval(self.params.controller_class)
+        self.controller = controller_cls(self.env, self.params, self.simulator)
         # # Run the environment for one step to get initial stats.
         # self.env.step()
 
@@ -145,15 +149,14 @@ class Simulator(SimulatorInterface):
         # in the future
         return simulator_state
 
-    def apply(self, actions: SimulatorAction):
+    def apply(self, actions):
 
         logger.debug(f"t={self.env.now}: {actions}")
 
         # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
         alg_runtime = time.time() - self.last_apply_time
-        self.writer.write_runtime(self.params.run_times, alg_runtime)
+        self.writer.write_runtime(alg_runtime)
         simulator_state = self.controller.get_next_state(actions)
-        # self.writer.write_action_result(self.episode, self.env.now, actions)
 
         # # Get the new placement from the action passed by the RL agent
         # # Modify and set the placement parameter of the instantiated simulator object.
@@ -204,8 +207,8 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
-        if self.params.use_states:
-            self.params.update_state()
+        # if self.params.use_states:
+        #     self.params.update_state()
         # generate flow data for next run (used for prediction)
         self.params.generate_flow_lists(now=self.env.now)
 
@@ -218,7 +221,8 @@ class Simulator(SimulatorInterface):
         # # Create a new SimulatorState object to pass to the RL Agent
         # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
         #                                  self.sf_list, self.traffic, self.network_stats)
-        self.writer.write_state_results(self.episode, self.env.now, simulator_state, self.params.metrics.get_metrics())
+        # self.writer.write_state_results(self.episode, self.env.now, simulator_state,
+        # self.params.metrics.get_metrics())
         logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
         self.last_apply_time = time.time()

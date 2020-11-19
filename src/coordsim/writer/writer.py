@@ -29,6 +29,7 @@ class ResultWriter():
             self.rl_state_file_name = f"{test_dir}/rl_state.csv"
             self.run_flows_file_name = f"{test_dir}/run_flows.csv"
             self.runtimes_file_name = f"{test_dir}/runtimes.csv"
+            self.flow_action_file_name = f"{test_dir}/flow_actions.csv"
 
             # Create the results directory if not exists
             os.makedirs(os.path.dirname(self.placement_file_name), exist_ok=True)
@@ -39,6 +40,7 @@ class ResultWriter():
             self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
             self.run_flows_stream = open(self.run_flows_file_name, 'a+', newline='')
             self.runtimes_stream = open(self.runtimes_file_name, 'a+', newline='')
+            self.flow_action_stream = open(self.flow_action_file_name, 'a+', newline='')
 
             if self.write_schedule:
                 self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
@@ -50,6 +52,8 @@ class ResultWriter():
             self.rl_state_writer = csv.writer(self.rl_state_stream)
             self.run_flows_writer = csv.writer(self.run_flows_stream)
             self.runtimes_writer = csv.writer(self.runtimes_stream)
+            self.flow_action_writer = csv.writer(self.flow_action_stream)
+            self.action_number = 0
 
             # Write the headers to the files
             self.create_csv_headers()
@@ -81,6 +85,9 @@ class ResultWriter():
                                  'in_network_flows', 'avg_end2end_delay']
         run_flows_output_header = ['episode', 'time', 'successful_flows', 'dropped_flows', 'total_flows']
         runtimes_output_header = ['run', 'runtime']
+        flow_action_output_header = ['episode', 'time', 'flow_id', 'flow_rem_ttl', 'flow_ttl',
+                                     'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap']
+        # TODO: Implement link caps here as well
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -88,27 +95,46 @@ class ResultWriter():
         self.metrics_writer.writerow(metrics_output_header)
         self.run_flows_writer.writerow(run_flows_output_header)
         self.runtimes_writer.writerow(runtimes_output_header)
+        self.flow_action_writer.writerow(flow_action_output_header)
 
-    def write_runtime(self, run, time):
+    def write_runtime(self, time):
         """
         Write runtime results to output file
         """
         if self.test_mode:
-            self.runtimes_writer.writerow([run, time])
+            self.action_number += 1
+            self.runtimes_writer.writerow([self.action_number, time])
 
-    def write_action_result(self, episode, time, action: SimulatorAction):
-        """
-        Write simulator actions to CSV files for statistics purposes
-        """
+    def write_flow_action(self, params, time, flow, current_node_id, destination_node_id):
         if self.test_mode:
-            placement = action.placement
-            placement_output = []
+            cur_node_rem_cap = params.network.nodes[flow.current_node_id]['remaining_cap']
+            if destination_node_id is None:
+                dest_node = 'None'
+                next_node_rem_cap = -1
+                # link_cap = -1
+                # rem_cap = -1
+            else:
+                dest_node = destination_node_id
+                next_node_rem_cap = params.network.nodes[dest_node]['remaining_cap']
+                # if dest_node == flow.current_node_id:
+                #     link_cap = 'inf'
+                #     rem_cap = 'inf'
+                # else:
+                #     link_cap = params.network.edges[(flow.current_node_id, dest_node)]['cap']
+                #     rem_cap = params.network.edges[(flow.current_node_id, dest_node)]['remaining_cap']
+
+            flow_action_output = [params.episode, time, flow.flow_id, flow.ttl, flow.original_ttl,
+                                  flow.current_node_id, dest_node, cur_node_rem_cap, next_node_rem_cap]
+            self.flow_action_writer.writerow(flow_action_output)
+
+    def write_schedule(self, params, time, action: SimulatorAction):
+        """
+        Write schedule to CSV files for statistics purposes
+        """
+        episode = self.params.episode
+        if self.test_mode:
             scheduling_output = []
 
-            for node_id, sfs in placement.items():
-                for sf in sfs:
-                    placement_output_row = [episode, time, node_id, sf]
-                    placement_output.append(placement_output_row)
             if self.write_schedule:
                 scheduling = action.scheduling
                 for node, sfcs in scheduling.items():
@@ -119,42 +145,61 @@ class ResultWriter():
                                 scheduling_output.append(scheduling_output_row)
                 self.scheduling_writer.writerows(scheduling_output)
 
-            self.placement_writer.writerows(placement_output)
-
-    def write_state_results(self, episode, time, state: SimulatorState, metrics):
+    def begin_writing(self, env, params):
         """
         Write node resource consumption to CSV file
         """
-        if self.test_mode:
-            network = state.network
-            stats = state.network_stats
+        self.env = env
+        self.params = params
+        yield self.env.process(self.write_network_state())
 
-            metrics_output = [episode, time, stats['total_flows'], stats['successful_flows'], stats['dropped_flows'],
-                              stats['in_network_flows'], stats['avg_end2end_delay']]
+    def write_network_state(self):
+        time = self.env.now
+        if self.test_mode:
+
+            metrics = self.params.metrics.get_metrics()
+            network = self.params.network
+
+            metrics_output = [self.params.episode, time, metrics['generated_flows'], metrics['processed_flows'],
+                              metrics['dropped_flows'], metrics['total_active_flows'], metrics['avg_end2end_delay']]
 
             resource_output = []
-            for node in network['nodes']:
-                node_id = node['id']
-                node_cap = node['resource']
-                used_resources = node['used_resources']
+            for node in network.nodes(data=True):
+                node_id = node[0]
+                node_cap = node[1]['cap']
+                used_resources = metrics['run_max_node_usage'][node_id]
                 ingress_traffic = 0
                 # get all sfc
-                sfcs = list(state.sfcs.keys())
+                sfcs = list(self.params.sfc_list.keys())
                 # iterate over sfcs to get traffic from all sfcs
                 for sfc in sfcs:
-                    ingress_sf = state.sfcs[sfc][0]
+                    ingress_sf = self.params.sfc_list[sfc][0]
                     ingress_traffic += metrics['run_act_total_requested_traffic'].get(
                         node_id, {}).get(
                             sfc, {}).get(
                                 ingress_sf, 0)
-                resource_output_row = [episode, time, node_id, node_cap, used_resources, ingress_traffic]
+                resource_output_row = [self.params.episode, time, node_id, node_cap, used_resources, ingress_traffic]
                 resource_output.append(resource_output_row)
 
-            run_flows_output = [episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'],
+            run_flows_output = [self.params.episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'],
                                 metrics['run_generated_flows']]
             self.run_flows_writer.writerow(run_flows_output)
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)
+
+            # Writing placement
+            placement_output = []
+            for node in network.nodes(data=True):
+                node_id = node[0]
+                sfs = list(node[1]['available_sf'].keys())
+                for sf in sfs:
+                    placement_output_row = [self.params.episode, time, node_id, sf]
+                    placement_output.append(placement_output_row)
+            self.placement_writer.writerows(placement_output)
+
+        # Wait a timeout then write the states
+        yield self.env.timeout(self.params.run_duration)
+        yield self.env.process(self.write_network_state())
 
     def write_dropped_flow_locs(self, dropped_flow_locs):
         """Dump dropped flow counters into yaml file. Called at end of simulation"""

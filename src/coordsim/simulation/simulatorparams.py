@@ -43,11 +43,13 @@ class SimulatorParams:
 
         self.flow_trigger = None
         self.run_times = None
+        self.episode = None
         self.metrics = metrics
         self.use_trace = False
         if 'trace_path' in config:
             self.use_trace = True
 
+        self.writer = None
         self.prediction = prediction  # bool
         self.predicted_inter_arr_mean = {node_id[0]: config['inter_arrival_mean'] for node_id in self.ing_nodes}
 
@@ -137,6 +139,13 @@ class SimulatorParams:
         params_str += f"deterministic_size: {self.deterministic_size}\n"
         return params_str
 
+    def start_mmpp(self, env):
+        """ Starts a Simpy process to update MMPP states every run_duration """
+        self.env = env
+        # State is always updated when param object is created
+        yield self.env.timeout(self.run_duration)
+        yield self.env.process(self.update_state())
+
     def update_state(self):
         """
         Change or keep the MMP state for each of the network's node
@@ -156,6 +165,8 @@ class SimulatorParams:
                     current_state = state_names[0]
                 self.current_states[node_id[0]] = current_state
         self.update_inter_arr_mean()
+        yield self.env.timeout(self.run_duration)
+        yield self.env.process(self.update_state())
 
     def update_inter_arr_mean(self):
         """Update inter arrival mean for each node based on """
