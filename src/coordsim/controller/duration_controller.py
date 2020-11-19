@@ -12,8 +12,8 @@ class DurationController(BaseController):
     This is the default decision maker class. It makes flow decisions based on the scheduling table
     """
 
-    def __init__(self, env, params):
-        super().__init__(env, params)
+    def __init__(self, env, params, simulator):
+        super().__init__(env, params, simulator)
         self.episode = 0
         self.duration = self.params.run_duration
 

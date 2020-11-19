@@ -1,5 +1,6 @@
 from simpy import Environment
 from coordsim.network.flow import Flow
+from coordsim.simulation.flowsimulator import FlowSimulator
 from coordsim.simulation.simulatorparams import SimulatorParams
 from typing import Union
 
@@ -10,9 +11,10 @@ class BaseController:
     Controls the duration between decisions and returns a simulator state to be passed
     to the controlling algorithm
     """
-    def __init__(self, env: Environment, params: SimulatorParams):
+    def __init__(self, env: Environment, params: SimulatorParams, simulator: FlowSimulator):
         self.env = env
         self.params = params
+        self.simulator = simulator
 
     def get_init_state(self):
         """ Return the init state """
