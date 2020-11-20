@@ -10,7 +10,7 @@ TODO: Add get/set methods
 class Flow:
 
     def __init__(self, flow_id, sfc, dr, size, creation_time, destination=None, egress_node_id=None, current_sf=None,
-                 current_node_id=None, current_position=0, end2end_delay=0.0):
+                 current_node_id=None, current_position=0, end2end_delay=0.0, ttl=50):
 
         # Flow ID: Unique ID string
         self.flow_id = flow_id
@@ -34,5 +34,14 @@ class Flow:
         self.current_position = current_position
         # End to end delay of the flow, used for metrics
         self.end2end_delay = end2end_delay
-        # FLow creation time
+        # Specify a flow TTL
+        self.ttl = ttl
+        self.original_ttl = ttl
+        # Flow creation time
         self.creation_time = creation_time
+        # Flag whether the flow departed
+        self.departed = False
+        self.forward_to_eg = False
+        # Flow success and dropped flags
+        self.success = False
+        self.dropped = False

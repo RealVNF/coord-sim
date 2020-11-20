@@ -181,12 +181,15 @@ class PlacementAnime:
         :param offset: int
         :return: dict of the form {key1: [x1 + offset, y1 + offset], key2: [x2 + offset, y2 + offset], ...}
         """
-        return {key: np.array([value[0]+offset, value[1]+offset]) for key, value in data.items()}
+        return {key: np.array([value[0] + offset, value[1] + offset]) for key, value in data.items()}
 
     def determine_node_pos(self):
         # if all nodes have those properties
-        if (all(map(lambda x: x[1].get("Latitude", None), self.net_x.nodes(data=True))) and
-                all(map(lambda x: x[1].get("Longitude", None), self.net_x.nodes(data=True)))):
+        if (all(
+                map(lambda x: x[1].get("Latitude", None), self.net_x.nodes(data=True))
+        ) and all(
+            map(lambda x: x[1].get("Longitude", None), self.net_x.nodes(data=True))
+        )):
             return {node: np.array([data.get("Longitude", None), data.get("Latitude", None)])
                     for node, data in list(self.net_x.nodes(data=True))}  # format for networkx plot functions
         else:
@@ -196,7 +199,7 @@ class PlacementAnime:
         # same format as for the nodes, but not used anymore
         edge_pos = {}
         for source, target, data in self.net_x.edges(data=True):
-            edge_pos[(source, target)] = (self.node_pos[source] + self.node_pos[target])/2
+            edge_pos[(source, target)] = (self.node_pos[source] + self.node_pos[target]) / 2
         return edge_pos
 
     def determine_extent(self):
@@ -238,7 +241,7 @@ class PlacementAnime:
         for node, data in self.placement.get_group(frame).groupby(["node"]):
             x, y = self.node_pos[node.replace("pop", "")]
             for component in data["sf"]:
-                ln.append(self.ax.text(x+self.component_offsets[component], y-self.component_offsets_y, component,
+                ln.append(self.ax.text(x + self.component_offsets[component], y - self.component_offsets_y, component,
                                        color=self.component_colors[component], label=component))
         return ln
 
@@ -249,7 +252,7 @@ class PlacementAnime:
         """
         ln = []
         for node, pos in self.node_pos.items():
-            ln.append(self.ax.text(*(pos+1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None),
+            ln.append(self.ax.text(*(pos + 1), s=self.net_x.nodes(data=True)[node].get("NodeCap", None),
                                    fontdict={"color": "b"}))
         return ln
 
@@ -260,12 +263,12 @@ class PlacementAnime:
         :return: axis
         """
         ln = []
-        node_colors = [(0.0, 0.0, 0.0, 1.0)]*self.net_x.number_of_nodes()
+        node_colors = [(0.0, 0.0, 0.0, 1.0)] * self.net_x.number_of_nodes()
         for node, data in self.resources.get_group(frame).groupby(["node"]):
             x, y = self.node_pos[node.replace("pop", "")] + 1
             capacity = data['node_capacity'].iloc[0]
             if capacity != 0:
-                node_load = data['used_resources'].iloc[0]/capacity
+                node_load = data['used_resources'].iloc[0] / capacity
                 node_color = self.node_load_cmap(node_load)
                 complement_node_color = complement(*node_color)
             else:
@@ -304,7 +307,7 @@ class PlacementAnime:
         ln = []
         for node, pos in self.node_pos.items():
             if self.net_x.nodes[node]["NodeType"] == "Ingress":
-                self.id_labels[node] = self.ax.text(*(pos-0.1), s=str(node), color="white",
+                self.id_labels[node] = self.ax.text(*(pos - 0.1), s=str(node), color="white",
                                                     bbox=dict(boxstyle="circle", fill=False, color="white"))
             else:
                 self.id_labels[node] = self.ax.text(*(pos - 0.1), s=str(node), color="white")
@@ -346,9 +349,10 @@ class PlacementAnime:
             if total_flows == 0:
                 total_flows = 1
             x = np.array([self.previous_frame(frame), frame])
-            y = np.array([self.run_flows[self.run_flows["time"] ==
-                                         self.previous_frame(frame)][col].iloc[0] / total_flows,
-                          self.run_flows[self.run_flows["time"] == frame][col].iloc[0] / total_flows])
+            y = np.array(
+                [self.run_flows[self.run_flows["time"] == self.previous_frame(frame)][col].iloc[0] / total_flows,
+                 self.run_flows[self.run_flows["time"] == frame][col].iloc[0] / total_flows]
+            )
 
             # ln.extend(self.dropped_flows_ax.plot(x, y, "o", color=self.run_flows_colors[col]))
             ln_element = self.dropped_flows_ax.plot(x[1], y[1], ".", color=self.run_flows_colors[col])
@@ -381,8 +385,9 @@ class PlacementAnime:
             ing_max = np.max(np.max(self.rl_state[columns]))
             self.ing_traffic_ax.set_ylim([ing_max * 0.1, ing_max * 1.2])
         for i, items in enumerate(self.ingress_node_colors.items()):
-            self.ing_traffic_ax.text(x_max + x_max*0.03*((i+1)//7), ing_max - ing_max*0.3*(i % 7), s=items[0],
-                                     color=items[1], size="smaller")
+            self.ing_traffic_ax.text(
+                x_max + x_max * 0.03 * ((i + 1) // 7), ing_max - ing_max * 0.3 * (i % 7), s=items[0],
+                color=items[1], size="smaller")
 
     def init_dropped_flows_ax(self):
         # xlim = [first point in time, last point in time]
@@ -458,12 +463,12 @@ class PlacementAnime:
     def init_subplots(self):
         self.fig = plt.figure()
         gs = self.fig.add_gridspec(10, 1)
-        self.ax = self.fig.add_subplot(gs[:-len(self.additional_subplots)*self.place_per_axis, 0])
+        self.ax = self.fig.add_subplot(gs[:-len(self.additional_subplots) * self.place_per_axis, 0])
         self.init()
 
         add_ax_position = len(self.additional_subplots) * self.place_per_axis
         if "ingress_traffic" in self.additional_subplots:
-            self.ing_traffic_ax = self.fig.add_subplot(gs[-add_ax_position:-(add_ax_position-self.place_per_axis), 0])
+            self.ing_traffic_ax = self.fig.add_subplot(gs[-add_ax_position:-(add_ax_position - self.place_per_axis), 0])
             self.init_ing_traffic_ax()
             add_ax_position -= self.place_per_axis
         if "dropped_flows" in self.additional_subplots:
@@ -514,7 +519,7 @@ class PlacementFuncAnime(PlacementAnime):
     def __init__(self, *args, **kwargs):
         super(PlacementFuncAnime, self).__init__(*args, **kwargs)
 
-        self.component_labels = {node: {sf: [pos[0]+offset, pos[1]+self.component_offsets_y]
+        self.component_labels = {node: {sf: [pos[0] + offset, pos[1] + self.component_offsets_y]
                                         for sf, offset in self.component_offsets.items()}
                                  for node, pos in self.node_pos.items()}
 

@@ -135,6 +135,7 @@ class Metrics:
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
     def dropped_flow(self, flow):
+        flow.dropped = True
         self.metrics['dropped_flows'] += 1
         self.metrics['total_active_flows'] -= 1
         self.metrics['dropped_flows_locs'][flow.current_node_id][flow.current_sf] += 1
@@ -155,7 +156,7 @@ class Metrics:
         if self.metrics['run_generated_flows'] > 0:
             self.metrics[
                 'run_avg_path_delay'
-                ] = self.metrics['run_total_path_delay'] / self.metrics['run_generated_flows']
+            ] = self.metrics['run_total_path_delay'] / self.metrics['run_generated_flows']
 
     def add_end2end_delay(self, delay):
         self.metrics['total_end2end_delay'] += delay
@@ -189,7 +190,7 @@ class Metrics:
         if self.metrics['run_processed_flows'] > 0:
             self.metrics[
                 'run_avg_end2end_delay'
-                ] = self.metrics['run_end2end_delay'] / self.metrics['run_processed_flows']
+            ] = self.metrics['run_end2end_delay'] / self.metrics['run_processed_flows']
         else:
             self.metrics['run_avg_end2end_delay'] = 0  # No run avg end2end delay yet (no processed flows yet)
 

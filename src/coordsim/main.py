@@ -44,7 +44,7 @@ def main():
     metrics = Metrics(network, sf_list)
 
     # Create the simulator parameters object with the provided args
-    params = SimulatorParams(network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics,
+    params = SimulatorParams(log, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics,
                              sf_placement=sf_placement, schedule=schedule)
     log.info(params)
 
@@ -52,7 +52,7 @@ def main():
         trace_path = os.path.join(os.getcwd(), config['trace_path'])
         trace = reader.get_trace(trace_path)
         TraceProcessor(params, env, trace)
-        log.info("Using trace "+config['trace_path'])
+        log.info("Using trace " + config['trace_path'])
     # Create a FlowSimulator object, pass the SimPy environment and params objects
     simulator = FlowSimulator(env, params)
 
