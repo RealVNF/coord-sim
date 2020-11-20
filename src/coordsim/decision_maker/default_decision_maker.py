@@ -17,6 +17,8 @@ class DefaultDecisionMaker(BaseDecisionMaker):
 
     def decide_next_node(self, flow: Flow):
         """ Load balance the flows according to the scheduling tables """
+        # Blank timeout to convert it to a simpy process
+        yield self.env.timeout(0)
         # Check flow TTL and drop if zero or less
         if flow.ttl <= 0:
             self.params.metrics.dropped_flow(flow)
