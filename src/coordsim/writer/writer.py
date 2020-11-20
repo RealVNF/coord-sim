@@ -86,7 +86,8 @@ class ResultWriter():
         run_flows_output_header = ['episode', 'time', 'successful_flows', 'dropped_flows', 'total_flows']
         runtimes_output_header = ['run', 'runtime']
         flow_action_output_header = ['episode', 'time', 'flow_id', 'flow_rem_ttl', 'flow_ttl',
-                                     'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap']
+                                     'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap',
+                                     'link_cap', 'link_rem_cap']
         # TODO: Implement link caps here as well
 
         # Write headers to CSV files
@@ -116,15 +117,16 @@ class ResultWriter():
             else:
                 dest_node = destination_node_id
                 next_node_rem_cap = params.network.nodes[dest_node]['remaining_cap']
-                # if dest_node == flow.current_node_id:
-                #     link_cap = 'inf'
-                #     rem_cap = 'inf'
-                # else:
-                #     link_cap = params.network.edges[(flow.current_node_id, dest_node)]['cap']
-                #     rem_cap = params.network.edges[(flow.current_node_id, dest_node)]['remaining_cap']
+                if dest_node == flow.current_node_id:
+                    link_cap = 'inf'
+                    rem_cap = 'inf'
+                else:
+                    link_cap = params.network.edges[(flow.current_node_id, dest_node)]['cap']
+                    rem_cap = params.network.edges[(flow.current_node_id, dest_node)]['remaining_cap']
 
             flow_action_output = [params.episode, time, flow.flow_id, flow.ttl, flow.original_ttl,
-                                  flow.current_node_id, dest_node, cur_node_rem_cap, next_node_rem_cap]
+                                  flow.current_node_id, dest_node, cur_node_rem_cap, next_node_rem_cap,
+                                  link_cap, rem_cap]
             self.flow_action_writer.writerow(flow_action_output)
 
     def write_schedule(self, params, time, action: SimulatorAction):

@@ -37,6 +37,9 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             flow.success = True
         # Metrics calculation for path delay. Flow's end2end delay is also incremented.
         if flow.current_node_id == next_node:
+            # Write action even if flow stays
+            if self.params.writer is not None:
+                self.params.writer.write_flow_action(self.params, self.env.now, flow, flow.current_node_id, next_node)
             assert path_delay == 0, "While Forwarding the flow, the Current and Next node same, yet path_delay != 0"
             self.params.logger.info(
                 "Flow {} will stay in node {}. Time: {}.".format(flow.flow_id, flow.current_node_id, self.env.now))
@@ -47,6 +50,10 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             path_to_next_node = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][0]
             # Get the path starting from next node
             for next_hop in path_to_next_node[1:]:
+                # Write flow action for every hop
+                if self.params.writer is not None:
+                    self.params.writer.write_flow_action(self.params, self.env.now, flow, flow.current_node_id,
+                                                         next_hop)
                 # Get edges resources
                 deduct_resources = self.deduct_link_resources(flow, flow.current_node_id, next_hop)
                 if not deduct_resources:
