@@ -8,8 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class SPRState:
-    def __init__(self, flow: Flow, network: dict, placement: dict, sfcs: dict, service_functions: dict,
-                 traffic: dict, network_stats: dict):
+    def __init__(self, flow: Flow, network: dict, sfcs: dict, network_stats: dict):
         """
         SPRState Class for SPR algorithm
         """

@@ -58,6 +58,9 @@ class BaseFlowProcessor:
             self.params.logger.info(
                 "Flow {} started processing at sf {} at node {}. Time: {}"
                 .format(flow.flow_id, sf, node_id, self.env.now))
+            
+            # Update processing level of flow
+            flow.processing_index += 1
 
             # Metrics: Add active flow to the SF once the flow has begun processing.
             self.params.metrics.add_active_flow(flow, node_id, sf)

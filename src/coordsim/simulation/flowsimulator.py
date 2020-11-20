@@ -76,7 +76,7 @@ class FlowSimulator:
                                            self.env.now))
         while not flow.departed:
             if not decision:
-                next_node = self.DecisionMaker.decide_next_node(flow)
+                next_node = yield self.env.process(self.DecisionMaker.decide_next_node(flow))
                 if next_node == "External":
                     # If decision maker asked for external decisions from the algo directly
                     # Then exit this simpy process. The runner module will be responsible to call

@@ -45,3 +45,4 @@ class Flow:
         # Flow success and dropped flags
         self.success = False
         self.dropped = False
+        self.processing_index = 0
