@@ -21,7 +21,6 @@ class DefaultDecisionMaker(BaseDecisionMaker):
         yield self.env.timeout(0)
         # Check flow TTL and drop if zero or less
         if flow.ttl <= 0:
-            self.params.metrics.dropped_flow(flow)
             return None
         # If flow is to be forwarded to egress, always return egress node as "next node"
         if flow.forward_to_eg:
@@ -73,12 +72,10 @@ class DefaultDecisionMaker(BaseDecisionMaker):
                     f'Flow {flow.flow_id}: Scheduling rule at node {flow.current_node_id} not correct'
                     f'Dropping flow!')
                 self.params.logger.warning(ex)
-                self.params.metrics.dropped_flow(flow)
                 return None
         else:
             # Scheduling rule does not exist: drop flow
             self.params.logger.warning(
                 f'Flow {flow.flow_id}: Scheduling rule not found at {flow.current_node_id}. Dropping flow!'
             )
-            self.params.metrics.dropped_flow(flow)
             return None

@@ -22,8 +22,6 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         """
         if next_node is None:
             self.params.logger.info(f"No node to forward flow {flow.flow_id} to. Dropping it")
-            # Update metrics for the dropped flow
-            self.params.metrics.dropped_flow(flow)
             return False
 
         path_delay = 0
@@ -95,8 +93,6 @@ class DefaultFlowForwarder(BaseFlowForwarder):
             # Not enough capacity on the edge: drop the flow
             self.params.logger.info(f"No cap on edge ({flow.current_node_id}, {dest_node_id}) to handle {flow.flow_id}.\
             Dropping it")
-            # Update metrics for the dropped flow
-            self.params.metrics.dropped_flow(flow)
             return False
 
     def return_link_resources(self, flow, source_node_id, dest_node_id):
