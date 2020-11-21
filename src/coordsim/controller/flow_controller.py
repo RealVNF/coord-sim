@@ -57,16 +57,13 @@ class FlowController(BaseController):
         if action.destination_node_id == flow.current_node_id:
             # check if instance is already here
             available_sf = self.simulator.params.network.nodes[flow.current_node_id]['available_sf']
-            if flow.current_sf not in list(available_sf.keys()):
+            if flow.current_sf not in list(available_sf.keys()) and not flow.current_sf == "EG":
                 # If no instance exists: place instance in the node
                 self.simulator.params.network.nodes[currrent_node]['available_sf'][current_sf] = {
                     'load': 0.0,
                     'last_active': self.simulator.env.now,
                     'startup_time': self.simulator.env.now
                 }
-
-        # Check active VNFs in the network
-        self.update_vnf_active_status()
 
         # Check active VNFs in the network
         self.update_vnf_active_status()
