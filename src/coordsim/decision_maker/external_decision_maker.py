@@ -26,6 +26,10 @@ class ExternalDecisionMaker(BaseDecisionMaker):
         if flow.ttl <= 0:
             return None
 
+        # If flow is done processing and at egress, don't request new decision and just let flow depart
+        if flow.forward_to_eg and flow.current_node_id == flow.egress_node_id:
+            return flow.current_node_id
+
         events_list = self.env._queue
         events_now = [event for event in events_list if event[0] == self.env.now]
         for event in events_now:
