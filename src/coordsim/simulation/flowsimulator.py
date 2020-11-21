@@ -86,6 +86,7 @@ class FlowSimulator:
                 next_node = decision
                 # Reset decision
                 decision = False
+                # TODO: Check if following is needed
                 if flow.forward_to_eg and flow.current_node_id == next_node:
                     # If flow finished processing and decision is to keep at the same node: +1 delay
                     yield self.env.timeout(1)
