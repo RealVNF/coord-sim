@@ -84,6 +84,14 @@ class FlowSimulator:
                     return
             else:
                 next_node = decision
+                # Reset decision
+                decision = False
+                # TODO: Check if following is needed
+                if flow.forward_to_eg and flow.current_node_id == next_node:
+                    # If flow finished processing and decision is to keep at the same node: +1 delay
+                    yield self.env.timeout(1)
+                    flow.ttl -= 1
+                    flow.end2end_delay += 1
             if next_node is not None:
                 # TODO: Record decision for every flow here. Add to CSV file
                 decision_type = self.DecisionMaker.decision_type
@@ -94,8 +102,10 @@ class FlowSimulator:
 
                 flow_forwarded = yield self.env.process(self.FlowForwarder.forward_flow(flow, next_node))
                 if not flow_forwarded:
-                    # Flow was dropped: terminate loop
-                    break
+                    # Flow was dropped: end simpy process
+                    # Update metrics for the dropped flow
+                    self.params.metrics.dropped_flow(flow)
+                    return
                 if not flow.forward_to_eg:
                     self.params.logger.info(
                         "Flow {} STARTED ARRIVING at node {} for processing. Time: {}"
@@ -103,11 +113,14 @@ class FlowSimulator:
                     if process:
                         flow_processed = yield self.env.process(self.FlowProcessor.process_flow(flow))
                         if not flow_processed:
-                            # Flow was dropped: terminate loop
-                            break
+                            # Flow was dropped: end simpy process
+                            # Update metrics for the dropped flow
+                            self.params.metrics.dropped_flow(flow)
+                            return
             else:
-                # No next node: terminate loop
-                break
+                # No next node: dropped flow
+                self.params.metrics.dropped_flow(flow)
+                return
         if flow.departed:
             self.depart_flow(flow)
 

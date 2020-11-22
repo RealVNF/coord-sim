@@ -25,11 +25,12 @@ class BaseFlowProcessor:
         # Calculate the demanded capacity when the flow is processed at a node
         demanded_total_capacity = 0.0
         for sf_i, sf_data in self.params.network.nodes[node_id]['available_sf'].items():
-            if sf == sf_i:
-                # Include flows data rate in requested sf capacity calculation
-                demanded_total_capacity += self.params.sf_list[sf]['resource_function'](sf_data['load'] + dr)
-            else:
-                demanded_total_capacity += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
+            if not sf_i == "EG":
+                if sf == sf_i:
+                    # Include flows data rate in requested sf capacity calculation
+                    demanded_total_capacity += self.params.sf_list[sf]['resource_function'](sf_data['load'] + dr)
+                else:
+                    demanded_total_capacity += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
 
         return demanded_total_capacity
 
@@ -90,8 +91,6 @@ class BaseFlowProcessor:
         else:
             self.params.logger.info(
                 f"Not enough capacity for flow {flow.flow_id} at node {flow.current_node_id}. Dropping flow.")
-            # Update metrics for the dropped flow
-            self.params.metrics.dropped_flow(flow)
             return False
 
     def finish_processing(self, flow: Flow, node_id: str, sf: str) -> bool:
@@ -117,7 +116,8 @@ class BaseFlowProcessor:
         node_cap = self.params.network.nodes[node_id]["cap"]
         used_total_capacity = 0.0
         for sf_i, sf_data in self.params.network.nodes[node_id]['available_sf'].items():
-            used_total_capacity += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
+            if not sf_i == "EG":
+                used_total_capacity += self.params.sf_list[sf_i]['resource_function'](sf_data['load'])
         # Set remaining node capacity
         self.params.network.nodes[node_id]['remaining_cap'] = node_cap - used_total_capacity
 

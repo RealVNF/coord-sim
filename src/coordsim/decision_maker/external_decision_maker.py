@@ -24,8 +24,11 @@ class ExternalDecisionMaker(BaseDecisionMaker):
         Return `External` to indicate that a decision from an external algorithm is required for the flow
         """
         if flow.ttl <= 0:
-            self.params.metrics.dropped_flow(flow)
             return None
+
+        # If flow is done processing and at egress, don't request new decision and just let flow depart
+        if flow.forward_to_eg and flow.current_node_id == flow.egress_node_id:
+            return flow.current_node_id
 
         events_list = self.env._queue
         events_now = [event for event in events_list if event[0] == self.env.now]
@@ -35,6 +38,13 @@ class ExternalDecisionMaker(BaseDecisionMaker):
                 # There is a scheduling conflict, wait a backoff time (between 0 and 1) and restart
                 backoff_time = random.random() / 10
                 yield self.env.timeout(backoff_time)
+        if not flow.forward_to_eg:
+            sf = self.params.sfc_list[flow.sfc][flow.current_position]
+        else:
+            # a virtual EG sf for flows on their way to egress
+            sf = "EG"
+        flow.current_sf = sf
+        self.params.metrics.add_requesting_flow(flow)
         # Trigger the event to register in Simpy
         self.params.flow_trigger.succeed(value=flow)
         # Reset it immediately

@@ -28,7 +28,8 @@ class Metrics:
         self.metrics['dropped_flows'] = 0
         self.metrics['total_active_flows'] = 0
         # number of dropped flows per node and SF (locations)
-        self.metrics['dropped_flows_locs'] = {v: {sf: 0 for sf in self.sfs.keys()} for v in self.network.nodes.keys()}
+        self.metrics['dropped_flows_locs'] = {
+            v: {sf: 0 for sf in list(self.sfs.keys()) + ['EG']} for v in self.network.nodes.keys()}
         # number of dropped flow per node - reset every run
         self.metrics['run_dropped_flows_per_node'] = {v: 0 for v in self.network.nodes.keys()}
 
@@ -138,7 +139,13 @@ class Metrics:
         flow.dropped = True
         self.metrics['dropped_flows'] += 1
         self.metrics['total_active_flows'] -= 1
-        self.metrics['dropped_flows_locs'][flow.current_node_id][flow.current_sf] += 1
+        # Check flows that finished processing
+        if flow.current_sf is None:
+            # Set 'current_sf' as EG to mark flow on its way out of the network
+            current_sf = 'EG'
+        else:
+            current_sf = flow.current_sf
+        self.metrics['dropped_flows_locs'][flow.current_node_id][current_sf] += 1
         self.metrics['run_dropped_flows_per_node'][flow.current_node_id] += 1
         self.metrics['run_dropped_flows'] += 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
