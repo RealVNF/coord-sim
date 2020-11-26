@@ -13,11 +13,12 @@ class ResultWriter():
     Result Writer
     Helper class to write results to CSV files.
     """
-    def __init__(self, test_mode: bool, test_dir, write_schedule=False):
+    def __init__(self, test_mode: bool, test_dir, write_schedule=False, write_flow_actions=False):
         """
         If the simulator is in test mode, create result folder and CSV files
         """
         self.write_schedule = write_schedule
+        self.write_per_flow_actions = write_flow_actions
         self.test_mode = test_mode
         if self.test_mode:
             if self.write_schedule:
@@ -40,11 +41,13 @@ class ResultWriter():
             self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
             self.run_flows_stream = open(self.run_flows_file_name, 'a+', newline='')
             self.runtimes_stream = open(self.runtimes_file_name, 'a+', newline='')
-            self.flow_action_stream = open(self.flow_action_file_name, 'a+', newline='')
 
             if self.write_schedule:
                 self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
                 self.scheduling_writer = csv.writer(self.scheduleing_stream)
+            if self.write_per_flow_actions:
+                self.flow_action_stream = open(self.flow_action_file_name, 'a+', newline='')
+                self.flow_action_writer = csv.writer(self.flow_action_stream)
             # Create CSV writers
             self.placement_writer = csv.writer(self.placement_stream)
             self.resources_writer = csv.writer(self.resources_stream)
@@ -52,7 +55,6 @@ class ResultWriter():
             self.rl_state_writer = csv.writer(self.rl_state_stream)
             self.run_flows_writer = csv.writer(self.run_flows_stream)
             self.runtimes_writer = csv.writer(self.runtimes_stream)
-            self.flow_action_writer = csv.writer(self.flow_action_stream)
             self.action_number = 0
 
             # Write the headers to the files
@@ -67,6 +69,8 @@ class ResultWriter():
             self.resources_stream.close()
             self.metrics_stream.close()
             self.rl_state_stream.close()
+            if self.write_per_flow_actions:
+                self.flow_action_stream.close()
             self.run_flows_stream.close()
             self.runtimes_stream.close()
 
@@ -85,10 +89,11 @@ class ResultWriter():
                                  'in_network_flows', 'avg_end2end_delay']
         run_flows_output_header = ['episode', 'time', 'successful_flows', 'dropped_flows', 'total_flows']
         runtimes_output_header = ['run', 'runtime']
-        flow_action_output_header = ['episode', 'time', 'flow_id', 'flow_rem_ttl', 'flow_ttl',
-                                     'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap',
-                                     'link_cap', 'link_rem_cap']
-        # TODO: Implement link caps here as well
+        if self.write_per_flow_actions:
+            flow_action_output_header = ['episode', 'time', 'flow_id', 'flow_rem_ttl', 'flow_ttl',
+                                         'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap',
+                                         'link_cap', 'link_rem_cap']
+            self.flow_action_writer.writerow(flow_action_output_header)
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -96,7 +101,6 @@ class ResultWriter():
         self.metrics_writer.writerow(metrics_output_header)
         self.run_flows_writer.writerow(run_flows_output_header)
         self.runtimes_writer.writerow(runtimes_output_header)
-        self.flow_action_writer.writerow(flow_action_output_header)
 
     def write_runtime(self, time):
         """
@@ -107,7 +111,7 @@ class ResultWriter():
             self.runtimes_writer.writerow([self.action_number, time])
 
     def write_flow_action(self, params, time, flow, current_node_id, destination_node_id):
-        if self.test_mode:
+        if self.test_mode and self.write_per_flow_actions:
             cur_node_rem_cap = params.network.nodes[flow.current_node_id]['remaining_cap']
             if destination_node_id is None:
                 dest_node = 'None'
@@ -129,7 +133,7 @@ class ResultWriter():
                                   link_cap, rem_cap]
             self.flow_action_writer.writerow(flow_action_output)
 
-    def write_schedule(self, params, time, action: SimulatorAction):
+    def write_schedule_table(self, params, time, action: SimulatorAction):
         """
         Write schedule to CSV files for statistics purposes
         """
@@ -156,6 +160,7 @@ class ResultWriter():
         yield self.env.process(self.write_network_state())
 
     def write_network_state(self):
+        # TODO: Reset run metrics here, rather than in the decision maker
         time = self.env.now
         if self.test_mode:
 

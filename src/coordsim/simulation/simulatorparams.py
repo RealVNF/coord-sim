@@ -37,7 +37,8 @@ class SimulatorParams:
         # Get the decision maker class and set defaults
         self.controller_class = self.config.get('controller_class', 'DurationController')
         # TTL choices: the list of TTLs to select for flows arriving at the network. default to 50 if not defined
-        self.ttl_choices = config.get('ttl_choices', [50])
+        self.ttl_choices = config.get('ttl_choices', None)
+        assert self.ttl_choices is not None, "TTL must be set in config file"
         # VNF Timeout: How much time to allow a VNF to be inactive before removing it
         self.vnf_timeout = config.get('vnf_timeout', 100)
 
