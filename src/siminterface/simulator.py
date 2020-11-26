@@ -48,8 +48,11 @@ class Simulator(SimulatorInterface):
         write_schedule = False
         if 'write_schedule' in self.config and self.config['write_schedule']:
             write_schedule = True
+        write_flow_actions = False
+        if 'write_flow_actions' in self.config and self.config['write_flow_actions']:
+            write_flow_actions = True
         # Create CSV writer
-        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
+        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule, write_flow_actions)
         self.params.writer = self.writer
         self.episode = 0
         self.params.episode = 0
