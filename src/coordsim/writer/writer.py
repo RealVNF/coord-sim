@@ -156,6 +156,7 @@ class ResultWriter():
         yield self.env.process(self.write_network_state())
 
     def write_network_state(self):
+        # TODO: Reset run metrics here, rather than in the decision maker
         time = self.env.now
         if self.test_mode:
 
