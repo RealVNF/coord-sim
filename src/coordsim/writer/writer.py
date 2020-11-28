@@ -26,6 +26,7 @@ class ResultWriter():
             self.placement_file_name = f"{test_dir}/placements.csv"
             self.resources_file_name = f"{test_dir}/node_metrics.csv"
             self.metrics_file_name = f"{test_dir}/metrics.csv"
+            self.drop_reasons_file_name = f"{test_dir}/drop_reasons.csv"
             self.dropped_flows_file_name = f"{test_dir}/dropped_flows.yaml"
             self.rl_state_file_name = f"{test_dir}/rl_state.csv"
             self.run_flows_file_name = f"{test_dir}/run_flows.csv"
@@ -41,6 +42,7 @@ class ResultWriter():
             self.rl_state_stream = open(self.rl_state_file_name, 'a+', newline='')
             self.run_flows_stream = open(self.run_flows_file_name, 'a+', newline='')
             self.runtimes_stream = open(self.runtimes_file_name, 'a+', newline='')
+            self.drop_reasons_stream = open(self.drop_reasons_file_name, 'a+', newline='')
 
             if self.write_schedule:
                 self.scheduleing_stream = open(self.scheduling_file_name, 'a+', newline='')
@@ -55,6 +57,7 @@ class ResultWriter():
             self.rl_state_writer = csv.writer(self.rl_state_stream)
             self.run_flows_writer = csv.writer(self.run_flows_stream)
             self.runtimes_writer = csv.writer(self.runtimes_stream)
+            self.drop_reasons_writer = csv.writer(self.drop_reasons_stream)
             self.action_number = 0
 
             # Write the headers to the files
@@ -73,6 +76,7 @@ class ResultWriter():
                 self.flow_action_stream.close()
             self.run_flows_stream.close()
             self.runtimes_stream.close()
+            self.drop_reasons_stream.close()
 
     def create_csv_headers(self):
         """
@@ -94,6 +98,7 @@ class ResultWriter():
                                          'curr_node_id', 'dest_node', 'cur_node_rem_cap', 'next_node_rem_cap',
                                          'link_cap', 'link_rem_cap']
             self.flow_action_writer.writerow(flow_action_output_header)
+        drop_reasons_output_header = ['episode', 'time', 'TTL', 'DECISION', 'LINK_CAP', 'NODE_CAP']
 
         # Write headers to CSV files
         self.placement_writer.writerow(placement_output_header)
@@ -101,6 +106,7 @@ class ResultWriter():
         self.metrics_writer.writerow(metrics_output_header)
         self.run_flows_writer.writerow(run_flows_output_header)
         self.runtimes_writer.writerow(runtimes_output_header)
+        self.drop_reasons_writer.writerow(drop_reasons_output_header)
 
     def write_runtime(self, time):
         """
@@ -190,6 +196,14 @@ class ResultWriter():
 
             run_flows_output = [self.params.episode, time, metrics['run_processed_flows'], metrics['run_dropped_flows'],
                                 metrics['run_generated_flows']]
+
+            drop_reasons = metrics['dropped_flow_reasons']
+            drop_reasons_output = [
+                self.params.episode, time, drop_reasons['TTL'], drop_reasons['DECISION'], drop_reasons['LINK_CAP'],
+                drop_reasons['NODE_CAP']
+            ]
+
+            self.drop_reasons_writer.writerow(drop_reasons_output)
             self.run_flows_writer.writerow(run_flows_output)
             self.metrics_writer.writerow(metrics_output)
             self.resources_writer.writerows(resource_output)

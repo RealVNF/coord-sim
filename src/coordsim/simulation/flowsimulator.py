@@ -104,7 +104,7 @@ class FlowSimulator:
                 if not flow_forwarded:
                     # Flow was dropped: end simpy process
                     # Update metrics for the dropped flow
-                    self.params.metrics.dropped_flow(flow)
+                    self.params.metrics.dropped_flow(flow, "LINK_CAP")
                     return
                 if not flow.forward_to_eg:
                     self.params.logger.info(
@@ -115,11 +115,11 @@ class FlowSimulator:
                         if not flow_processed:
                             # Flow was dropped: end simpy process
                             # Update metrics for the dropped flow
-                            self.params.metrics.dropped_flow(flow)
+                            self.params.metrics.dropped_flow(flow, "NODE_CAP")
                             return
             else:
                 # No next node: dropped flow
-                self.params.metrics.dropped_flow(flow)
+                self.params.metrics.dropped_flow(flow, "DECISION")
                 return
         if flow.departed:
             self.depart_flow(flow)

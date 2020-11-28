@@ -30,6 +30,12 @@ class Metrics:
         # number of dropped flows per node and SF (locations)
         self.metrics['dropped_flows_locs'] = {
             v: {sf: 0 for sf in list(self.sfs.keys()) + ['EG']} for v in self.network.nodes.keys()}
+        self.metrics['dropped_flow_reasons'] = {
+            "TTL": 0,
+            "DECISION": 0,
+            "LINK_CAP": 0,
+            "NODE_CAP": 0
+        }
         # number of dropped flow per node - reset every run
         self.metrics['run_dropped_flows_per_node'] = {v: 0 for v in self.network.nodes.keys()}
 
@@ -135,7 +141,8 @@ class Metrics:
         self.metrics['total_active_flows'] -= 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
-    def dropped_flow(self, flow):
+    def dropped_flow(self, flow, reason):
+
         flow.dropped = True
         self.metrics['dropped_flows'] += 1
         self.metrics['total_active_flows'] -= 1
@@ -149,6 +156,12 @@ class Metrics:
         self.metrics['run_dropped_flows_per_node'][flow.current_node_id] += 1
         self.metrics['run_dropped_flows'] += 1
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
+
+        assert reason in list(self.metrics['dropped_flow_reasons'].keys())
+        if reason == "DECISION":
+            if flow.ttl <= 0:
+                reason = "TTL"
+        self.metrics['dropped_flow_reasons'][reason] += 1
 
     def add_processing_delay(self, delay):
         self.metrics['num_processing_delays'] += 1
