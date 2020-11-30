@@ -39,6 +39,9 @@ class BaseFlowProcessor:
         vnf_delay_mean = self.params.sf_list[sf]["processing_delay_mean"]
         vnf_delay_stdev = self.params.sf_list[sf]["processing_delay_stdev"]
         processing_delay = np.absolute(np.random.normal(vnf_delay_mean, vnf_delay_stdev))
+        if flow.ttl - processing_delay <= 0:
+            flow.ttl = 0
+            return False
         self.params.metrics.add_processing_delay(processing_delay)
         flow.end2end_delay += processing_delay
         flow.ttl -= processing_delay
@@ -83,6 +86,10 @@ class BaseFlowProcessor:
             if not startup_done:
                 # Startup is not done: wait the remaining startup time
                 startup_time_remaining = (startup_time + startup_delay) - self.env.now
+                # Check if startup delay will cause flow to be dropped
+                if flow.ttl - startup_time_remaining <= 0:
+                    flow.ttl = 0
+                    return False
                 flow.end2end_delay += startup_time_remaining
                 flow.ttl -= startup_time_remaining
                 yield self.env.timeout(startup_time_remaining)

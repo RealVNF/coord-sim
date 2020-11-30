@@ -28,6 +28,12 @@ class DefaultFlowForwarder(BaseFlowForwarder):
         if flow.current_node_id != next_node:
             path_delay = self.params.network.graph['shortest_paths'][(flow.current_node_id, next_node)][1]
 
+        # Check if path delay is longer than flow's remaining TTL
+        if flow.ttl - path_delay <= 0:
+            # Path delay longer than TTL, drop flow
+            flow.ttl = 0
+            return False
+
         # TODO: Put this in a better place. Maybe in the perflow controller. For later
         if flow.current_node_id == flow.egress_node_id and flow.forward_to_eg:
             # TODO: Make sure this is correct
