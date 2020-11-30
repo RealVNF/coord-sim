@@ -51,7 +51,7 @@ class TraceProcessor():
         else:
             inter_arrival_mean = float(inter_arrival_mean)
             self.params.update_single_inter_arr_mean(inter_arrival_mean)
-        if self.trace_index < len(self.trace)-1:
+        if self.trace_index < len(self.trace) - 1:
             self.trace_index += 1
             self.env.process(self.process_trace())
 
@@ -80,6 +80,6 @@ class TraceProcessor():
         else:
             inter_arrival_mean = float(inter_arrival_mean)
             self.params.update_single_predicted_inter_arr_mean(inter_arrival_mean)
-        if self.prediction_trace_index < len(self.trace)-1:
+        if self.prediction_trace_index < len(self.trace) - 1:
             self.prediction_trace_index += 1
             self.env.process(self.prediction())

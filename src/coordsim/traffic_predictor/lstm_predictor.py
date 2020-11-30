@@ -65,7 +65,7 @@ class LSTM_Predictor:
             inter_arr_mean = float(self.trace[i]['inter_arrival_mean'])
             if i < len(self.trace) - 1:
                 # Check for multiple runs with the same mean
-                while cur_time < float(self.trace[i+1]['time']):
+                while cur_time < float(self.trace[i + 1]['time']):
                     self.gen_run_data(cur_time, inter_arr_mean)
                     cur_time += self.run_duration
             else:
@@ -147,7 +147,7 @@ class LSTM_Predictor:
             run_end = now + self.run_duration
             # Check to see if next flow arrival is before end of run
             while self.last_arrival_sum < run_end:
-                inter_arr_time = random.expovariate(lambd=1.0/inter_arr_mean)
+                inter_arr_time = random.expovariate(lambd=1.0 / inter_arr_mean)
                 # Generate flow dr
                 flow_dr = np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev)
                 # generate flow sizes
@@ -177,14 +177,14 @@ class LSTM_Predictor:
         # Generate avg flow_dr
         flow_drs = [
             np.random.normal(self.params.flow_dr_mean, self.params.flow_dr_stdev) for _ in range(self.run_duration)
-            ]
+        ]
         mean_flow_dr = np.mean(flow_drs)
         self.requested_traffic.append((self.run_duration / inter_arr_mean) * mean_flow_dr)
 
     # frame a sequence as a supervised learning problem
     def timeseries_to_supervised(self, data, lag=1):
         df = pd.DataFrame(data)
-        columns = [df.shift(i) for i in range(1, lag+1)]
+        columns = [df.shift(i) for i in range(1, lag + 1)]
         columns.append(df)
         df = pd.concat(columns, axis=1)
         df.fillna(-1, inplace=True)

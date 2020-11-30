@@ -14,6 +14,7 @@ from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
 from coordsim.traffic_predictor.traffic_predictor import TrafficPredictor
 from coordsim.traffic_predictor.lstm_predictor import LSTM_Predictor
+from coordsim.controller import *
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,6 @@ class Simulator(SimulatorInterface):
                  test_dir=None):
         super().__init__(test_mode)
         # Number of time the simulator has run. Necessary to correctly calculate env run time of apply function
-        self.run_times = int(1)
         self.network_file = network_file
         self.test_dir = test_dir
         # init network, sfc, sf, and config files
@@ -43,14 +43,19 @@ class Simulator(SimulatorInterface):
         # Check if future ingress traffic setting is enabled
         if 'future_traffic' in self.config and self.config['future_traffic']:
             self.prediction = True
-        self.params = SimulatorParams(self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
+        self.params = SimulatorParams(logger, self.network, self.ing_nodes, self.eg_nodes, self.sfc_list, self.sf_list,
                                       self.config, self.metrics, prediction=self.prediction)
         write_schedule = False
         if 'write_schedule' in self.config and self.config['write_schedule']:
             write_schedule = True
+        write_flow_actions = False
+        if 'write_flow_actions' in self.config and self.config['write_flow_actions']:
+            write_flow_actions = True
         # Create CSV writer
-        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule)
+        self.writer = ResultWriter(self.test_mode, self.test_dir, write_schedule, write_flow_actions)
+        self.params.writer = self.writer
         self.episode = 0
+        self.params.episode = 0
         self.last_apply_time = None
         # Load trace file
         if 'trace_path' in self.config:
@@ -72,14 +77,16 @@ class Simulator(SimulatorInterface):
             self.predictor = TrafficPredictor(self.params, self.lstm_predictor)
         # increment episode count
         self.episode += 1
+        self.params.episode += 1
         # reset network caps and available SFs:
         reader.reset_cap(self.network)
         # Initialize metrics, record start time
-        self.run_times = int(1)
+        self.params.run_times = int(1)
         self.start_time = time.time()
 
         # Generate SimPy simulation environment
         self.env = simpy.Environment()
+        self.env.process(self.writer.begin_writing(self.env, self.params))
 
         self.params.metrics.reset_metrics()
 
@@ -90,8 +97,8 @@ class Simulator(SimulatorInterface):
         if self.params.use_states:
             if self.params.in_init_state:
                 self.params.in_init_state = False
-            else:
-                self.params.update_state()
+            # else:
+            self.env.process(self.params.start_mmpp(self.env))
 
         self.duration = self.params.run_duration
         # Get and plant random seed
@@ -113,27 +120,31 @@ class Simulator(SimulatorInterface):
         # Start the simulator
         self.simulator.start()
 
-        # Run the environment for one step to get initial stats.
-        self.env.step()
+        # TODO: Create runner here
+        controller_cls = eval(self.params.controller_class)
+        self.controller = controller_cls(self.env, self.params, self.simulator)
+        # # Run the environment for one step to get initial stats.
+        # self.env.step()
 
-        # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
-        # for changing node remaining capacities.
-        # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
+        # # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
+        # # for changing node remaining capacities.
+        # # Also, parse the network stats and prepare it in SimulatorState format.
+        # self.parse_network()
+        # self.network_metrics()
 
         # Record end time and running time metrics
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
+        simulator_state = self.controller.get_init_state()
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
-        logger.debug(f"t={self.env.now}: {simulator_state}")
+        # if self.prediction:
+        #     requested_traffic = self.get_current_ingress_traffic()
+        #     self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+        #     stats = self.params.metrics.get_metrics()
+        #     self.traffic = stats['run_total_requested_traffic']
+        # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+        #                                  self.sf_list, self.traffic, self.network_stats)
+        # logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
         self.last_apply_time = time.time()
         # Check to see if init called in warmup, if so, set warmup to false
@@ -141,33 +152,38 @@ class Simulator(SimulatorInterface):
         # in the future
         return simulator_state
 
-    def apply(self, actions: SimulatorAction):
+    def apply(self, actions):
 
         logger.debug(f"t={self.env.now}: {actions}")
 
         # calc runtime since last apply (or init): that's the algorithm's runtime without simulation
         alg_runtime = time.time() - self.last_apply_time
-        self.writer.write_runtime(self.run_times, alg_runtime)
-        self.writer.write_action_result(self.episode, self.env.now, actions)
+        self.writer.write_runtime(alg_runtime)
+        simulator_state = self.controller.get_next_state(actions)
 
-        # Get the new placement from the action passed by the RL agent
-        # Modify and set the placement parameter of the instantiated simulator object.
-        self.simulator.params.sf_placement = actions.placement
+        # # Get the new placement from the action passed by the RL agent
+        # # Modify and set the placement parameter of the instantiated simulator object.
+        # self.simulator.params.sf_placement = actions.placement
         # Update which sf is available at which node
-        for node_id, placed_sf_list in actions.placement.items():
-            available = {}
-            # Keep only SFs which still process
-            for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
-                if sf_data['load'] != 0:
-                    available[sf] = sf_data
-            # Add all SFs which are in the placement
-            for sf in placed_sf_list:
-                available[sf] = available.get(sf, {'load': 0.0})
-            self.simulator.params.network.nodes[node_id]['available_sf'] = available
+        # for node_id, placed_sf_list in actions.placement.items():
+        #     available = {}
+        #     # Keep only SFs which still process
+        #     for sf, sf_data in self.simulator.params.network.nodes[node_id]['available_sf'].items():
+        #         if sf_data['load'] != 0:
+        #             available[sf] = sf_data
+        #     # Add all SFs which are in the placement
+        #     for sf in placed_sf_list:
+        #         if sf not in available.keys():
+        #             available[sf] = available.get(sf, {
+        #                 'load': 0.0,
+        #                 'last_active': self.env.now,
+        #                 'startup_time': self.env.now
+        #             })
+        #     self.simulator.params.network.nodes[node_id]['available_sf'] = available
 
         # Get the new schedule from the SimulatorAction
         # Set it in the params of the instantiated simulator object.
-        self.simulator.params.schedule = actions.scheduling
+        # self.simulator.params.schedule = actions.scheduling
 
         # reset metrics for steps
         self.params.metrics.reset_run_metrics()
@@ -176,39 +192,40 @@ class Simulator(SimulatorInterface):
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
         # stops and we must increase the value of "until=" to accomodate for this. e.g.: 1st run call runs for 100 time
         # uniits (1 run time), 2nd run call will also run for 100 more time units but value of "until=" is now 200.
-        runtime_steps = self.duration * self.run_times
-        logger.debug("Running simulator until time step %s", runtime_steps)
-        self.env.run(until=runtime_steps)
+        # runtime_steps = self.duration * self.params.run_times
+        # logger.debug("Running simulator until time step %s", runtime_steps)
+        # self.env.run(until=runtime_steps)
 
         # Parse the NetworkX object into a dict format specified in SimulatorState. This is done to account
         # for changing node remaining capacities.
         # Also, parse the network stats and prepare it in SimulatorState format.
-        self.parse_network()
-        self.network_metrics()
+        # self.parse_network()
+        # self.network_metrics()
 
         # Increment the run times variable
-        self.run_times += 1
+        self.params.run_times += 1
 
         # Record end time of the apply round, doesn't change start time to show the running time of the entire
         # simulation at the end of the simulation.
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
-        if self.params.use_states:
-            self.params.update_state()
+        # if self.params.use_states:
+        #     self.params.update_state()
         # generate flow data for next run (used for prediction)
         self.params.generate_flow_lists(now=self.env.now)
 
         # Check to see if traffic prediction is enabled to provide future traffic not current traffic
-        if self.prediction:
-            requested_traffic = self.get_current_ingress_traffic()
-            self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
-            stats = self.params.metrics.get_metrics()
-            self.traffic = stats['run_total_requested_traffic']
-        # Create a new SimulatorState object to pass to the RL Agent
-        simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
-                                         self.sf_list, self.traffic, self.network_stats)
-        self.writer.write_state_results(self.episode, self.env.now, simulator_state, self.params.metrics.get_metrics())
+        # if self.prediction:
+        #     requested_traffic = self.get_current_ingress_traffic()
+        #     self.predictor.predict_traffic(self.env.now, current_traffic=requested_traffic)
+        #     stats = self.params.metrics.get_metrics()
+        #     self.traffic = stats['run_total_requested_traffic']
+        # # Create a new SimulatorState object to pass to the RL Agent
+        # simulator_state = SimulatorState(self.network_dict, self.simulator.params.sf_placement, self.sfc_list,
+        #                                  self.sf_list, self.traffic, self.network_stats)
+        # self.writer.write_state_results(self.episode, self.env.now, simulator_state,
+        # self.params.metrics.get_metrics())
         logger.debug(f"t={self.env.now}: {simulator_state}")
         # set time stamp to calculate runtime of next apply call
         self.last_apply_time = time.time()
@@ -225,57 +242,6 @@ class Simulator(SimulatorInterface):
         ingress_node = self.params.ing_nodes[0][0]
         ingress_traffic = self.metrics.metrics['run_total_requested_traffic'][ingress_node][first_sfc][ingress_sf]
         return ingress_traffic
-
-    def parse_network(self) -> dict:
-        """
-        Converts the NetworkX network in the simulator to a dict in a format specified in the SimulatorState class.
-        """
-        max_node_usage = self.params.metrics.get_metrics()['run_max_node_usage']
-        self.network_dict = {'nodes': [], 'edges': []}
-        for node in self.params.network.nodes(data=True):
-            node_cap = node[1]['cap']
-            run_max_node_usage = max_node_usage[node[0]]
-            # 'used_resources' here is the max usage for the run.
-            self.network_dict['nodes'].append({'id': node[0], 'resource': node_cap,
-                                               'used_resources': run_max_node_usage})
-        for edge in self.network.edges(data=True):
-            edge_src = edge[0]
-            edge_dest = edge[1]
-            edge_delay = edge[2]['delay']
-            edge_dr = edge[2]['cap']
-            # We use a fixed user data rate for the edges here as the functionality is not yet incorporated in the
-            # simulator.
-            # TODO: Implement used edge data rates in the simulator.
-            edge_used_dr = 0
-            self.network_dict['edges'].append({
-                'src': edge_src,
-                'dst': edge_dest,
-                'delay': edge_delay,
-                'data_rate': edge_dr,
-                'used_data_rate': edge_used_dr
-            })
-
-    def network_metrics(self):
-        """
-        Processes the metrics and parses them in a format specified in the SimulatorState class.
-        """
-        stats = self.params.metrics.get_metrics()
-        self.traffic = stats['run_total_requested_traffic']
-        self.network_stats = {
-            'processed_traffic': stats['run_total_processed_traffic'],
-            'total_flows': stats['generated_flows'],
-            'successful_flows': stats['processed_flows'],
-            'dropped_flows': stats['dropped_flows'],
-            'run_successful_flows': stats['run_processed_flows'],
-            'run_dropped_flows': stats['run_dropped_flows'],
-            'run_dropped_flows_per_node': stats['run_dropped_flows_per_node'],
-            'in_network_flows': stats['total_active_flows'],
-            'avg_end2end_delay': stats['avg_end2end_delay'],
-            'run_avg_end2end_delay': stats['run_avg_end2end_delay'],
-            'run_max_end2end_delay': stats['run_max_end2end_delay'],
-            'run_avg_path_delay': stats['run_avg_path_delay'],
-            'run_total_processed_traffic': stats['run_total_processed_traffic']
-        }
 
     def get_active_ingress_nodes(self):
         """Return names of all ingress nodes that are currently active, ie, produce flows."""
