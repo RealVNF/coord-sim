@@ -143,7 +143,7 @@ class ResultWriter():
         """
         Write schedule to CSV files for statistics purposes
         """
-        episode = self.params.episode
+        episode = params.episode
         if self.test_mode:
             scheduling_output = []
 

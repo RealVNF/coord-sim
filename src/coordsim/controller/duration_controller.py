@@ -37,6 +37,7 @@ class DurationController(BaseController):
         """
 
         # self.writer.write_action_result(self.episode, self.env.now, action)
+        self.params.writer.write_schedule_table(self.params, self.env.now, action)
 
         # Get the new placement from the action passed by the RL agent
         # Modify and set the placement parameter of the instantiated simulator object.
