@@ -28,6 +28,10 @@ class DefaultFlowProcessor(BaseFlowProcessor):
 
         if sf in self.params.sf_placement[current_node_id]:
             processing_delay = self.get_processing_delay(flow, sf)
+            # Check if flow's TTL is enough for processing delay
+            if not processing_delay:
+                return False
+
             resources_available = yield self.env.process(self.request_resources(flow, current_node_id, sf))
             if resources_available:
                 # Resources are available: wait processing_delay

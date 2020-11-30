@@ -158,9 +158,9 @@ class Metrics:
         assert self.metrics['total_active_flows'] >= 0, "Cannot have negative active flows"
 
         assert reason in list(self.metrics['dropped_flow_reasons'].keys())
-        if reason == "DECISION":
-            if flow.ttl <= 0:
-                reason = "TTL"
+
+        if flow.ttl <= 0:
+            reason = "TTL"
         self.metrics['dropped_flow_reasons'][reason] += 1
 
     def add_processing_delay(self, delay):
