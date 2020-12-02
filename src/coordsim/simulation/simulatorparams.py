@@ -11,8 +11,9 @@ import random
 
 
 class SimulatorParams:
-    def __init__(self, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
+    def __init__(self, logger, network, ing_nodes, eg_nodes, sfc_list, sf_list, config, metrics, prediction=False,
                  schedule=None, sf_placement=None):
+        self.logger = logger
         # NetworkX network object: DiGraph
         self.network = network
         # Ingress nodes of the network (nodes at which flows arrive): list
@@ -23,11 +24,33 @@ class SimulatorParams:
         self.sfc_list = sfc_list
         # List of every SF and it's properties (e.g. processing_delay): defaultdict(None)
         self.sf_list = sf_list
+        # Set sim config
+        self.config: dict = config
+        # Get the flow generator class and set defaults
+        self.flow_generator_class = self.config.get('flow_generator_class', 'DefaultFlowGenerator')
+        # Get the flow forwarder class and set defaults
+        self.flow_forwarder_class = self.config.get('flow_forwarder_class', 'DefaultFlowForwarder')
+        # Get the flow processor class and set defaults
+        self.flow_processor_class = self.config.get('flow_processor_class', 'DefaultFlowProcessor')
+        # Get the decision maker class and set defaults
+        self.decision_maker_class = self.config.get('decision_maker_class', 'DefaultDecisionMaker')
+        # Get the decision maker class and set defaults
+        self.controller_class = self.config.get('controller_class', 'DurationController')
+        # TTL choices: the list of TTLs to select for flows arriving at the network. default to 50 if not defined
+        self.ttl_choices = config.get('ttl_choices', None)
+        assert self.ttl_choices is not None, "TTL must be set in config file"
+        # VNF Timeout: How much time to allow a VNF to be inactive before removing it
+        self.vnf_timeout = config.get('vnf_timeout', 100)
+
+        self.flow_trigger = None
+        self.run_times = None
+        self.episode = None
         self.metrics = metrics
         self.use_trace = False
         if 'trace_path' in config:
             self.use_trace = True
 
+        self.writer = None
         self.prediction = prediction  # bool
         self.predicted_inter_arr_mean = {node_id[0]: config['inter_arrival_mean'] for node_id in self.ing_nodes}
 
@@ -44,7 +67,10 @@ class SimulatorParams:
         for node_id, placed_sf_list in sf_placement.items():
             for sf in placed_sf_list:
                 self.network.nodes[node_id]['available_sf'][sf] = self.network.nodes[node_id]['available_sf'].get(sf, {
-                    'load': 0.0})
+                    'load': 0.0,
+                    'startup_time': 0.0,
+                    'last_active': 0.0
+                })
 
         # Flow data rate normal distribution mean: float
         self.flow_dr_mean = config['flow_dr_mean']
@@ -114,6 +140,13 @@ class SimulatorParams:
         params_str += f"deterministic_size: {self.deterministic_size}\n"
         return params_str
 
+    def start_mmpp(self, env):
+        """ Starts a Simpy process to update MMPP states every run_duration """
+        self.env = env
+        # State is always updated when param object is created
+        yield self.env.timeout(self.run_duration)
+        yield self.env.process(self.update_state())
+
     def update_state(self):
         """
         Change or keep the MMP state for each of the network's node
@@ -133,6 +166,8 @@ class SimulatorParams:
                     current_state = state_names[0]
                 self.current_states[node_id[0]] = current_state
         self.update_inter_arr_mean()
+        yield self.env.timeout(self.run_duration)
+        yield self.env.process(self.update_state())
 
     def update_inter_arr_mean(self):
         """Update inter arrival mean for each node based on """
@@ -173,7 +208,7 @@ class SimulatorParams:
                 if self.deterministic_arrival:
                     inter_arr_time = self.inter_arr_mean[ing]
                 else:
-                    inter_arr_time = random.expovariate(lambd=1.0/self.inter_arr_mean[ing])
+                    inter_arr_time = random.expovariate(lambd=1.0 / self.inter_arr_mean[ing])
                 # Generate flow dr
                 flow_dr = np.random.normal(self.flow_dr_mean, self.flow_dr_stdev)
                 # generate flow sizes
@@ -199,6 +234,9 @@ class SimulatorParams:
 
     def get_next_flow_data(self, ing):
         """Return next flow data for given ingress from list of generated arrival times."""
+        if self.flow_list_idx is None:
+            self.reset_flow_lists()
+            self.generate_flow_lists()
         idx = self.flow_list_idx[ing]
         assert idx < len(self.flow_arrival_list[ing])
         inter_arrival_time = self.flow_arrival_list[ing][idx]
