@@ -30,7 +30,7 @@ write_schedule: True
 use_states: False
 # Set the init state for nodes
 init_state: state_1
-# Optional: Apply random states as init. Overrides the state defined in init_state.
+# Optional: Apply random states as init. Oerrides the state defined in init_state. 
 rand_init_state: True 
 states:
   state_1:

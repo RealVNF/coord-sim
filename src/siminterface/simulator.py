@@ -88,12 +88,10 @@ class Simulator(SimulatorInterface):
             logger.warning('Two state model and traces are both activated, thi will cause unexpected behaviour!')
 
         if self.params.use_states:
-            # We change the mmpp state only at the beginning of the episode based on the switching probability of the
-            # states. Then during the whole episode the same state is used.
-            #if self.params.in_init_state:
-            #    self.params.in_init_state = False
-            #else:
-            self.params.update_state()
+            if self.params.in_init_state:
+                self.params.in_init_state = False
+            else:
+                self.params.update_state()
 
         self.duration = self.params.run_duration
         # Get and plant random seed
@@ -196,8 +194,8 @@ class Simulator(SimulatorInterface):
         self.end_time = time.time()
         self.params.metrics.running_time(self.start_time, self.end_time)
 
-        #if self.params.use_states:
-        #    self.params.update_state()
+        if self.params.use_states:
+            self.params.update_state()
         # generate flow data for next run (used for prediction)
         self.params.generate_flow_lists(now=self.env.now)
 
