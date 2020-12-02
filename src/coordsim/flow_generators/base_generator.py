@@ -13,7 +13,12 @@ class BaseFlowGenerator:
     All flow generator classes must inherit this class
     """
     def __init__(self, env: Environment, params: SimulatorParams):
-        pass
+        raise NotImplementedError
 
     def generate_flow(self, flow_id, node_id) -> Tuple[float, Flow]:
-        pass
+        """ Generate flow
+        Returns:
+            - float: inter arrival time to wait for next flow arrival
+            - Flow: flow object containing all required parameters set
+        """
+        raise NotImplementedError
