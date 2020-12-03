@@ -75,7 +75,7 @@ class FlowSimulator:
             "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
                                            self.env.now))
         while not flow.departed:
-            if not decision:
+            if decision is False:
                 next_node = yield self.env.process(self.DecisionMaker.decide_next_node(flow))
                 if next_node == "External":
                     # If decision maker asked for external decisions from the algo directly
