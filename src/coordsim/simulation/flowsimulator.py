@@ -76,7 +76,7 @@ class FlowSimulator:
                                            self.env.now))
         while not flow.departed:
             decision_type = self.DecisionMaker.decision_type
-            if not decision:
+            if decision is False:
                 if decision_type == "PerFlow":
                     next_node = yield self.env.process(self.DecisionMaker.decide_next_node(flow))
                 else:
