@@ -75,8 +75,12 @@ class FlowSimulator:
             "flow dr: {}. Time: {}".format(flow.flow_id, flow.current_node_id, flow.sfc, flow.duration, flow.dr,
                                            self.env.now))
         while not flow.departed:
+            decision_type = self.DecisionMaker.decision_type
             if not decision:
-                next_node = yield self.env.process(self.DecisionMaker.decide_next_node(flow))
+                if decision_type == "PerFlow":
+                    next_node = yield self.env.process(self.DecisionMaker.decide_next_node(flow))
+                else:
+                    next_node = self.DecisionMaker.decide_next_node(flow)
                 if next_node == "External":
                     # If decision maker asked for external decisions from the algo directly
                     # Then exit this simpy process. The runner module will be responsible to call
@@ -93,8 +97,6 @@ class FlowSimulator:
                     flow.ttl -= 1
                     flow.end2end_delay += 1
             if next_node is not None:
-                # TODO: Record decision for every flow here. Add to CSV file
-                decision_type = self.DecisionMaker.decision_type
                 if (decision_type != "PerFlow") or (decision_type == "PerFlow" and next_node == flow.current_node_id):
                     process = True
                 else:
