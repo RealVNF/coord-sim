@@ -247,5 +247,3 @@ def reset_cap(network):
         network.nodes[node]['available_sf'] = {}
     for edge in network.edges(data=True):
         edge[2]['remaining_cap'] = edge[2]['cap']
-
-
