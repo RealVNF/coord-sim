@@ -19,8 +19,6 @@ class TraceProcessor():
         self.trace = trace
         self.simulator = simulator
         self.env.process(self.process_trace())
-        if self.params.prediction:
-            self.env.process(self.prediction())
 
     def process_trace(self):
         """
@@ -40,46 +38,17 @@ class TraceProcessor():
                 self.params.inter_arr_mean[node_id] = None
             else:
                 inter_arrival_mean = float(inter_arrival_mean)
-                old_mean = self.params.inter_arr_mean[node_id]
+                # old_mean = self.params.inter_arr_mean.get(node_id, None)
                 self.params.inter_arr_mean[node_id] = inter_arrival_mean
                 # Check for changing capacities in the trace file. Currently limited to only increasing capacites.
                 if 'cap' in self.trace[self.trace_index]:
                     cap = self.trace[self.trace_index]["cap"]
                     self.params.network.nodes[node_id]["cap"] = float(cap)
-                if old_mean is None:
-                    self.env.process(self.simulator.generate_flow(node_id))
+                # if old_mean is None:
+                #     self.env.process(self.simulator.init_arrival(node_id))
         else:
             inter_arrival_mean = float(inter_arrival_mean)
             self.params.update_single_inter_arr_mean(inter_arrival_mean)
         if self.trace_index < len(self.trace) - 1:
             self.trace_index += 1
             self.env.process(self.process_trace())
-
-    def prediction(self):
-        """
-        Check the trace file and update the simulator param 'predicted_inter_arr_mean'
-        one run duration before the trace module updates the actual mean
-
-        """
-        timeout = float(self.trace[self.prediction_trace_index]['time']) - self.env.now - self.params.run_duration - 1
-        # Cap to make sure we don't have timeout less 0, otherwise raises exception in SimPy
-        self.prediction_timeout = np.clip(timeout, 0, None)
-        inter_arrival_mean = self.trace[self.prediction_trace_index]['inter_arrival_mean']
-        yield self.env.timeout(self.prediction_timeout)
-        log.debug(f"Predicted inter arrival mean changed to {inter_arrival_mean} at {self.env.now}")
-        if 'node' in self.trace[self.prediction_trace_index]:
-            node_id = self.trace[self.prediction_trace_index]['node']
-            if inter_arrival_mean == 'None':
-                self.params.predicted_inter_arr_mean[node_id] = None
-            else:
-                inter_arrival_mean = float(inter_arrival_mean)
-                old_mean = self.params.inter_arr_mean[node_id]
-                self.params.predicted_inter_arr_mean[node_id] = inter_arrival_mean
-                if old_mean is None:
-                    self.env.process(self.simulator.generate_flow(node_id))
-        else:
-            inter_arrival_mean = float(inter_arrival_mean)
-            self.params.update_single_predicted_inter_arr_mean(inter_arrival_mean)
-        if self.prediction_trace_index < len(self.trace) - 1:
-            self.prediction_trace_index += 1
-            self.env.process(self.prediction())
