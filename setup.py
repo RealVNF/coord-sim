@@ -6,6 +6,7 @@ requirements = [
     'pyyaml>=5.1',
     'numpy==1.16.4',
     'common-utils',
+    'cython',   # otherwise sklearn fails
     'sklearn',
     'pandas',
     'tensorflow==1.14.0',
