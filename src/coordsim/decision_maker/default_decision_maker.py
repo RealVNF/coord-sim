@@ -39,9 +39,6 @@ class DefaultDecisionMaker(BaseDecisionMaker):
             dest_nodes = [sch_sf for sch_sf in local_schedule.keys()]
             dest_prob = [prob for name, prob in local_schedule.items()]
             try:
-                # TODO: test random weighted scheduling instead of RR-based scheduling below
-                return np.random.choice(dest_nodes, p=dest_prob)
-
                 # select next node based on weighted RR according to the scheduling weights/probabilities
                 # get current flow counts per possible destination node
                 flow_counts = self.params.metrics.metrics['run_flow_counts'][flow.current_node_id][flow.sfc][sf]
