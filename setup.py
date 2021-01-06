@@ -8,7 +8,7 @@ requirements = [
     'common-utils',
     'cython',   # otherwise sklearn fails
     'sklearn',
-    'pandas',
+    'pandas==1.0.0',
     'tensorflow==1.14.0',
     'keras==2.2.5',
     'matplotlib',
@@ -19,10 +19,6 @@ test_requirements = [
     'nose2'
 ]
 
-dependency_links = [
-    'git+https://github.com/RealVNF/common-utils'
-]
-
 setup(
     name='coord-sim',
     version='2.0.0',
@@ -30,7 +26,6 @@ setup(
                 'scheduling/balancing traffic between them.',
     url='https://github.com/RealVNF/coord-sim',
     author='Stefan Schneider',
-    dependency_links=dependency_links,
     author_email='stefan.schneider@upb.de',
     package_dir={'': 'src'},
     packages=find_packages('src'),
