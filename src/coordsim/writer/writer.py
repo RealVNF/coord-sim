@@ -218,6 +218,8 @@ class ResultWriter():
                     placement_output.append(placement_output_row)
             self.placement_writer.writerows(placement_output)
 
+        # reset metrics for run
+        self.params.metrics.reset_run_metrics()
         # Wait a timeout then write the states
         yield self.env.timeout(self.params.run_duration)
         yield self.env.process(self.write_network_state())
