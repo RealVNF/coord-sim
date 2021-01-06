@@ -185,8 +185,8 @@ class Simulator(SimulatorInterface):
         # Set it in the params of the instantiated simulator object.
         # self.simulator.params.schedule = actions.scheduling
 
-        # reset metrics for steps
-        self.params.metrics.reset_run_metrics()
+        # reset metrics for steps; now done in result writer
+        # self.params.metrics.reset_run_metrics()
 
         # Run the simulation again with the new params for the set duration.
         # Due to SimPy restraints, we multiply the duration by the run times because SimPy does not reset when run()
