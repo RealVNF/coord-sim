@@ -4,7 +4,8 @@ requirements = [
     'networkx==2.4',
     'geopy',
     'pyyaml>=5.1',
-    'numpy>=1.16.5',
+    'numpy>=1.16.5,<1.19',
+    'scipy<1.6'
     'common-utils',
     'cython',   # otherwise sklearn fails
     'sklearn',
