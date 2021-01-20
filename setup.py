@@ -25,7 +25,7 @@ dependency_links = [
 
 setup(
     name='coord-sim',
-    version='2.0.0',
+    version='2.1.0',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     url='https://github.com/RealVNF/coord-sim',
