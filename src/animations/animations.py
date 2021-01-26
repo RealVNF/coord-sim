@@ -87,7 +87,7 @@ class PlacementAnime:
         self.node_load_cmap = plt.cm.get_cmap("RdYlGn_r", 10)
         self.id_labels = {}
 
-        self.run_flows_colors = {"successful_flows": "b", "dropped_flows": "y", "total_flows": "g"}
+        self.run_flows_colors = {"successful_flows": "g", "dropped_flows": "r", "total_flows": "y"}
         self.component_colors = {"a": "b", "b": "y", "c": "g"}
         # component placement marks offset on x axis in relation to the node position
         self.component_offsets = {"a": -1, "b": 0, "c": 1}
@@ -329,12 +329,12 @@ class PlacementAnime:
             y = np.array([self.get_ingress_traffic(f"pop{node}", self.previous_frame(frame)),
                           self.get_ingress_traffic(f"pop{node}", frame)])
 
-            # ln.extend(self.ing_traffic_ax.plot(x, y, "o", color=self.ingress_node_colors[f"pop{node}"]))
+            ln.extend(self.ing_traffic_ax.plot(x, y, color=self.ingress_node_colors[f"pop{node}"]))
 
             self.last_point[f"pop{node}"][0] = x[1]
             self.last_point[f"pop{node}"][1] = y[1]
-            ln_element = self.ing_traffic_ax.plot(frame, y[1], marker=".", color=self.ingress_node_colors[f"pop{node}"])
-            ln.extend(ln_element)
+            # ln_element = self.ing_traffic_ax.plot(frame, y[1], ".", color=self.ingress_node_colors[f"pop{node}"])
+            # ln.extend(ln_element)
         return ln
 
     def plot_dropped_flows(self, frame):
@@ -350,13 +350,13 @@ class PlacementAnime:
                 total_flows = 1
             x = np.array([self.previous_frame(frame), frame])
             y = np.array(
-                [self.run_flows[self.run_flows["time"] == self.previous_frame(frame)][col].iloc[0] / total_flows,
+                [self.dropped_flows_last_point[col][1],
                  self.run_flows[self.run_flows["time"] == frame][col].iloc[0] / total_flows]
             )
 
-            # ln.extend(self.dropped_flows_ax.plot(x, y, "o", color=self.run_flows_colors[col]))
-            ln_element = self.dropped_flows_ax.plot(x[1], y[1], ".", color=self.run_flows_colors[col])
-            ln.extend(ln_element)
+            ln.extend(self.dropped_flows_ax.plot(x, y, color=self.run_flows_colors[col]))
+            # ln_element = self.dropped_flows_ax.plot(x[1], y[1], ".", color=self.run_flows_colors[col])
+            # ln.extend(ln_element)
 
             self.dropped_flows_last_point[col][0] = x[1]
             self.dropped_flows_last_point[col][1] = y[1]
