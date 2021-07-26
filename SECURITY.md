@@ -13,3 +13,5 @@ We will certainly try to fix reported issues, but there are no guarantees or war
 ## Reporting a Vulnerability
 
 Best to report security vulnerabilities in GitHub issues or directly fix them with a pull request.
+
+If there is a severe security vulnerability that you want to disclose privately, you can contact stefan.schneider@upb.de
