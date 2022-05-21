@@ -24,7 +24,7 @@ Simulate flow-level, inter-node network coordination including scaling and place
 
 ## Setup
 
-Requires Python 3.6. Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
+Requires **Python 3.6** (newer versions do not support the required TF 1.14). Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
 
 ```bash
 pip install -r requirements.txt
