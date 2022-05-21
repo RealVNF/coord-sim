@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 requirements = [
+    'scipy==1.5.4',
     'simpy>=4',
     'networkx==2.4',
     'geopy',
     'pyyaml>=5.1',
-    'numpy>=1.16.5',
+    'numpy>=1.16.5,<=1.19.5',
     'common-utils',
-    'cython',   # otherwise sklearn fails
-    'sklearn',
-    'pandas',
+    'scikit-learn',
+    'pandas==1.1.5',
     'tensorflow==1.14.0',
     'keras==2.2.5',
     'matplotlib',
@@ -19,22 +19,16 @@ test_requirements = [
     'nose2'
 ]
 
-dependency_links = [
-    'git+https://github.com/RealVNF/common-utils'
-]
-
 setup(
     name='coord-sim',
-    version='2.1.0',
+    version='2.1.1',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     url='https://github.com/RealVNF/coord-sim',
     author='Stefan Schneider',
-    dependency_links=dependency_links,
-    author_email='stefan.schneider@upb.de',
     package_dir={'': 'src'},
     packages=find_packages('src'),
-    install_requires=requirements + test_requirements,
+    install_requires=requirements,
     tests_require=test_requirements,
     zip_safe=False,
     entry_points={
