@@ -9,7 +9,7 @@ requirements = [
     'common-utils',
     'scikit-learn',
     'pandas==1.1.5',
-    'tensorflow==1.14.0',
+    'tensorflow==2.5.3',
     'keras==2.2.5',
     'matplotlib',
 ]
