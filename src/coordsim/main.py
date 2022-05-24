@@ -48,13 +48,13 @@ def main():
                              sf_placement=sf_placement, schedule=schedule)
     log.info(params)
 
+    # Create a FlowSimulator object, pass the SimPy environment and params objects
+    simulator = FlowSimulator(env, params)
     if 'trace_path' in config:
         trace_path = os.path.join(os.getcwd(), config['trace_path'])
         trace = reader.get_trace(trace_path)
-        TraceProcessor(params, env, trace)
+        TraceProcessor(params, env, trace, simulator)
         log.info("Using trace " + config['trace_path'])
-    # Create a FlowSimulator object, pass the SimPy environment and params objects
-    simulator = FlowSimulator(env, params)
 
     # Start the simulation
     simulator.start()
