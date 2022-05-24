@@ -17,7 +17,7 @@ ttl_choices: [50]
 
 # Optional: Trace file trace relative to the CWD.
 # Until values start in the trace file, the defaults from this file are used
-# trace_path: params/traces/default_trace.csv
+trace_path: params/traces/default_trace.csv
 
 # future_traffic: True
 # lstm_prediction: True
