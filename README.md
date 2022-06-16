@@ -22,14 +22,6 @@ Simulate flow-level, inter-node network coordination including scaling and place
   <img src="docs/huawei_horizontal.png" width="250" hspace="30"/>
 </p>
 
-## Setup
-
-Requires **Python 3.6** (newer versions do not support the required TF 1.14). Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Projects Using coord-sim
 
 * [DeepCoord: Centralized Deep Reinforcement Learning (DRL) Approach](https://github.com/RealVNF/DeepCoord)
@@ -39,6 +31,15 @@ pip install -r requirements.txt
 * [Simple baselines for comparison](https://github.com/RealVNF/baseline-algorithms)
 
 Feel free to open a pull request and add your own project if you use coord-sim!
+
+## Setup
+
+Requires **Python 3.6** (newer versions do not support the required TF 1.14). Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
+
+```bash
+pip install -r requirements.txt
+```
+
 
 ## Usage
 
