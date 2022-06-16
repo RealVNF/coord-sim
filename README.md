@@ -30,6 +30,16 @@ Requires **Python 3.6** (newer versions do not support the required TF 1.14). In
 pip install -r requirements.txt
 ```
 
+## Projects Using coord-sim
+
+* [DeepCoord: Centralized Deep Reinforcement Learning (DRL) Approach](https://github.com/RealVNF/DeepCoord)
+* [Distributed DRL Approach](https://github.com/RealVNF/distributed-drl-coordination)
+* [B-JointSP: Centralized Heuristic Approach](https://github.com/CN-UPB/B-JointSP) (corresponding [adapter code](https://github.com/RealVNF/bjointsp-adapter))
+* [Two Fully Distributed Heuristic Approaches](https://github.com/CN-UPB/distributed-coordination)
+* [Simple baselines for comparison](https://github.com/RealVNF/baseline-algorithms)
+
+Feel free to open a pull request and add your own project if you use coord-sim!
+
 ## Usage
 
 Type `coord-sim -h` for help using the simulator. For now, this should print
