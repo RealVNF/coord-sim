@@ -13,7 +13,7 @@ from spinterface import SimulatorAction, SimulatorInterface, SimulatorState
 from coordsim.writer.writer import ResultWriter
 from coordsim.trace_processor.trace_processor import TraceProcessor
 from coordsim.traffic_predictor.traffic_predictor import TrafficPredictor
-from coordsim.traffic_predictor.lstm_predictor import LSTM_Predictor
+# from coordsim.traffic_predictor.lstm_predictor import LSTM_Predictor
 from coordsim.controller import *
 
 logger = logging.getLogger(__name__)
@@ -63,9 +63,9 @@ class Simulator(SimulatorInterface):
             self.trace = reader.get_trace(trace_path)
 
         self.lstm_predictor = None
-        if 'lstm_prediction' in self.config and self.config['lstm_prediction']:
-            self.lstm_predictor = LSTM_Predictor(self.trace, params=self.params,
-                                                 weights_dir=self.config['lstm_weights'])
+        # if 'lstm_prediction' in self.config and self.config['lstm_prediction']:
+        #     self.lstm_predictor = LSTM_Predictor(self.trace, params=self.params,
+        #                                          weights_dir=self.config['lstm_weights'])
 
     def __del__(self):
         # write dropped flow locs to yaml
