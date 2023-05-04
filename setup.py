@@ -28,7 +28,7 @@ test_requirements = [
 
 setup(
     name='coord-sim',
-    version='2.2.0',
+    version='2.2.1',
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     long_description=long_description,

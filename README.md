@@ -17,9 +17,9 @@ Simulate flow-level, inter-node network coordination including scaling and place
 - Graceful adjustment of placements: When VNFs are removed from a placement by an algorithm. Currently processing flows are allowed to finish processing before the VNF is completely removed (see PR [#78](https://github.com/RealVNF/coordination-simulation/pull/78) and [#81](https://github.com/RealVNF/coordination-simulation/pull/81)).
 
 <p align="center">
-    <img src="docs/realvnf_logo.png" height="150" hspace="30"/>
-  <img src="docs/upb.png" width="200" hspace="30"/>
-  <img src="docs/huawei_horizontal.png" width="250" hspace="30"/>
+    <img src="https://raw.githubusercontent.com/RealVNF/coord-sim/master/docs/realvnf_logo.png" height="150" hspace="30"/>
+  <img src="https://raw.githubusercontent.com/RealVNF/coord-sim/master/docs/upb.png" width="200" hspace="30"/>
+  <img src="https://raw.githubusercontent.com/RealVNF/coord-sim/master/docs/huawei_horizontal.png" width="250" hspace="30"/>
 </p>
 
 ## Projects Using coord-sim
