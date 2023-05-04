@@ -14,6 +14,7 @@ requirements = [
     'numpy>=1.16.5,<=1.19.5',
     'pandas==1.1.5',
     'matplotlib',
+    'pyyaml'
 ]
 # extra requirements for the lstm_predictor (usually not needed)
 lstm_extra_requirements = [
