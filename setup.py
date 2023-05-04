@@ -32,7 +32,7 @@ setup(
     description='Simulate flow-level, inter-node network coordination including scaling and placement of services and '
                 'scheduling/balancing traffic between them.',
     long_description=long_description,
-    long_description_type="text/markdown",
+    long_description_content_type="text/markdown",
     url='https://github.com/RealVNF/coord-sim',
     author='Stefan Schneider',
     package_dir={'': 'src'},
