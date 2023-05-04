@@ -34,10 +34,11 @@ Feel free to open a pull request and add your own project if you use coord-sim!
 
 ## Setup
 
-Requires **Python 3.6** (newer versions do not support the required TF 1.14). Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
+Install with (ideally using [virtualenv](https://virtualenv.pypa.io/en/stable/)):
 
 ```bash
-pip install -r requirements.txt
+pip install .
+# For dev install: pip install -e .
 ```
 
 
